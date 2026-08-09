@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "curse.hex_vs_mark",
+      "category": "curse",
+      "statement": "Hexes and Marks are both curse families, but they have different application behavior and target rules; the skill's current tags and wording determine which family it uses.",
+      "facts": {"families": ["hex", "mark"]},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Curse"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "ailment.damage_source",
+      "category": "ailment",
+      "statement": "Damaging ailments are based on the relevant damage of the Hit that inflicts them, then use ailment and Damage over Time modifiers; they are not calculated from the final post-mitigation Hit damage.",
+      "facts": {"usesFinalHitDamage": false, "usesDamageOverTimeModifiers": true},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Ailment"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "ailment.critical_multiplier",
+      "category": "ailment",
+      "statement": "Damaging ailments inflicted by critical strikes can receive an ailment Damage over Time multiplier bonus; the exact value and modifiers must be read from the current patch and PoB context.",
+      "facts": {"requiresPoBContext": true},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Ailment"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "ailment.non_damaging.effect",
+      "category": "ailment",
+      "statement": "Non-damaging ailments change action speed, damage taken, resistance, critical chance, or damage dealt rather than dealing damage over time themselves.",
+      "facts": {"dealsDamageOverTime": false},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Ailment"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}

@@ -2,6 +2,8 @@
 
 This checklist tracks missing rules. Only Path of Exile 1 is in scope. Rules are added to versioned JSON files after verification.
 
+Current status: P0 has an initial rule set, but every item still requires PoB and patch-version verification before production use.
+
 ## P0 — Required for PoB explanations
 
 ### Damage calculation
@@ -67,4 +69,3 @@ Sources: [Ailment](https://www.poewiki.net/wiki/Ailment), [Curse](https://www.po
 ## Collection principle
 
 Use PoE Wiki for concepts and cross-references, then compare current values and behavior against PoB data and official patch notes. Store only the rules needed by the agent instead of copying entire wiki pages.
-

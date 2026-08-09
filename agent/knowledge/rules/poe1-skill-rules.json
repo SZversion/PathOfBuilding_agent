@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "skill.tag.attack",
+      "category": "skill.tag",
+      "statement": "Attack skills use weapon or unarmed attack mechanics and are affected by attack-specific modifiers.",
+      "facts": {"tag": "attack"},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "skill.tag.spell",
+      "category": "skill.tag",
+      "statement": "Spell skills use spell mechanics and are affected by spell-specific modifiers; spells cannot be evaded by Evasion.",
+      "facts": {"tag": "spell", "evadable": false},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"},
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Evasion"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "skill.tag.projectile",
+      "category": "skill.tag",
+      "statement": "The Projectile tag identifies skills whose effects use projectile behavior; projectile-specific modifiers require this scope.",
+      "facts": {"tag": "projectile"},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "skill.tag.aoe",
+      "category": "skill.tag",
+      "statement": "The Area of Effect tag identifies skills with area effects; area damage and area-of-effect modifiers are separate concepts.",
+      "facts": {"tag": "aoe"},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "skill.triggered_not_used",
+      "category": "skill.trigger",
+      "statement": "A skill triggered by a trigger mechanism does not count as the character using a skill for conditions that specifically require using a skill.",
+      "facts": {"triggeredSkillCountsAsUse": false},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Skill"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "skill.proxy.totem_trap_mine",
+      "category": "skill.proxy",
+      "statement": "Totems, traps, and mines use skills indirectly; whether an effect is attributed to the character or the proxy depends on the specific wording and mechanic.",
+      "facts": {"proxyTypes": ["totem", "trap", "mine"]},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Skill"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "skill.support_link_scope",
+      "category": "skill.support",
+      "statement": "A Support Gem affects socketed active skills only when the support is compatible and linked according to the item's socket links.",
+      "facts": {"requiresCompatibleLink": true},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Support_gem"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "skill.aura_reservation",
+      "category": "skill.resource",
+      "statement": "Aura skills can reserve a resource; the reserved amount is affected by the skill, reservation efficiency, and applicable modifiers.",
+      "facts": {"resourceBehavior": "reservation"},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Aura"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}
