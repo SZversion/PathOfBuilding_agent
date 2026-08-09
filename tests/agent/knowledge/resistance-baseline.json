@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "id": "act10-no-modifiers",
+      "question": "Act 10을 완료했고 장비와 패시브가 없다면 원소 저항은 얼마인가?",
+      "expected": {"fire": -60, "cold": -60, "lightning": -60},
+      "requiredRules": ["character.base_resistance.elemental", "campaign.resistance_penalty.act10"]
+    },
+    {
+      "id": "default-curse-limit",
+      "question": "증가 효과가 없다면 한 대상에게 기본적으로 몇 개의 저주를 걸 수 있는가?",
+      "expected": {"curseLimit": 1},
+      "requiredRules": ["curse.default_limit"]
+    }
+  ]
+}

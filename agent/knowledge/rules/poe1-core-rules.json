@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "rules": [
+    {
+      "id": "character.base_resistance.elemental",
+      "category": "character.resistance",
+      "statement": "캐릭터의 장비·패시브·퀘스트 보상을 적용하기 전 기본 화염·냉기·번개 저항은 0%이다.",
+      "facts": {"elements": ["fire", "cold", "lightning"], "basePercent": 0},
+      "terms": ["기본 원소 저항", "base elemental resistance"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"},
+        {"type": "test", "ref": "tests/agent/knowledge/resistance-baseline.json"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "character.base_resistance.chaos",
+      "category": "character.resistance",
+      "statement": "캐릭터의 장비·패시브·퀘스트 보상을 적용하기 전 기본 카오스 저항은 0%이다.",
+      "facts": {"element": "chaos", "basePercent": 0},
+      "terms": ["기본 카오스 저항", "base chaos resistance"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "campaign.resistance_penalty.act5",
+      "category": "campaign.resistance",
+      "statement": "Act 5 완료 후 캐릭터의 화염·냉기·번개 저항에 -30% 캠페인 패널티가 적용된다.",
+      "facts": {"afterAct": 5, "elements": ["fire", "cold", "lightning"], "penaltyPercent": -30},
+      "terms": ["Act 5 저항 패널티", "Kitava 저항 패널티"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"},
+        {"type": "pob", "ref": "src/Modules/CalcPerform.lua"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "campaign.resistance_penalty.act10",
+      "category": "campaign.resistance",
+      "statement": "Act 10 완료 후 Act 5 패널티와 합쳐 화염·냉기·번개 저항에 총 -60% 캠페인 패널티가 적용된다.",
+      "facts": {"afterAct": 10, "elements": ["fire", "cold", "lightning"], "totalPenaltyPercent": -60},
+      "terms": ["Act 10 저항 패널티", "endgame resistance penalty"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"},
+        {"type": "test", "ref": "tests/agent/knowledge/resistance-baseline.json"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "curse.default_limit",
+      "category": "curse.limit",
+      "statement": "별도의 증가 효과가 없을 때 한 대상에게 적용할 수 있는 저주의 기본 한도는 1개이다.",
+      "facts": {"defaultLimit": 1, "scope": "target"},
+      "terms": ["기본 저주 개수", "curse limit", "maximum curses"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Curse"},
+        {"type": "pob", "ref": "src/Modules/CalcPerform.lua"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "damage.types",
+      "category": "damage-type",
+      "statement": "PoE의 기본 피해 타입은 물리, 화염, 냉기, 번개, 카오스이다.",
+      "facts": {"damageTypes": ["physical", "fire", "cold", "lightning", "chaos"]},
+      "terms": ["피해 유형", "damage type", "physical damage", "elemental damage"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "damage.elemental_definition",
+      "category": "damage-type",
+      "statement": "원소 피해는 화염·냉기·번개 피해를 의미하며 물리·카오스 피해는 원소 피해가 아니다.",
+      "facts": {"elementalTypes": ["fire", "cold", "lightning"]},
+      "terms": ["원소 피해", "elemental damage"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Elemental_damage"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "damage.hit_vs_dot",
+      "category": "delivery",
+      "statement": "Hit은 한 번의 명중으로 발생하는 피해 인스턴스이고, Damage over Time은 시간에 따라 반복 적용되는 피해이다. DoT는 Hit이 아니다.",
+      "facts": {"deliveryTypes": ["hit", "damage_over_time"], "dotIsHit": false},
+      "terms": ["타격", "Hit", "지속 피해", "Damage over Time", "DoT"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage_over_time"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "ailment.damaging",
+      "category": "ailment",
+      "statement": "대표적인 피해를 주는 상태이상은 Ignite, Bleed, Poison이며 각각 화염·물리·카오스 기반의 지속 피해를 발생시킨다.",
+      "facts": {
+        "damagingAilments": ["ignite", "bleed", "poison"],
+        "baseDamageTypes": {"ignite": "fire", "bleed": "physical", "poison": "chaos"},
+        "delivery": "damage_over_time"
+      },
+      "terms": ["피해 상태이상", "damaging ailment", "ignite", "bleed", "poison"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Ailment"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "ailment.non_damaging",
+      "category": "ailment",
+      "statement": "Chill, Freeze, Shock, Scorch, Brittle, Sap은 피해 자체를 발생시키는 상태이상이 아니라 적의 상태나 받는 피해에 영향을 주는 비피해 상태이상이다.",
+      "facts": {"nonDamagingAilments": ["chill", "freeze", "shock", "scorch", "brittle", "sap"]},
+      "terms": ["비피해 상태이상", "non-damaging ailment"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Ailment"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}

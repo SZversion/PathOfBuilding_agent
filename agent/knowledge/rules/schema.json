@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pob-agent.local/schemas/poe-rule.json",
+  "title": "PoE 1 Rule",
+  "type": "object",
+  "required": ["id", "category", "statement", "sources", "verification"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9._-]+$"},
+    "category": {"type": "string"},
+    "statement": {"type": "string"},
+    "facts": {"type": "object"},
+    "terms": {"type": "array", "items": {"type": "string"}},
+    "patchRange": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": {"type": ["string", "null"]},
+        "to": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "ref"],
+        "properties": {
+          "type": {"enum": ["pob", "official", "wiki", "in-game", "test"]},
+          "ref": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "verification": {"enum": ["draft", "needs_patch_check", "verified"]}
+  },
+  "additionalProperties": false
+}
