@@ -9,7 +9,7 @@
       "statement": "Attack skills use weapon or unarmed attack mechanics and are affected by attack-specific modifiers.",
       "facts": {"tag": "attack"},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "skill.tag.spell",
@@ -20,7 +20,7 @@
         {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"},
         {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Evasion"}
       ],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "skill.tag.projectile",
@@ -28,7 +28,7 @@
       "statement": "The Projectile tag identifies skills whose effects use projectile behavior; projectile-specific modifiers require this scope.",
       "facts": {"tag": "projectile"},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "skill.tag.aoe",
@@ -36,7 +36,7 @@
       "statement": "The Area of Effect tag identifies skills with area effects; area damage and area-of-effect modifiers are separate concepts.",
       "facts": {"tag": "aoe"},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Gem_tag"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "skill.triggered_not_used",

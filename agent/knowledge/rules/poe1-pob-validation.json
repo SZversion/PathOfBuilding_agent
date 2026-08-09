@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "sourceTree": "PathOfBuilding/src",
+  "validation": [
+    {
+      "id": "damage.modifier.increased_decreased",
+      "status": "confirmed",
+      "evidence": ["src/Classes/ModList.lua:97-116", "src/Classes/ModDB.lua:132-156"],
+      "finding": "SumInternal adds matching modifiers; this confirms additive aggregation for the same modifier scope."
+    },
+    {
+      "id": "damage.modifier.more_less",
+      "status": "partial",
+      "evidence": ["src/Classes/ModList.lua:118-147", "src/Classes/ModDB.lua:157-191"],
+      "finding": "MoreInternal multiplies (1 + value/100) factors. The universal ordering relative to every damage stage is not established by this helper alone."
+    },
+    {
+      "id": "damage.added_damage",
+      "status": "partial",
+      "evidence": ["src/Modules/CalcOffence.lua:33", "src/Modules/CalcOffence.lua:1878-1945"],
+      "finding": "PoB has separate damage-type tables and conversion/gain processing, but a single universal 'added before all percentage modifiers' rule was not proven."
+    },
+    {
+      "id": "damage.gain_as_extra",
+      "status": "confirmed",
+      "evidence": ["src/Modules/CalcOffence.lua:1878-1945"],
+      "finding": "buildConversionTable collects gain-as-extra separately from conversion and emits distinct gain and conversion tables."
+    },
+    {
+      "id": "damage.conversion",
+      "status": "confirmed",
+      "evidence": ["src/Modules/CalcOffence.lua:1878-1945"],
+      "finding": "Conversion is processed by ordered damage-type indexes and normalized when combined conversion exceeds 100%."
+    },
+    {
+      "id": "resistance.reduction_vs_penetration",
+      "status": "partial",
+      "evidence": ["src/Modules/CalcOffence.lua:3466-3475", "src/Modules/CalcPerform.lua:3572-3585"],
+      "finding": "PoB has separate penetration selection and enemy resistance modification paths; complete ordering across curses, exposure, reduction, and penetration was not proven."
+    },
+    {
+      "id": "resistance.exposure",
+      "status": "confirmed",
+      "evidence": ["src/Modules/CalcPerform.lua:3565-3585"],
+      "finding": "Exposure is applied as an enemy resistance BASE modifier, with minimum selection and extra exposure handling."
+    },
+    {
+      "id": "damage.modifier.scope",
+      "status": "confirmed",
+      "evidence": ["src/Data/Gems.lua", "src/Modules/CalcOffence.lua:3536-3545"],
+      "finding": "Gem tag data and skillFlags (including projectile) are used to gate scoped calculations."
+    },
+    {
+      "id": "critical.default_multiplier",
+      "status": "confirmed",
+      "evidence": ["src/Data/Misc.lua:88-89", "src/Modules/CalcSetup.lua:501-502"],
+      "finding": "PoB defines 150% base critical multiplier and a +50 critical ailment DoT multiplier, then initializes the calculation context from those constants."
+    },
+    {
+      "id": "defence.armour_formula",
+      "status": "confirmed",
+      "evidence": ["src/Modules/CalcDefence.lua:111-121", "src/Modules/CalcDefence.lua:154-155"],
+      "finding": "PoB implements armour mitigation as effectiveArmour / (effectiveArmour + effectiveDamage * 5), with damage-type applicability gates."
+    },
+    {
+      "id": "curse.hex_mark_order",
+      "status": "partial",
+      "evidence": ["src/Modules/CalcPerform.lua:2602-2637", "src/Modules/CalcPerform.lua:3156-3246"],
+      "finding": "PoB distinguishes marks from hexes, tracks EnemyCurseLimit, socketed curse limits, and slot replacement. Exact in-game application order still needs targeted cases."
+    },
+    {
+      "id": "ailment.application_and_damage",
+      "status": "partial",
+      "evidence": ["src/Modules/CalcPerform.lua:836-865", "src/Modules/CalcPerform.lua:3432-3539"],
+      "finding": "Avoidance, immunity, magnitude caps, and non-damaging ailment effects are explicitly calculated; complete duration and damage formulas for every ailment are not yet covered."
+    },
+    {
+      "id": "projectile.overlap_and_secondary_behavior",
+      "status": "not_confirmed",
+      "evidence": ["src/Modules/CalcOffence.lua:3536-3545"],
+      "finding": "Projectile tagging is present, but Chain/Fork/Pierce/Split and single-target overlap behavior require dedicated calculation and test fixtures."
+    },
+    {
+      "id": "skill.proxy.ownership",
+      "status": "not_confirmed",
+      "evidence": ["src/Data/Gems.lua", "src/Modules/CalcPerform.lua"],
+      "finding": "Skill metadata and proxy paths exist, but every totem/trap/mine ownership exception cannot be inferred from the current comparison."
+    }
+  ]
+}

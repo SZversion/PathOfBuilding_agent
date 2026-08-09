@@ -21,16 +21,23 @@ Validation target: current PoB source tree on branch `feat/pob-agent-architectur
 
 This means the PoB implementation and the live-game rule must be represented separately until the scope is confirmed for the target PoE 1 patch. Do not use the current campaign rule to infer Chaos Resistance from PoB without checking the build's actual PoB output.
 
-## Not yet proven by direct source comparison
+## Results for the previously unproven items
 
-- The complete `increased`/`more`/`less` calculation order
-- Added damage, Gain as Extra, and conversion ordering in every damage path
-- Resistance reduction, Exposure, curse reduction, and penetration ordering
-- Full skill-tag semantics and every proxy ownership exception
-- Armour formula and all defense interaction layers
-- Hex/Mark application and curse replacement order
-- Full ailment application, duration, magnitude, and damage formulas
-- Projectile Chain/Fork/Pierce/Split and single-target overlap behavior
+The direct source comparison is now recorded in `poe1-pob-validation.json`. The statuses below deliberately distinguish a PoB implementation finding from a complete universal game-rule claim.
 
-These rules remain `needs_patch_check` and require focused comparison against the relevant PoB calculation modules plus patch-specific test cases.
+| Item | Status | PoB evidence | Interpretation |
+|---|---|---|---|
+| Increased/decreased aggregation | Confirmed | `src/Classes/ModList.lua:97-116` | Matching modifiers are summed. |
+| More/less operation and global order | Partial | `src/Classes/ModList.lua:118-147` | Multiplicative factors are confirmed; every stage's ordering is not. |
+| Added damage | Partial | `src/Modules/CalcOffence.lua:1878-1945` | Separate damage tables exist, but the universal ordering claim needs fixtures. |
+| Gain as Extra | Confirmed | `src/Modules/CalcOffence.lua:1878-1945` | Stored separately from conversion. |
+| Conversion | Confirmed | `src/Modules/CalcOffence.lua:1878-1945` | Ordered damage-type conversion and >100% normalization are implemented. |
+| Resistance reduction / Exposure / penetration ordering | Partial | `src/Modules/CalcOffence.lua:3466-3475`; `src/Modules/CalcPerform.lua:3572-3585` | Separate paths are present; complete ordering remains unproven. |
+| Skill tags and scoped modifiers | Confirmed | `src/Data/Gems.lua`; `src/Modules/CalcOffence.lua:3536-3545` | Tags and skill flags gate calculations. |
+| Proxy ownership exceptions | Not confirmed | `src/Data/Gems.lua`; `src/Modules/CalcPerform.lua` | Requires per-mechanic cases. |
+| Armour formula | Confirmed | `src/Modules/CalcDefence.lua:111-121` | Effective armour uses the `armour / (armour + damage * 5)` mitigation form. |
+| Hex/Mark and curse replacement | Partial | `src/Modules/CalcPerform.lua:2602-2637`; `3156-3246` | Limits, mark distinction, and replacement slots are implemented; exact game order needs fixtures. |
+| Ailment application and damage | Partial | `src/Modules/CalcPerform.lua:836-865`; `3432-3539` | Avoidance/immunity/effect paths are present; all formulas are not covered. |
+| Projectile secondary behavior and overlap | Not confirmed | `src/Modules/CalcOffence.lua:3536-3545` | Tagging is present, but Chain/Fork/Pierce/Split overlap needs dedicated tests. |
 
+Rules updated from `needs_patch_check` to `verified` only where the PoB source directly proves the stated operation. Partial and unresolved claims remain conservative and are listed in the machine-readable validation file.

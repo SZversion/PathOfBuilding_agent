@@ -9,7 +9,7 @@
       "statement": "Increased and decreased modifiers of the same applicable type are additive with each other.",
       "facts": {"operation": "additive"},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "damage.modifier.more_less",
@@ -33,7 +33,7 @@
       "statement": "Gain as Extra Damage creates additional damage of a destination type from damage of a source type; it is not the same operation as conversion.",
       "facts": {"kind": "derived_damage", "conversion": false},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage_conversion"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "damage.conversion",
@@ -41,7 +41,7 @@
       "statement": "Damage conversion changes damage from one damage type to another and conversion interactions must be evaluated in their defined conversion order.",
       "facts": {"kind": "damage_type_change"},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage_conversion"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "resistance.reduction_vs_penetration",
@@ -57,7 +57,7 @@
       "statement": "Exposure is a resistance-reducing debuff applied to an enemy and is distinct from penetration.",
       "facts": {"kind": "resistance_reduction_debuff"},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Exposure"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "damage.modifier.scope",
@@ -65,7 +65,7 @@
       "statement": "A modifier applies only when its wording and the skill's properties match; for example, attack damage, spell damage, projectile damage, and damage with ailments are distinct scopes.",
       "facts": {"requiresTagMatching": true},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "critical.default_multiplier",
@@ -73,7 +73,7 @@
       "statement": "A critical strike deals extra damage based on Critical Strike Multiplier; the exact default and modifier interactions must be read from the current PoB calculation context.",
       "facts": {"requiresPoBContext": true},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Critical_strike"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     }
   ]
 }
