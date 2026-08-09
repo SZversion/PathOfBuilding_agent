@@ -41,3 +41,7 @@ runtime/SimpleGraphic/SimpleGraphic.log
 
 src/poe_api_response.json
 .worktrees/
+local-models/*.gguf
+local-models/*.bin
+local-models/*.safetensors
+agent/.cache/

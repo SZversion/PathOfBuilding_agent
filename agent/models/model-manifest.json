@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "qwen3-8b-q4",
+      "displayName": "Qwen3-8B (4-bit)",
+      "source": "https://huggingface.co/Qwen/Qwen3-8B",
+      "runtime": "llama.cpp",
+      "format": "GGUF",
+      "version": "select-release-before-download",
+      "sha256": "",
+      "sizeBytes": 0
+    }
+  ]
+}
