@@ -1,6 +1,8 @@
 # Knowledge base
 
-패치 버전이 있는 PoE 메커니즘 설명, 아이템·스킬·패시브 별칭, 한국어 명칭을 저장합니다.
+This directory contains versioned Path of Exile 1 mechanics, item and skill metadata, aliases, and retrieval indexes.
 
-원본 지식 파일과 생성된 검색 인덱스는 분리합니다. 계산된 숫자는 이 디렉터리가 아니라 PoB Tool에서 가져옵니다.
+Canonical game rules are written in English. Korean item and skill names are maintained separately under `aliases/ko` and are used only for query matching and answer localization.
+
+Current build numbers and calculation traces are not stored here; they are requested from PoB tools at runtime.
 
