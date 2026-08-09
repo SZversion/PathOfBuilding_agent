@@ -7,9 +7,9 @@
       "source": "https://huggingface.co/Qwen/Qwen3-8B",
       "runtime": "llama.cpp",
       "format": "GGUF",
-      "version": "select-release-before-download",
-      "sha256": "",
-      "sizeBytes": 0
+      "version": "main-2026-08-10",
+      "sha256": "1E3398D7660D69376E25AC359961A040866C995953334FB6E44C3E553C2DF981",
+      "sizeBytes": 5037146944
     }
   ]
 }
