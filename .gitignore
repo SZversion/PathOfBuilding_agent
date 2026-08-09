@@ -45,3 +45,4 @@ local-models/*.gguf
 local-models/*.bin
 local-models/*.safetensors
 agent/.cache/
+__pycache__/
