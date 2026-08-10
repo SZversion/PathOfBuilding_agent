@@ -29,12 +29,14 @@ end
 local tool = tools[request.tool]
 if type(tool) ~= "function" then respond({ ok = false, error = "unknown PoB tool: " .. request.tool }); return end
 local result, err
-if request.tool == "resolve_skill_context" or request.tool == "get_support_links" or request.tool == "get_skill_chain" or request.tool == "get_socket_order" then
+if request.tool == "resolve_skill_context" or request.tool == "get_support_links" or request.tool == "get_skill_chain" or request.tool == "get_socket_order" or request.tool == "get_curse_application_order" then
 	result, err = tool(build, args.skillSetSelector, args.skillName)
 elseif request.tool == "compare_support_effect" or request.tool == "explain_damage_change" then
 	result, err = tool(build, args.skillSetSelector, args.skillName, args.supportName)
 elseif request.tool == "get_item_modifiers" then
 	result, err = tool(build, args.itemId)
+elseif request.tool == "get_duration" then
+	result, err = tool(build, args.skillIndex, args.durationType)
 else
 	result, err = tool(build, args.skillIndex)
 end

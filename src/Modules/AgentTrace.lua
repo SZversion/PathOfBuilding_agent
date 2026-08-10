@@ -2,7 +2,7 @@ local function collect(skill, stat, wantedType)
 	local result = { }
 	local list, cfg = skill and skill.skillModList, skill and skill.skillCfg
 	if not list or type(list.Tabulate) ~= "function" then return result end
-	for _, modType in ipairs({ "BASE", "MORE", "OVERRIDE" }) do
+	for _, modType in ipairs({ "BASE", "INC", "RED", "MORE", "OVERRIDE" }) do
 		if not wantedType or wantedType == modType then
 		for _, entry in ipairs(list:Tabulate(modType, cfg, stat)) do
 			local mod = entry.mod or { }

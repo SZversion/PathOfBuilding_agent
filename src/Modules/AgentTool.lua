@@ -304,6 +304,37 @@ local function get_curse_limit(build)
 	return envelope(build, { value = value }, { "PoB:Modules/CalcPerform.lua:3156-3158" })
 end
 
+local function get_duration(build, skillIndex, durationType)
+	if type(durationType) ~= "string" or durationType == "" then return nil, "durationType is required" end
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local output = skill.output or { }
+	local outputKey = ({ skill_effect = "Duration", secondary = "DurationSecondary", tertiary = "DurationTertiary", aura = "AuraDuration", reserve = "ReserveDuration", totem = "TotemDuration" })[durationType]
+	if outputKey and type(output[outputKey]) == "number" then
+		return envelope(build, { skillIndex = skillIndex, name = skillName(skill), durationType = durationType, value = output[outputKey], unit = "seconds", status = "calculated" }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output." .. outputKey }, { { operation = "FINAL_DURATION", stat = outputKey, value = output[outputKey], source = "PoB output" } })
+	end
+	if durationType ~= "trauma" then return nil, "duration is unavailable for this skill and durationType" end
+	if not skill.skillModList or not skill.skillCfg then return nil, "TraumaDuration modifiers are unavailable" end
+	local baseTerms = (LoadModule and LoadModule("Modules/AgentTrace") or dofile("src/Modules/AgentTrace.lua")).collect(skill, "TraumaDuration", "BASE")
+	local durationTerms = (LoadModule and LoadModule("Modules/AgentTrace") or dofile("src/Modules/AgentTrace.lua")).collect(skill, "Duration")
+	local base = 0
+	for _, term in ipairs(baseTerms) do base = base + (term.value or 0) end
+	local inc, red, more = 0, 0, 1
+	for _, term in ipairs(durationTerms) do
+		if term.operation == "INC" then inc = inc + term.value elseif term.operation == "RED" then red = red + term.value elseif term.operation == "MORE" then more = more * (1 + term.value / 100) end
+	end
+	local multiplier = more * (1 + inc / 100) * (1 + red / 100)
+	local value = base * multiplier
+	if base <= 0 then return nil, "TraumaDuration is unavailable for this skill" end
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), durationType = durationType, value = value, unit = "seconds", status = "calculated" }, { "PoB:Modules/CalcOffence.lua:2252" }, {
+		{ operation = "SUM_BASE", stat = "TraumaDuration", value = base, inputs = baseTerms },
+		{ operation = "DURATION_MODIFIER", stat = "Duration", value = multiplier, inputs = durationTerms },
+		{ operation = "FINAL_DURATION", value = value, formula = "SUM_BASE(TraumaDuration) * calcLib.mod(Duration)" },
+	})
+end
+
 local function explain_stat(build, stat, skillIndex)
 	if type(stat) ~= "string" or stat == "" then
 		return nil, "stat is required"
@@ -374,5 +405,6 @@ return {
 	get_projectile_count = get_projectile_count,
 	get_elemental_penetration = get_elemental_penetration,
 	get_curse_limit = get_curse_limit,
+	get_duration = get_duration,
 	explain_stat = explain_stat,
 }

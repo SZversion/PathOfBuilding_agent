@@ -7,7 +7,7 @@ local build = {
 				output = { Life = 5000, EnemyCurseLimit = 2 },
 				breakdown = { Life = { "5000 (base)", "= 5000" } },
 				activeSkillList = {
-					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", infoTrigger = "Manual", triggered = false, output = { ProjectileCount = 3, Chain = 2, TotalDPS = 1000, IgniteChance = 25, FireEffMult = 0.7, ElementalPenetration = { Fire = 14, Cold = 8 } }, conversionTable = { Physical = { conversion = { Fire = 0.5 }, gain = { Cold = 0.1 }, mult = 0.5 } }, breakdown = { TotalDPS = { "1000" }, Fire = { "base", "= 1000" } } },
+					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", infoTrigger = "Manual", triggered = false, output = { ProjectileCount = 3, Chain = 2, TotalDPS = 1000, Duration = 4, IgniteChance = 25, FireEffMult = 0.7, ElementalPenetration = { Fire = 14, Cold = 8 } }, conversionTable = { Physical = { conversion = { Fire = 0.5 }, gain = { Cold = 0.1 }, mult = 0.5 } }, breakdown = { TotalDPS = { "1000" }, Fire = { "base", "= 1000" } } },
 					{ activeEffect = { grantedEffect = { name = "Spark" } }, skillPartName = "main", output = { TotalDPS = 900 }, breakdown = { TotalDPS = { "900" } } },
 				},
 			},
@@ -34,6 +34,7 @@ local penetration = assert(tools.get_elemental_penetration(build, 1))
 assert(penetration.facts.name == "Fireball")
 assert(penetration.facts.values.Fire == 14 and penetration.facts.values.Cold == 8 and penetration.facts.values.Lightning == nil)
 assert(tools.get_skill_dps(build, 1).facts.value == 1000)
+assert(tools.get_duration(build, 1, "skill_effect").facts.value == 4)
 assert(tools.get_highest_dps_skill(build).facts.skillIndex == 1)
 assert(tools.get_skill_breakdown(build, 1).facts.breakdown.status == "calculated")
 assert(tools.get_projectile_behavior(build, 1).facts.values.Chain == 2)

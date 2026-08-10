@@ -53,4 +53,5 @@ def make_pob_handlers(build_path, luajit=None, timeout=120):
         "get_effective_resistance", "get_support_links", "resolve_skill_context", "get_projectile_count",
         "get_curse_limit", "get_elemental_penetration", "get_skill_chain", "get_socket_order",
         "compare_support_effect", "explain_damage_change",
+        "get_duration",
     )}
