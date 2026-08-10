@@ -455,6 +455,9 @@ function CalcsTabClass:BuildOutput()
 	self.calcsEnv = self.calcs.buildOutput(self.build, "CALCS")
 	self.calcsOutput = self.calcsEnv.player.output
 	self.build.agentSnapshot = self.agentSnapshot.capture(self.build)
+	self.build.explainAgentStat = function(stat, skillIndex)
+		return self.agentSnapshot.explain(self.build, stat, skillIndex)
+	end
 	self.build.saveAgentSnapshot = function(fileName)
 		return self.agentSnapshot.save(self.build.agentSnapshot, fileName)
 	end

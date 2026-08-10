@@ -23,4 +23,8 @@ assert(result.outputs.Life == 5000)
 assert(result.outputs.ignoredTable == nil)
 assert(result.skills[1].name == "Fireball")
 assert(result.skills[1].output.ProjectileCount == 3)
+build.calcsTab.mainEnv.player.breakdown = { Life = { "5000 (base)", "= 5000" } }
+local explanation = snapshot.explain(build, "Life")
+assert(explanation.value == 5000)
+assert(explanation.trace[1] == "5000 (base)")
 print("agent snapshot self-check passed")
