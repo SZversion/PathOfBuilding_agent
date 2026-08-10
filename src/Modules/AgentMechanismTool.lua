@@ -221,9 +221,9 @@ local function get_skill_chain(build, skillSetSelector, name)
 			return nil, "chain output is unavailable for selected skill"
 		end
 		local traceTool = (LoadModule and LoadModule("Modules/AgentTrace")) or dofile("src/Modules/AgentTrace.lua")
-		local maxTerms = traceTool.collect(skill, "ChainCountMax", "BASE")
-		local moreTerms = traceTool.collect(skill, "ChainCountMax", "MORE")
-		local chainTerms = traceTool.collect(skill, "ChainCount", "BASE")
+		local maxTerms = traceTool.collectCombined(skill, "ChainCountMax", "BASE")
+		local moreTerms = traceTool.collectCombined(skill, "ChainCountMax", "MORE")
+		local chainTerms = traceTool.collectCombined(skill, "ChainCount", "BASE")
 		local baseMax = traceTool.sum(maxTerms, "BASE")
 		local moreMax = traceTool.sum(moreTerms, "MORE")
 		local addedProjectiles = 0
