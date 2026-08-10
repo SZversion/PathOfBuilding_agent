@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PoB Mechanism Fact Structure - Implementation Plan</title><style>body{max-width:900px;margin:2rem auto;padding:0 1rem;font:16px/1.5 system-ui,sans-serif;color:#202124}code,pre{background:#f3f4f6;border-radius:4px}code{padding:.1rem .25rem}pre{padding:1rem;overflow:auto}</style></head>
+<body>
+  <h1>PoB Mechanism Fact Structure Implementation Plan</h1>
+  <p><strong>Goal:</strong> expose PoB's existing calculated mechanism state in one read-only Fact Envelope.</p>
+  <p><strong>Architecture:</strong> add one Lua module that reads <code>build.skillsTab.socketGroupList</code> and <code>build.calcsTab.mainEnv.player</code>, reuses <code>AgentTool</code> for calculated projectile/curse facts, and marks unavailable or unsimulated areas explicitly.</p>
+  <p><strong>Tech stack:</strong> Lua/LuaJIT, existing PoB runtime, assert-based self-checks.</p>
+  <h2>Global constraints</h2>
+  <ul><li>Read-only; no PoB calculation edits.</li><li>No new dependencies.</li><li>Preserve PoB array order.</li><li>All errors use <code>nil, error</code>.</li></ul>
+  <h2>Task 1: deterministic contract test</h2>
+  <p><strong>Files:</strong> create <code>tests/agent/tools/test_agent_mechanism_tool.lua</code>.</p>
+  <ol><li>Build a fake object with socket groups, gem instances, player output, active skills, and breakdown.</li><li>Assert group/gem order, slot, enabled, trigger, projectile, curse, and status fields.</li><li>Assert missing build returns an error and missing optional values use the documented status.</li><li>Run with LuaJIT and confirm the test fails before implementation.</li></ol>
+  <h2>Task 2: minimal mechanism module</h2>
+  <p><strong>Files:</strong> create <code>src/Modules/AgentMechanismTool.lua</code>.</p>
+  <ol><li>Validate <code>build.calcsTab.mainEnv.player</code>.</li><li>Copy only scalar values from PoB tables.</li><li>Map socket groups and <code>gemList</code> in original order.</li><li>Map active skills, trigger fields, and scalar outputs.</li><li>Call <code>AgentTool.get_projectile_count</code> where available and <code>get_curse_limit</code> once.</li><li>Return empty breakdown or <code>not_simulated</code> markers without inventing calculations.</li></ol>
+  <h2>Task 3: tests and external smoke</h2>
+  <p><strong>Files:</strong> modify <code>tests/agent/tools/test_user_build_headless.lua</code>.</p>
+  <ol><li>Load the mechanism module after PoB's frame calculation.</li><li>Assert a non-empty skill list and socket-group list when present.</li><li>Print calculated/unavailable/not_simulated statuses without hard-coded patch values.</li><li>Run fake, snapshot, and external Imported build tests.</li></ol>
+  <h2>Task 4: review and commit</h2>
+  <ol><li>Run <code>git diff --check</code>.</li><li>Verify no PoB calculation module changed.</li><li>Commit with <code>feat: structure PoB mechanism facts</code>.</li></ol>
+</body>
+</html>
