@@ -36,6 +36,7 @@ local function dispatch(name, args)
 	if type(tool) ~= "function" then return nil, "unknown PoB tool: " .. tostring(name) end
 	if name == "get_item_modifiers" then return tool(current, args.itemId) end
 	if name == "get_duration" then return tool(current, args.skillIndex, args.durationType) end
+	if name == "explain_stat" then return tool(current, args.stat, args.skillIndex) end
 	if name == "get_curse_limit" or name == "get_character_stats" or name == "get_highest_dps_skill" then return tool(current) end
 	if name == "resolve_skill_context" or name == "get_socket_order" or name == "get_skill_chain" or name == "get_support_links" or name == "get_curse_application_order" then
 		return tool(current, args.skillSetSelector, args.skillName)

@@ -38,6 +38,8 @@ elseif request.tool == "get_item_modifiers" then
 	result, err = tool(build, args.itemId)
 elseif request.tool == "get_duration" then
 	result, err = tool(build, args.skillIndex, args.durationType)
+elseif request.tool == "explain_stat" then
+	result, err = tool(build, args.stat, args.skillIndex)
 else
 	result, err = tool(build, args.skillIndex)
 end
