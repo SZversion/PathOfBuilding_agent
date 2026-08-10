@@ -41,3 +41,7 @@ The direct source comparison is now recorded in `poe1-pob-validation.json`. The 
 | Projectile secondary behavior and overlap | Not confirmed | `src/Modules/CalcOffence.lua:3536-3545` | Tagging is present, but Chain/Fork/Pierce/Split overlap needs dedicated tests. |
 
 Rules updated from `needs_patch_check` to `verified` only where the PoB source directly proves the stated operation. Partial and unresolved claims remain conservative and are listed in the machine-readable validation file.
+
+## Additional runtime systems validated
+
+The second comparison pass added `poe1-runtime-rules.json`, covering resource calculation and reservation, standard charge limits, totem and trap limits, trigger-rate/cooldown behavior, leech pools, and on-hit recovery. Full proxy ownership remains intentionally unresolved because PoB branches by mechanic and skill metadata.

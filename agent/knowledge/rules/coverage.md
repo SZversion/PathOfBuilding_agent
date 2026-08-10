@@ -2,25 +2,25 @@
 
 This checklist tracks missing rules. Only Path of Exile 1 is in scope. Rules are added to versioned JSON files after verification.
 
-Current status: P0 has an initial rule set, but every item still requires PoB and patch-version verification before production use.
+Current status: P0 has an initial PoB comparison; unresolved items remain explicitly marked in `validation-report.md` and `poe1-pob-validation.json`.
 
 ## P0 — Required for PoB explanations
 
 ### Damage calculation
 
-- [ ] `increased` versus `more/less`
-- [ ] `added damage` versus `gain as extra`
-- [ ] damage conversion order
-- [ ] resistance reduction, Exposure, curses, and penetration
-- [ ] modifier scope for Hits versus Damage over Time
-- [ ] weapon, melee, projectile, spell, and area damage tags
+- [x] `increased` versus `more/less` (operation verified; universal order partial)
+- [x] `added damage` versus `gain as extra` (gain-as-extra verified; added damage partial)
+- [x] damage conversion order
+- [x] resistance reduction, Exposure, curses, and penetration (ordering partial)
+- [x] modifier scope for Hits versus Damage over Time
+- [x] weapon, melee, projectile, spell, and area damage tags
 
 Sources: [Damage](https://www.poewiki.net/wiki/Damage), [Resistance penetration](https://www.poewiki.net/wiki/Resistance_penetration)
 
 ### Skills and gems
 
-- [ ] Attack, Spell, Warcry, Aura, and Curse tags
-- [ ] Projectile, AoE, Duration, Channelling, and Trigger tags
+- [x] Attack, Spell, Warcry, Aura, and Curse tags (tag data verified)
+- [x] Projectile, AoE, Duration, Channelling, and Trigger tags (tag data verified)
 - [ ] Totem, Trap, Mine, and Brand proxy behavior
 - [ ] Triggered skills versus `use a skill` conditions
 - [ ] support gem link scope
@@ -29,11 +29,11 @@ Sources: [Skill](https://www.poewiki.net/wiki/Skill), [Gem tag](https://www.poew
 
 ### Defenses and survival
 
-- [ ] Armour, Evasion, Energy Shield, and Ward
-- [ ] Block, Spell Suppression, and Dodge scope
-- [ ] Accuracy versus Evasion
-- [ ] resistance caps and effective resistance
-- [ ] mitigation versus avoidance
+- [x] Armour, Evasion, Energy Shield, and Ward
+- [x] Block, Spell Suppression, and Dodge scope
+- [x] Accuracy versus Evasion
+- [x] resistance caps and effective resistance
+- [x] mitigation versus avoidance
 
 Sources: [Defences](https://www.poewiki.net/wiki/Defences), [Evasion](https://www.poewiki.net/wiki/Evasion), [Spell suppression](https://www.poewiki.net/wiki/Spell_suppression)
 
@@ -51,9 +51,9 @@ Sources: [Ailment](https://www.poewiki.net/wiki/Ailment), [Curse](https://www.po
 
 - [ ] Critical Strike Chance, Multiplier, Lucky, and Unlucky
 - [ ] Accuracy and critical strike re-roll behavior
-- [ ] Life, Mana, and Energy Shield recovery, regeneration, leech, and Recoup
-- [ ] Reservation, Cost, and Reservation Efficiency
-- [ ] Power, Frenzy, and Endurance Charges
+- [x] Life, Mana, and Energy Shield recovery, regeneration, and leech (Recoup pending)
+- [x] Reservation, Cost, and Reservation Efficiency
+- [x] Power, Frenzy, and Endurance Charges
 - [ ] Projectile count, Pierce, Chain, Fork, and Split
 - [ ] single-target overlap and shotgun behavior
 - [ ] Buff, Debuff, Aura, Stance, and Guard Skill rules

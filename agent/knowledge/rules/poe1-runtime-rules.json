@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "resource.life.calculation",
+      "category": "resource",
+      "statement": "PoB calculates maximum Life from base Life, increased and more Life modifiers, and Life conversion effects, with a minimum result of 1.",
+      "facts": {"minimum": 1},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:82-104"}],
+      "verification": "verified"
+    },
+    {
+      "id": "resource.mana.reservation",
+      "category": "resource",
+      "statement": "PoB models Life and Mana reservation separately, including flat and percentage reservation and reservation efficiency.",
+      "facts": {"pools": ["life", "mana"], "supportsFlatAndPercent": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:1933-2040"}],
+      "verification": "verified"
+    },
+    {
+      "id": "resource.mana.regeneration",
+      "category": "resource",
+      "statement": "Mana regeneration is represented as a base modifier and can receive additional modifiers during calculation.",
+      "facts": {"stat": "ManaRegen"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:497"}],
+      "verification": "verified"
+    },
+    {
+      "id": "charges.standard_limits",
+      "category": "charges",
+      "statement": "PoB initializes maximum Power, Frenzy, and Endurance Charges from character constants, then applies overrides and modifiers.",
+      "facts": {"chargeTypes": ["power", "frenzy", "endurance"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:31-33"}, {"type": "pob", "ref": "src/Modules/CalcPerform.lua:953-967"}],
+      "verification": "verified"
+    },
+    {
+      "id": "skill.totem.limit",
+      "category": "skill.proxy",
+      "statement": "PoB initializes an Active Totem limit from character constants and allows skill-specific modifiers to change it.",
+      "facts": {"stat": "ActiveTotemLimit"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:60"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1399-1406"}],
+      "verification": "verified"
+    },
+    {
+      "id": "skill.trap.throwing_speed",
+      "category": "skill.proxy",
+      "statement": "Trap throwing speed is calculated from base throwing time, throwing speed modifiers, action speed, and a server tick-rate cap.",
+      "facts": {"stat": "TrapThrowingSpeed", "hasServerTickCap": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua:1224-1237"}],
+      "verification": "verified"
+    },
+    {
+      "id": "trigger.rate.cooldown",
+      "category": "skill.trigger",
+      "statement": "Triggered skill rate is limited by effective cooldown, trigger interval, cooldown recovery, and server tick rounding.",
+      "facts": {"rateOutput": "SkillTriggerRate", "hasCooldownCap": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcTriggers.lua:250-335"}, {"type": "pob", "ref": "src/Modules/CalcTriggers.lua:783-825"}],
+      "verification": "verified"
+    },
+    {
+      "id": "trigger.triggered_skill_detection",
+      "category": "skill.trigger",
+      "statement": "PoB identifies triggered skills from triggered skill data, inbuilt trigger types, and trigger metadata on granted effects.",
+      "facts": {"function": "isTriggered"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcTriggers.lua:40-42"}],
+      "verification": "verified"
+    },
+    {
+      "id": "recovery.leech_pools",
+      "category": "recovery",
+      "statement": "PoB tracks Life, Energy Shield, and Mana leech separately, including instant portions and duration-based instances.",
+      "facts": {"pools": ["life", "energy_shield", "mana"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua:3301-3306"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:3641-3667"}],
+      "verification": "verified"
+    },
+    {
+      "id": "recovery.life_on_hit",
+      "category": "recovery",
+      "statement": "Life, Energy Shield, and Mana gained on Hit are calculated as separate outputs and can be disabled by recovery-preventing flags.",
+      "facts": {"pools": ["life", "energy_shield", "mana"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua:3671-3677"}],
+      "verification": "verified"
+    },
+    {
+      "id": "proxy.ownership.full_semantics",
+      "category": "skill.proxy",
+      "statement": "The complete attribution of damage and effects between a character and every totem, trap, mine, and minion exception requires mechanic-specific analysis.",
+      "facts": {"status": "requires_case_fixtures"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua"}, {"type": "pob", "ref": "src/Modules/CalcTriggers.lua"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}
