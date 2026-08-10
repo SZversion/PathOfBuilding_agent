@@ -9,6 +9,7 @@ local build, loadErr = context.load_xml_file(buildPath, "Agent XML build")
 if not build then io.write(json.encode({ ok = false, error = loadErr or "XML build load failed" })); return end
 runCallback("OnFrame")
 if build.calcsTab and type(build.calcsTab.BuildOutput) == "function" then
+	if wipeGlobalCache then wipeGlobalCache() end
 	local calculated, calculationErr = pcall(build.calcsTab.BuildOutput, build.calcsTab)
 	if not calculated then io.write(json.encode({ ok = false, error = calculationErr })); return end
 end
