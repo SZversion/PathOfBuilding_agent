@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PoB Per-Skill Cache Comparison - Scope</title><style>body{max-width:900px;margin:2rem auto;padding:0 1rem;font:16px/1.5 system-ui,sans-serif;color:#202124}code,pre{background:#f3f4f6;border-radius:4px}code{padding:.1rem .25rem}pre{padding:1rem;overflow:auto}.scope{border-left:4px solid #2563eb;padding-left:1rem}.out{border-left:4px solid #dc2626;padding-left:1rem}</style></head>
+<body>
+<h1>PoB Per-Skill Cache Comparison</h1>
+<p><strong>Status:</strong> Approved for implementation</p>
+<p><strong>Branch:</strong> <code>feat/pob-agent-architecture</code></p>
+<h2>Goal</h2>
+<p>Expose the individual skill calculation cached by PoB and compare a support gem enabled versus disabled, including projectile count, chain count, remaining chains, and DPS.</p>
+<h2>In scope</h2>
+<div class="scope"><ul>
+<li>Read per-skill results from <code>GlobalCache.cachedData.MAIN/CALCS[*].Env.player.mainSkill.output</code>.</li>
+<li>Use PoB's existing <code>cacheSkillUUID(skill, env)</code> and cache entries; do not copy or reimplement formulas.</li>
+<li>Add a Tool that compares one named support gem in one named skill group with <code>enabled=true</code> and <code>enabled=false</code>.</li>
+<li>For each state expose <code>ProjectileCount</code>, <code>Chain</code>, <code>ChainMax</code>, <code>ChainRemaining</code>, <code>ChainMaxString</code>, and <code>TotalDPS</code> when present.</li>
+<li>Return field-level availability and numeric/string deltas where both states are numeric.</li>
+<li>Restore the original Skill Set, main socket group, calculation input, support enabled flag, and rebuild the original context after success or error.</li>
+<li>Add fake and real-build tests using the existing LuaJIT headless runner.</li>
+</ul></div>
+<h2>Out of scope</h2>
+<div class="out"><ul>
+<li>New damage, projectile, or chain formulas.</li><li>Changing PoB calculation modules.</li>
+<li>Multiple support gems or combinatorial build optimization.</li><li>UI, model, server, routing, RAG, or database work.</li>
+<li>Persisting modified build state.</li>
+</ul></div>
+<h2>Contract</h2>
+<pre><code>compare_support_effect(build, skillSetSelector, skillName, supportName)
+  -&gt; envelope | nil, error
+
+facts = {
+  skillSet = { id, title },
+  skill = { name, socketGroup },
+  support = { name, enabledBefore },
+  enabled = { status, output },
+  disabled = { status, output },
+  delta = { ProjectileCount, Chain, ChainMax, ChainRemaining, TotalDPS }
+}</code></pre>
+<h2>Acceptance criteria</h2>
+<ul><li>PoB cache output is read without formula duplication.</li><li>Greater Volley comparison reports an increased/decreased projectile and chain result when PoB provides both states.</li><li>Original state is restored on success and error.</li><li>Unavailable outputs are explicit and never replaced with guessed values.</li></ul>
+<h2>Files allowed to change</h2>
+<ul><li><code>src/Modules/AgentMechanismTool.lua</code></li><li><code>tests/agent/tools/test_agent_mechanism_tool.lua</code></li><li><code>tests/agent/tools/test_user_build_headless.lua</code></li><li>This scope and implementation plan</li></ul>
+</body></html>

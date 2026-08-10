@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PoB Per-Skill Cache Comparison - Implementation Plan</title><style>body{max-width:900px;margin:2rem auto;padding:0 1rem;font:16px/1.5 system-ui,sans-serif;color:#202124}code,pre{background:#f3f4f6;border-radius:4px}code{padding:.1rem .25rem}pre{padding:1rem;overflow:auto}</style></head>
+<body>
+<h1>PoB Per-Skill Cache Comparison Implementation Plan</h1>
+<p><strong>Goal:</strong> compare PoB's cached output for one skill with one support gem enabled and disabled.</p>
+<p><strong>Architecture:</strong> extend <code>AgentMechanismTool.lua</code> with a cache reader and a protected toggle/rebuild/restore operation. Reuse <code>cacheSkillUUID</code>, <code>GlobalCache</code>, and <code>CalcsTab:BuildOutput()</code>.</p>
+<p><strong>Tech stack:</strong> Lua/LuaJIT, existing PoB runtime, assert-based tests.</p>
+<h2>Global constraints</h2><ul><li>No PoB calculation source edits.</li><li>No formula reimplementation.</li><li>All temporary mutations restore on success and error.</li><li>Missing cache/output fields remain unavailable.</li></ul>
+<h2>Task 1: fake cache contract test</h2>
+<p><strong>File:</strong> <code>tests/agent/tools/test_agent_mechanism_tool.lua</code></p>
+<ol><li>Add a fake skill group containing Poisonous Concoction and Greater Volley.</li><li>Stub <code>BuildOutput()</code> to populate <code>GlobalCache.cachedData.MAIN</code> with enabled/disabled outputs.</li><li>Assert projectile, chain, chain max, remaining chain, TotalDPS, and numeric deltas.</li><li>Assert support state and original context are restored after success and forced error.</li><li>Run LuaJIT and confirm failure before implementation.</li></ol>
+<h2>Task 2: cache reader and comparison</h2>
+<p><strong>File:</strong> <code>src/Modules/AgentMechanismTool.lua</code></p>
+<ol><li>Find the target socket group and support gem by exact case-insensitive name.</li><li>Save Skill Set/context/support state.</li><li>Set support enabled, wipe relevant PoB cache, call <code>BuildOutput()</code>, and locate the target skill cache entry by <code>cacheSkillUUID</code>.</li><li>Repeat with support disabled.</li><li>Copy only scalar output keys and calculate deltas only for numeric pairs.</li><li>Restore all saved state in a protected cleanup path and return the Fact Envelope.</li></ol>
+<h2>Task 3: real smoke test</h2>
+<p><strong>File:</strong> <code>tests/agent/tools/test_user_build_headless.lua</code></p>
+<ol><li>Query <code>6) ENDGAME SETUP</code>, <code>Poisonous Concoction of Bouncing</code>, and <code>Greater Volley</code> from <code>pcob leveling.xml</code>.</li><li>Print enabled/disabled projectile, chain, and DPS values plus deltas.</li><li>If PoB marks the skill disabled or does not populate a cache output, print the explicit reason and keep the test honest.</li></ol>
+<h2>Task 4: verification</h2>
+<ol><li>Run mechanism, tool, snapshot, fake comparison, and external smoke tests.</li><li>Run <code>git diff --check</code> and verify no calculation modules changed.</li><li>Commit with <code>feat: compare per-skill cached effects</code>.</li></ol>
+</body></html>
