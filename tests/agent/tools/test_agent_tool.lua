@@ -42,6 +42,9 @@ assert(tools.get_ailment_effect(build, 1).facts.values.IgniteChance == 25)
 assert(tools.get_damage_breakdown(build, 1).facts.breakdown.status == "calculated")
 assert(tools.get_conversion_chain(build, 1).facts.values.Physical.conversion.Fire == 0.5)
 assert(tools.get_effective_resistance(build, 1).facts.values.FireEffMult == 0.7)
+local otherBuild = { targetVersion = "3_29", calcsTab = { mainEnv = { player = { activeSkillList = { { output = { TotalDPS = 1200, ProjectileCount = 4 } } } } } } }
+local comparison = assert(tools.compare_build_states(build, otherBuild, 1, 1))
+assert(comparison.facts.delta.TotalDPS == 200 and comparison.facts.delta.ProjectileCount == 1)
 local item = assert(tools.get_item_modifiers(build, 1))
 assert(#item.facts.modLines == 2 and item.facts.modLines[1].category == "implicit")
 

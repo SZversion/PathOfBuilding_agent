@@ -230,6 +230,29 @@ local function get_support_links(build, skillSetSelector, skillNameValue)
 	return mechanism.get_socket_order(build, skillSetSelector, skillNameValue)
 end
 
+local function resolve_skill_context(build, skillSetSelector, skillNameValue)
+	local context = (LoadModule and LoadModule("Modules/AgentContext")) or dofile("src/Modules/AgentContext.lua")
+	local result, err = context.find_skill(build, skillSetSelector, skillNameValue)
+	if not result then return nil, err end
+	return envelope(build, result, { "PoB:Modules/AgentContext.lua:find_skill" })
+end
+
+local function compare_build_states(buildA, buildB, skillIndexA, skillIndexB)
+	local playerA, errA = playerFor(buildA)
+	if not playerA then return nil, errA end
+	local playerB, errB = playerFor(buildB)
+	if not playerB then return nil, errB end
+	local skillA, skillErrA = skillFor(playerA, skillIndexA)
+	if not skillA then return nil, skillErrA end
+	local skillB, skillErrB = skillFor(playerB, skillIndexB)
+	if not skillB then return nil, skillErrB end
+	local before, after, delta = scalarTable(skillA.output), scalarTable(skillB.output), { }
+	for key, value in pairs(before) do
+		if type(value) == "number" and type(after[key]) == "number" then delta[key] = after[key] - value end
+	end
+	return envelope(buildB, { before = before, after = after, delta = delta }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" })
+end
+
 local function get_projectile_count(build, skillIndex)
 	local player, err = playerFor(build)
 	if not player then
@@ -313,6 +336,8 @@ return {
 	get_conversion_chain = get_conversion_chain,
 	get_effective_resistance = get_effective_resistance,
 	get_support_links = get_support_links,
+	resolve_skill_context = resolve_skill_context,
+	compare_build_states = compare_build_states,
 	get_projectile_count = get_projectile_count,
 	get_elemental_penetration = get_elemental_penetration,
 	get_curse_limit = get_curse_limit,
