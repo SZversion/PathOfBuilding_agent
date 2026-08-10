@@ -7,7 +7,7 @@ local build = {
 				output = { Life = 5000, EnemyCurseLimit = 2 },
 				breakdown = { Life = { "5000 (base)", "= 5000" } },
 				activeSkillList = {
-					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", infoTrigger = "Manual", triggered = false, output = { ProjectileCount = 3, Chain = 2, TotalDPS = 1000, IgniteChance = 25, ElementalPenetration = { Fire = 14, Cold = 8 } }, breakdown = { TotalDPS = { "1000" }, Fire = { "base", "= 1000" } } },
+					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", infoTrigger = "Manual", triggered = false, output = { ProjectileCount = 3, Chain = 2, TotalDPS = 1000, IgniteChance = 25, FireEffMult = 0.7, ElementalPenetration = { Fire = 14, Cold = 8 } }, conversionTable = { Physical = { conversion = { Fire = 0.5 }, gain = { Cold = 0.1 }, mult = 0.5 } }, breakdown = { TotalDPS = { "1000" }, Fire = { "base", "= 1000" } } },
 					{ activeEffect = { grantedEffect = { name = "Spark" } }, skillPartName = "main", output = { TotalDPS = 900 }, breakdown = { TotalDPS = { "900" } } },
 				},
 			},
@@ -39,6 +39,9 @@ assert(tools.get_skill_breakdown(build, 1).facts.breakdown.status == "calculated
 assert(tools.get_projectile_behavior(build, 1).facts.values.Chain == 2)
 assert(tools.get_trigger_sequence(build, 1).facts.infoTrigger == "Manual")
 assert(tools.get_ailment_effect(build, 1).facts.values.IgniteChance == 25)
+assert(tools.get_damage_breakdown(build, 1).facts.breakdown.status == "calculated")
+assert(tools.get_conversion_chain(build, 1).facts.values.Physical.conversion.Fire == 0.5)
+assert(tools.get_effective_resistance(build, 1).facts.values.FireEffMult == 0.7)
 local item = assert(tools.get_item_modifiers(build, 1))
 assert(#item.facts.modLines == 2 and item.facts.modLines[1].category == "implicit")
 

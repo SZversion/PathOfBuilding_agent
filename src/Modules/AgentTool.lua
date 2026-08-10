@@ -188,6 +188,48 @@ local function get_ailment_effect(build, skillIndex)
 	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" })
 end
 
+local function get_damage_breakdown(build, skillIndex)
+	return get_skill_breakdown(build, skillIndex)
+end
+
+local function get_conversion_chain(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local tableValue = skill.conversionTable
+	if type(tableValue) ~= "table" then return nil, "conversionTable is unavailable for this skill" end
+	local values = { }
+	for damageType, entry in pairs(tableValue) do
+		if type(entry) == "table" then
+			local item = { conversion = { }, gain = { }, mult = entry.mult }
+			for key, value in pairs(entry.conversion or { }) do if type(value) == "number" then item.conversion[key] = value end end
+			for key, value in pairs(entry.gain or { }) do if type(value) == "number" then item.gain[key] = value end end
+			values[damageType] = item
+		end
+	end
+	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
+	return envelope(build, { skillIndex = skillIndex, name = effect and effect.name, status = "calculated", values = values }, { "PoB:Modules/CalcOffence.lua:1879-1926" })
+end
+
+local function get_effective_resistance(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local values = { }
+	for _, key in ipairs({ "PhysicalEffMult", "FireEffMult", "ColdEffMult", "LightningEffMult", "ChaosEffMult" }) do
+		if type(skill.output and skill.output[key]) == "number" then values[key] = skill.output[key] end
+	end
+	if next(values) == nil then return nil, "effective resistance multipliers are unavailable for this skill" end
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:Modules/CalcOffence.lua:3515-3522" })
+end
+
+local function get_support_links(build, skillSetSelector, skillNameValue)
+	local mechanism = (LoadModule and LoadModule("Modules/AgentMechanismTool")) or dofile("src/Modules/AgentMechanismTool.lua")
+	return mechanism.get_socket_order(build, skillSetSelector, skillNameValue)
+end
+
 local function get_projectile_count(build, skillIndex)
 	local player, err = playerFor(build)
 	if not player then
@@ -267,6 +309,10 @@ return {
 	get_trigger_sequence = get_trigger_sequence,
 	get_curse_application_order = get_curse_application_order,
 	get_ailment_effect = get_ailment_effect,
+	get_damage_breakdown = get_damage_breakdown,
+	get_conversion_chain = get_conversion_chain,
+	get_effective_resistance = get_effective_resistance,
+	get_support_links = get_support_links,
 	get_projectile_count = get_projectile_count,
 	get_elemental_penetration = get_elemental_penetration,
 	get_curse_limit = get_curse_limit,
