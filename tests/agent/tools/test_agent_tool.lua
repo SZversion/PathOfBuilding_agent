@@ -7,7 +7,7 @@ local build = {
 				output = { Life = 5000, EnemyCurseLimit = 2 },
 				breakdown = { Life = { "5000 (base)", "= 5000" } },
 				activeSkillList = {
-					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", infoTrigger = "Manual", triggered = false, output = { ProjectileCount = 3, Chain = 2, TotalDPS = 1000, Duration = 4, IgniteChance = 25, FireEffMult = 0.7, ElementalPenetration = { Fire = 14, Cold = 8 } }, conversionTable = { Physical = { conversion = { Fire = 0.5 }, gain = { Cold = 0.1 }, mult = 0.5 } }, breakdown = { TotalDPS = { "1000" }, Fire = { "base", "= 1000" } } },
+					{ activeEffect = { grantedEffect = { name = "Fireball" }, level = 20, quality = 20 }, skillPartName = "main", infoTrigger = "Manual", triggered = false, output = { ProjectileCount = 3, Chain = 2, TotalDPS = 1000, Duration = 4, IgniteChance = 25, FireEffMult = 0.7, ElementalPenetration = { Fire = 14, Cold = 8 } }, conversionTable = { Physical = { conversion = { Fire = 0.5 }, gain = { Cold = 0.1 }, mult = 0.5 } }, breakdown = { TotalDPS = { "1000" }, Fire = { "base", "= 1000" } } },
 					{ activeEffect = { grantedEffect = { name = "Spark" } }, skillPartName = "main", output = { TotalDPS = 900 }, breakdown = { TotalDPS = { "900" } } },
 				},
 			},
@@ -25,6 +25,7 @@ local skill = assert(tools.get_skill_stats(build, 1))
 assert(skill.facts.skillIndex == 1)
 assert(skill.facts.name == "Fireball")
 assert(skill.facts.output.TotalDPS == 1000)
+assert(skill.facts.gems[1].level == 20 and skill.facts.gems[1].quality == 20)
 
 local projectile = assert(tools.get_projectile_count(build, 1))
 assert(projectile.facts.value == 3)

@@ -53,6 +53,25 @@ local function get_character_stats(build)
 	return envelope(build, scalarTable(player.output), { "PoB:CalcsTab.mainEnv.player.output" })
 end
 
+local function gemFacts(skill)
+	local result = { }
+	local function add(effect, role)
+		local granted = effect and effect.grantedEffect
+		if not granted then return end
+		result[#result + 1] = {
+			name = granted.name,
+			role = role,
+			level = effect.srcInstance and effect.srcInstance.level or effect.level,
+			quality = effect.srcInstance and effect.srcInstance.quality or effect.quality,
+		}
+	end
+	add(skill.activeEffect, "active")
+	for _, effect in ipairs(skill.effectList or { }) do
+		if effect.grantedEffect and effect.grantedEffect.support then add(effect, "support") end
+	end
+	return result
+end
+
 local function get_skill_stats(build, skillIndex)
 	local player, err = playerFor(build)
 	if not player then
@@ -63,12 +82,15 @@ local function get_skill_stats(build, skillIndex)
 		return nil, skillErr
 	end
 	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
+	local output = skill.output or { }
+	if next(output) == nil and player.mainSkill and player.mainSkill.actor then output = player.mainSkill.actor.output or output end
 	return envelope(build, {
 		skillIndex = skillIndex,
 		name = effect and effect.name,
 		skillPart = skill.skillPartName,
+		gems = gemFacts(skill),
 		trigger = skill.infoTrigger,
-		output = scalarTable(skill.output),
+		output = scalarTable(output),
 	}, { "PoB:CalcsTab.mainEnv.player.activeSkillList" })
 end
 
@@ -156,6 +178,9 @@ local function get_projectile_behavior(build, skillIndex)
 	local skill, skillErr = skillFor(player, skillIndex)
 	if not skill then return nil, skillErr end
 	local output = skill.output or { }
+	if next(output) == nil and player.mainSkill and player.mainSkill.actor then
+		output = player.mainSkill.actor.output or output
+	end
 	local values = { }
 	for _, key in ipairs({ "ProjectileCount", "PierceCount", "Chain", "ChainMax", "ChainRemaining", "ForkCount", "SplitCount" }) do
 		if type(output[key]) == "number" then values[key] = output[key] end
@@ -311,9 +336,15 @@ local function get_duration(build, skillIndex, durationType)
 	local skill, skillErr = skillFor(player, skillIndex)
 	if not skill then return nil, skillErr end
 	local output = skill.output or { }
+	if next(output) == nil and player.mainSkill and player.mainSkill.actor then
+		output = player.mainSkill.actor.output or output
+	end
 	local outputKey = ({ skill_effect = "Duration", secondary = "DurationSecondary", tertiary = "DurationTertiary", aura = "AuraDuration", reserve = "ReserveDuration", totem = "TotemDuration" })[durationType]
 	if outputKey and type(output[outputKey]) == "number" then
-		return envelope(build, { skillIndex = skillIndex, name = skillName(skill), durationType = durationType, value = output[outputKey], unit = "seconds", status = "calculated" }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output." .. outputKey }, { { operation = "FINAL_DURATION", stat = outputKey, value = output[outputKey], source = "PoB output" } })
+		local trace = { }
+		for _, entry in ipairs((skill.breakdown and skill.breakdown[outputKey]) or { }) do trace[#trace + 1] = entry end
+		trace[#trace + 1] = { operation = "FINAL_DURATION", stat = outputKey, value = output[outputKey], modifier = output.DurationMod, source = "PoB output", gems = gemFacts(skill) }
+		return envelope(build, { skillIndex = skillIndex, name = skillName(skill), durationType = durationType, value = output[outputKey], modifier = output.DurationMod, unit = "seconds", status = "calculated", gems = gemFacts(skill) }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output." .. outputKey, "PoB:CalcsTab.mainEnv.player.activeSkillList.breakdown." .. outputKey }, trace)
 	end
 	if durationType ~= "trauma" then return nil, "duration is unavailable for this skill and durationType" end
 	if not skill.skillModList or not skill.skillCfg then return nil, "TraumaDuration modifiers are unavailable" end
@@ -328,7 +359,7 @@ local function get_duration(build, skillIndex, durationType)
 	local multiplier = more * (1 + inc / 100) * (1 + red / 100)
 	local value = base * multiplier
 	if base <= 0 then return nil, "TraumaDuration is unavailable for this skill" end
-	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), durationType = durationType, value = value, unit = "seconds", status = "calculated" }, { "PoB:Modules/CalcOffence.lua:2252" }, {
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), durationType = durationType, value = value, unit = "seconds", status = "calculated", gems = gemFacts(skill) }, { "PoB:Modules/CalcOffence.lua:2252" }, {
 		{ operation = "SUM_BASE", stat = "TraumaDuration", value = base, inputs = baseTerms },
 		{ operation = "DURATION_MODIFIER", stat = "Duration", value = multiplier, inputs = durationTerms },
 		{ operation = "FINAL_DURATION", value = value, formula = "SUM_BASE(TraumaDuration) * calcLib.mod(Duration)" },
