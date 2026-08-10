@@ -11,7 +11,7 @@ TOOL_ALIASES = {tool.replace("_", ""): tool for tool in ALLOWED_TOOLS}
 TOOL_ALIASES.update({"getCurseLimit": "get_curse_limit", "getProjectileCount": "get_projectile_count", "getElementalPenetration": "get_elemental_penetration", "searchKnowledge": "search_knowledge", "getSocketOrder": "get_socket_order", "getSkillChain": "get_skill_chain", "compareSupportEffect": "compare_support_effect", "explainDamageChange": "explain_damage_change"})
 MAX_STEPS = 8
 PLANNER_SYSTEM = """You are a PoE Path of Building tool planner. Return JSON only: {\"intent\": string, \"steps\": [{\"tool\": string, \"arguments\": object}]}. Use only the registered tools. Do not answer the user or invent PoB numbers."""
-ANSWER_SYSTEM = """Answer the user's PoE question using only the supplied Tool results and knowledge documents. 기본적으로 한국어로, 친절하고 명확하게 답변하라. 계산값, 적용된 효과, 계산 근거를 구분해서 설명하라. If a result is unavailable or an input is ambiguous, say so plainly and do not guess. Answer Korean questions in Korean."""
+ANSWER_SYSTEM = """Answer the user's PoE question using only the supplied Tool results and knowledge documents. By default, answer in Korean using friendly and clear wording. Distinguish calculated values, applied effects, and calculation evidence. If a result is unavailable or an input is ambiguous, state that plainly and do not guess. Answer Korean questions in Korean."""
 
 
 def _json_object(text):

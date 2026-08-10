@@ -21,7 +21,7 @@ model = FakeModel()
 result = AgentLoop(model).run("저주 한도는 몇 개야?", handlers={"get_curse_limit": lambda args: {"facts": {"value": 2}}})
 assert result["status"] == "ok" and result["execution"]["steps"][0]["status"] == "ok"
 assert len(model.calls) == 2 and result["answer"].startswith("저주 한도")
-assert "한국어" in model.calls[1][0]["content"] and "친절" in model.calls[1][0]["content"]
+assert "answer in Korean" in model.calls[1][0]["content"] and "friendly" in model.calls[1][0]["content"]
 
 for bad in (
     {"steps": [{"tool": "not_allowed", "arguments": {}}]},
