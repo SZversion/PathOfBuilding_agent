@@ -251,6 +251,7 @@ local function scalarOutput(source)
 end
 
 local function compare_support_effect(build, skillSetSelector, skillNameValue, supportName)
+	if type(skillNameValue) ~= "string" or skillNameValue == "" then return nil, "skill name is required" end
 	if type(supportName) ~= "string" or supportName == "" then return nil, "support name is required" end
 	local target, targetId = skillSetFor(build, skillSetSelector)
 	if not target then return nil, targetId end
@@ -312,4 +313,34 @@ local function compare_support_effect(build, skillSetSelector, skillNameValue, s
 	}
 end
 
-return { get_mechanism_snapshot = get_mechanism_snapshot, get_skill_set = get_skill_set, get_skill_chain = get_skill_chain, compare_support_effect = compare_support_effect }
+local function get_socket_order(build, skillSetSelector, skillNameValue)
+	if type(skillNameValue) ~= "string" or skillNameValue == "" then return nil, "skill name is required" end
+	local target, targetId = skillSetFor(build, skillSetSelector)
+	if not target then return nil, targetId end
+	local groupIndex, groupErr = skillGroupFor(target, skillNameValue)
+	if not groupIndex then return nil, groupErr or "skill was not found in Skill Set" end
+	local gems = { }
+	for index, gem in ipairs(target.socketGroupList[groupIndex].gemList or { }) do
+		gems[index] = { index = index, name = gem.nameSpec or gem.name or gem.baseName, enabled = gem.enabled ~= false, triggered = gem.triggered == true }
+	end
+	return {
+		calculationVersion = tostring(build.targetVersion or "unknown"),
+		facts = { skillSet = { id = targetId, title = target.title }, skill = { name = skillNameValue, socketGroup = groupIndex }, gems = gems },
+		sources = { "PoB:SkillsTab.skillSets.socketGroupList.gemList" },
+		trace = { },
+	}
+end
+
+local function explain_damage_change(build, skillSetSelector, skillNameValue, supportName)
+	local result, err = compare_support_effect(build, skillSetSelector, skillNameValue, supportName)
+	if not result then return nil, err end
+	result.trace = {
+		"Support enabled: " .. supportName,
+		"Compare against support disabled state",
+		"Numeric deltas are enabled minus disabled",
+	}
+	result.sources[#result.sources + 1] = "PoB:GlobalCache.cachedData.MAIN[*].Env.player.output"
+	return result
+end
+
+return { get_mechanism_snapshot = get_mechanism_snapshot, get_skill_set = get_skill_set, get_skill_chain = get_skill_chain, compare_support_effect = compare_support_effect, get_socket_order = get_socket_order, explain_damage_change = explain_damage_change }
