@@ -352,9 +352,20 @@ local function get_duration(build, skillIndex, durationType)
 	local outputKey = ({ skill_effect = "Duration", secondary = "DurationSecondary", tertiary = "DurationTertiary", aura = "AuraDuration", reserve = "ReserveDuration", totem = "TotemDuration" })[durationType]
 	if outputKey and type(output[outputKey]) == "number" then
 		local trace = { }
-		for _, entry in ipairs((skill.breakdown and skill.breakdown[outputKey]) or { }) do trace[#trace + 1] = entry end
+		local breakdown = skill.breakdown or (skill.actor and skill.actor.breakdown) or { }
+		for _, entry in ipairs(breakdown[outputKey] or breakdown.DurationMod or { }) do trace[#trace + 1] = entry end
 		local traceTool = (LoadModule and LoadModule("Modules/AgentTrace")) or dofile("src/Modules/AgentTrace.lua")
 		local modifierTerms = traceTool.collectCombined(skill, "Duration")
+		for _, term in ipairs(modifierTerms) do
+			trace[#trace + 1] = {
+				operation = "DURATION_MODIFIER_SOURCE",
+				stat = term.stat,
+				modifierType = term.operation,
+				value = term.value,
+				source = term.source,
+				scope = term.scope,
+			}
+		end
 		trace[#trace + 1] = { operation = "FINAL_DURATION", stat = outputKey, value = output[outputKey], modifier = output.DurationMod, source = "PoB output", gems = gemFacts(skill) }
 		return envelope(build, { skillIndex = skillIndex, name = skillName(skill), durationType = durationType, value = output[outputKey], modifier = output.DurationMod, unit = "seconds", status = "calculated", gems = gemFacts(skill), modifierTerms = modifierTerms }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output." .. outputKey, "PoB:CalcsTab.mainEnv.player.activeSkillList.breakdown." .. outputKey }, trace)
 	end
