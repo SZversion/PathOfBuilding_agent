@@ -7,11 +7,13 @@ local build = {
 				output = { Life = 5000, EnemyCurseLimit = 2 },
 				breakdown = { Life = { "5000 (base)", "= 5000" } },
 				activeSkillList = {
-					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", output = { ProjectileCount = 3, TotalDPS = 1000, ElementalPenetration = { Fire = 14, Cold = 8 } }, breakdown = { TotalDPS = { "1000" } } },
+					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", output = { ProjectileCount = 3, TotalDPS = 1000, ElementalPenetration = { Fire = 14, Cold = 8 } }, breakdown = { TotalDPS = { "1000" }, Fire = { "base", "= 1000" } } },
+					{ activeEffect = { grantedEffect = { name = "Spark" } }, skillPartName = "main", output = { TotalDPS = 900 }, breakdown = { TotalDPS = { "900" } } },
 				},
 			},
 		},
 	},
+	itemsTab = { items = { [1] = { name = "Test Wand", baseName = "Wand", raw = "Test Wand", implicitModLines = { { line = "+10% to Fire Resistance" } }, explicitModLines = { { line = "+20 to Life" } } } } },
 }
 
 local character = assert(tools.get_character_stats(build))
@@ -31,6 +33,11 @@ assert(#projectile.trace == 0)
 local penetration = assert(tools.get_elemental_penetration(build, 1))
 assert(penetration.facts.name == "Fireball")
 assert(penetration.facts.values.Fire == 14 and penetration.facts.values.Cold == 8 and penetration.facts.values.Lightning == nil)
+assert(tools.get_skill_dps(build, 1).facts.value == 1000)
+assert(tools.get_highest_dps_skill(build).facts.skillIndex == 1)
+assert(tools.get_skill_breakdown(build, 1).facts.breakdown.status == "calculated")
+local item = assert(tools.get_item_modifiers(build, 1))
+assert(#item.facts.modLines == 2 and item.facts.modLines[1].category == "implicit")
 
 local curse = assert(tools.get_curse_limit(build))
 assert(curse.facts.value == 2)
@@ -48,9 +55,10 @@ end
 assertError(function() return tools.get_character_stats({}) end)
 assertError(function() return tools.get_skill_stats(build, 0) end)
 assertError(function() return tools.get_skill_stats(build, 1.5) end)
-assertError(function() return tools.get_skill_stats(build, 2) end)
+assertError(function() return tools.get_skill_stats(build, 3) end)
 assertError(function() return tools.explain_stat(build, "MissingStat") end)
 assertError(function() return tools.get_projectile_count(build, 2) end)
 assertError(function() return tools.get_elemental_penetration(build, 2) end)
+assertError(function() return tools.get_item_modifiers(build, 2) end)
 
 print("agent tool contract self-check passed")

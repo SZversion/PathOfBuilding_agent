@@ -72,6 +72,79 @@ local function get_skill_stats(build, skillIndex)
 	}, { "PoB:CalcsTab.mainEnv.player.activeSkillList" })
 end
 
+local function skillName(skill)
+	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
+	return effect and effect.name or skill.name or skill.baseName
+end
+
+local function get_skill_dps(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local value = skill.output and skill.output.TotalDPS
+	if type(value) ~= "number" then return nil, "TotalDPS is unavailable for this skill" end
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), value = value }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output.TotalDPS" })
+end
+
+local function get_highest_dps_skill(build)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local bestIndex, bestValue
+	for index, skill in ipairs(player.activeSkillList or { }) do
+		local value = skill.output and skill.output.TotalDPS
+		if type(value) == "number" and (bestValue == nil or value > bestValue) then
+			bestIndex, bestValue = index, value
+		end
+	end
+	if not bestIndex then return nil, "TotalDPS is unavailable for all skills" end
+	return envelope(build, { skillIndex = bestIndex, name = skillName(player.activeSkillList[bestIndex]), value = bestValue }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output.TotalDPS" })
+end
+
+local function breakdownValues(source)
+	local result = { }
+	if type(source) ~= "table" then return result end
+	for key, value in pairs(source) do
+		if type(value) == "number" or type(value) == "string" or type(value) == "boolean" then
+			result[key] = { value }
+		elseif type(value) == "table" then
+			local trace = { }
+			for _, entry in ipairs(value) do
+				if type(entry) == "number" or type(entry) == "string" or type(entry) == "boolean" then trace[#trace + 1] = entry end
+			end
+			if #trace > 0 then result[key] = trace end
+		end
+	end
+	return result
+end
+
+local function get_skill_breakdown(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local values = breakdownValues(skill.breakdown)
+	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
+	return envelope(build, { skillIndex = skillIndex, name = effect and effect.name, breakdown = { status = next(values) and "calculated" or "unavailable", values = values } }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.breakdown" })
+end
+
+local function get_item_modifiers(build, itemId)
+	if type(itemId) ~= "number" or itemId % 1 ~= 0 then return nil, "itemId must be an integer" end
+	local item = build and build.itemsTab and build.itemsTab.items and build.itemsTab.items[itemId]
+	if not item then return nil, "item was not found" end
+	local lines = { }
+	local function addLines(source, category)
+		for _, entry in ipairs(source or { }) do
+			if type(entry) == "table" and type(entry.line) == "string" then lines[#lines + 1] = { line = entry.line, category = category } end
+		end
+	end
+	addLines(item.implicitModLines, "implicit")
+	addLines(item.explicitModLines, "explicit")
+	addLines(item.enchantModLines, "enchant")
+	addLines(item.craftedModLines, "crafted")
+	return envelope(build, { itemId = itemId, name = item.name, baseName = item.baseName, raw = item.raw, modLines = lines }, { "PoB:ItemsTab.items.modLines" })
+end
+
 local function get_projectile_count(build, skillIndex)
 	local player, err = playerFor(build)
 	if not player then
@@ -143,6 +216,10 @@ end
 return {
 	get_character_stats = get_character_stats,
 	get_skill_stats = get_skill_stats,
+	get_skill_dps = get_skill_dps,
+	get_highest_dps_skill = get_highest_dps_skill,
+	get_skill_breakdown = get_skill_breakdown,
+	get_item_modifiers = get_item_modifiers,
 	get_projectile_count = get_projectile_count,
 	get_elemental_penetration = get_elemental_penetration,
 	get_curse_limit = get_curse_limit,
