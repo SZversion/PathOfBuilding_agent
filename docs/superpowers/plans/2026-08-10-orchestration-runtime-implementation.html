@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Orchestration Runtime Implementation Plan</title></head>
+<body>
+<h1>Orchestration Runtime Implementation Plan</h1>
+<ol>
+  <li>Add one self-check covering ordered execution, knowledge search, unavailable PoB handlers, and handler errors.</li>
+  <li>Implement <code>agent/orchestration/runtime.py</code> with standard-library validation and a small handler map; every handler receives one arguments dict and returns a plain result.</li>
+  <li>Expose a convenience function that plans then executes a question using an optional search index.</li>
+  <li>Run orchestration and knowledge self-checks, review the diff, and commit only runtime files and tests.</li>
+</ol>
+<p><strong>ponytail:</strong> no async layer, dependency injection framework, model adapter, or UI until a real caller requires it.</p>
+</body>
+</html>
