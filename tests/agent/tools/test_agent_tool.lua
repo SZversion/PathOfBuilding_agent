@@ -7,7 +7,7 @@ local build = {
 				output = { Life = 5000, EnemyCurseLimit = 2 },
 				breakdown = { Life = { "5000 (base)", "= 5000" } },
 				activeSkillList = {
-					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", output = { ProjectileCount = 3, TotalDPS = 1000 }, breakdown = { TotalDPS = { "1000" } } },
+					{ activeEffect = { grantedEffect = { name = "Fireball" } }, skillPartName = "main", output = { ProjectileCount = 3, TotalDPS = 1000, ElementalPenetration = { Fire = 14, Cold = 8 } }, breakdown = { TotalDPS = { "1000" } } },
 				},
 			},
 		},
@@ -28,6 +28,10 @@ local projectile = assert(tools.get_projectile_count(build, 1))
 assert(projectile.facts.value == 3)
 assert(#projectile.trace == 0)
 
+local penetration = assert(tools.get_elemental_penetration(build, 1))
+assert(penetration.facts.name == "Fireball")
+assert(penetration.facts.values.Fire == 14 and penetration.facts.values.Cold == 8 and penetration.facts.values.Lightning == nil)
+
 local curse = assert(tools.get_curse_limit(build))
 assert(curse.facts.value == 2)
 
@@ -47,5 +51,6 @@ assertError(function() return tools.get_skill_stats(build, 1.5) end)
 assertError(function() return tools.get_skill_stats(build, 2) end)
 assertError(function() return tools.explain_stat(build, "MissingStat") end)
 assertError(function() return tools.get_projectile_count(build, 2) end)
+assertError(function() return tools.get_elemental_penetration(build, 2) end)
 
 print("agent tool contract self-check passed")

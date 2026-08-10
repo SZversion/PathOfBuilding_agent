@@ -88,6 +88,21 @@ local function get_projectile_count(build, skillIndex)
 	return envelope(build, { skillIndex = skillIndex, value = value }, { "PoB:Modules/CalcOffence.lua:1054-1062" })
 end
 
+local function get_elemental_penetration(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local output = skill.output and skill.output.ElementalPenetration or { }
+	local values = { }
+	for _, damageType in ipairs({ "Fire", "Cold", "Lightning" }) do
+		if output[damageType] ~= nil then values[damageType] = output[damageType] end
+	end
+	if next(values) == nil then return nil, "ElementalPenetration is unavailable for this skill" end
+	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
+	return envelope(build, { skillIndex = skillIndex, name = effect and effect.name, values = values }, { "PoB:Modules/CalcOffence.lua:3466-3475" })
+end
+
 local function get_curse_limit(build)
 	local player, err = playerFor(build)
 	if not player then
@@ -129,6 +144,7 @@ return {
 	get_character_stats = get_character_stats,
 	get_skill_stats = get_skill_stats,
 	get_projectile_count = get_projectile_count,
+	get_elemental_penetration = get_elemental_penetration,
 	get_curse_limit = get_curse_limit,
 	explain_stat = explain_stat,
 }
