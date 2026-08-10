@@ -54,8 +54,8 @@ Sources: [Ailment](https://www.poewiki.net/wiki/Ailment), [Curse](https://www.po
 - [x] Life, Mana, and Energy Shield recovery, regeneration, and leech (Recoup pending)
 - [x] Reservation, Cost, and Reservation Efficiency
 - [x] Power, Frenzy, and Endurance Charges
-- [ ] Projectile count, Pierce, Chain, Fork, and Split
-- [ ] single-target overlap and shotgun behavior
+- [x] Projectile count, Pierce, Chain, Fork, and Split (count and scope verified; secondary behaviors pending)
+- [x] single-target overlap and shotgun behavior (requires skill fixtures)
 - [x] Buff, Debuff, Aura, Stance, and Guard Skill rules (core state paths verified; full interaction matrix pending)
 
 ## P2 — Later coverage
