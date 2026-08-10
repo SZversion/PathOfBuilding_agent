@@ -63,7 +63,7 @@
         {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Curse"},
         {"type": "pob", "ref": "src/Modules/CalcPerform.lua"}
       ],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "damage.types",
@@ -73,7 +73,7 @@
       "terms": ["damage type"],
       "patchRange": {"from": "3.0.0", "to": null},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "damage.elemental_definition",

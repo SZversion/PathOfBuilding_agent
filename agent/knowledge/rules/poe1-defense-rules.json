@@ -33,7 +33,7 @@
       "statement": "Spell Suppression is a chance-based mitigation layer for damage from spells; a successful suppression normally prevents 40% of the suppressed spell damage.",
       "facts": {"defaultSuppressedDamagePreventedPercent": 40},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Spell_suppression"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "defence.resistance.cap",
@@ -41,7 +41,7 @@
       "statement": "Resistance has a maximum cap; the default elemental resistance cap is 75% unless modifiers change it.",
       "facts": {"defaultElementalMaximumPercent": 75},
       "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"}],
-      "verification": "needs_patch_check"
+      "verification": "verified"
     },
     {
       "id": "defence.block_scope",
