@@ -27,3 +27,5 @@ Runtime-derived resource, charge, trigger, proxy, and recovery rules are in `poe
 Attribute, buff, flask, guard, character-level, and monster-level rules are in `poe1-buffs-flasks-attributes.json`.
 
 Projectile count, projectile scope, and trap/mine throwing rules are in `poe1-projectile-rules.json`.
+
+Map and monster modifier behavior is indexed in `poe1-map-monster-rules.json`.

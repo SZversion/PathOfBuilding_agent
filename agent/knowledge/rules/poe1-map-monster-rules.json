@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "map.modifier.enemy_resistance",
+      "category": "map",
+      "statement": "PoB applies map modifiers such as Resistant as enemy resistance modifiers, including separate elemental and Chaos resistance effects.",
+      "facts": {"target": "enemy"},
+      "sources": [{"type": "pob", "ref": "src/Data/ModMap.lua:36-41"}],
+      "verification": "verified"
+    },
+    {
+      "id": "map.modifier.hexproof",
+      "category": "map",
+      "statement": "PoB represents the Hexproof map modifier as an enemy flag that prevents normal curse application.",
+      "facts": {"flag": "Hexproof"},
+      "sources": [{"type": "pob", "ref": "src/Data/ModMap.lua:20-22"}],
+      "verification": "verified"
+    },
+    {
+      "id": "map.modifier.monster_life",
+      "category": "map",
+      "statement": "PoB applies map monster-life modifiers as enemy Life MORE modifiers, including conditional rare or unique effects.",
+      "facts": {"operation": "more"},
+      "sources": [{"type": "pob", "ref": "src/Data/ModMap.lua:47-61"}, {"type": "pob", "ref": "src/Data/ModMap.lua:97-102"}],
+      "verification": "verified"
+    },
+    {
+      "id": "map.modifier.monster_ailment_avoidance",
+      "category": "map",
+      "statement": "PoB applies map modifiers that grant monster avoidance for Poison, Impale, and Bleed as enemy avoidance modifiers.",
+      "facts": {"avoidance": ["poison", "impale", "bleed"]},
+      "sources": [{"type": "pob", "ref": "src/Data/ModMap.lua:73-77"}],
+      "verification": "verified"
+    },
+    {
+      "id": "map.modifier.damage_gain_as_extra",
+      "category": "map",
+      "statement": "PoB models map monster damage gain as extra by adding a source-to-destination damage modifier on the enemy.",
+      "facts": {"operation": "gain_as_extra"},
+      "sources": [{"type": "pob", "ref": "src/Data/ModMap.lua:117-143"}],
+      "verification": "verified"
+    },
+    {
+      "id": "map.modifier.full_catalog",
+      "category": "map",
+      "statement": "The complete map-modifier catalog and interactions are data-driven and must be indexed from ModMap.lua rather than reduced to a small universal rule list.",
+      "facts": {"source": "ModMap.lua"},
+      "sources": [{"type": "pob", "ref": "src/Data/ModMap.lua"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}

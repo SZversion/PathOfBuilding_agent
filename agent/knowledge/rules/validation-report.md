@@ -49,3 +49,5 @@ The second comparison pass added `poe1-runtime-rules.json`, covering resource ca
 The third comparison pass added `poe1-buffs-flasks-attributes.json`, covering attribute-derived stats, Fortify, Onslaught, Tailwind, Elusive, flask effect/charges/recovery, level-based resources, monster-level scaling, and Guard Skill state.
 
 The fourth comparison pass added `poe1-projectile-rules.json`, confirming the default projectile count, projectile skill gating, and separate trap/mine throwing calculations. Chain/Fork/Pierce/Split and single-target overlap remain fixture-dependent.
+
+The fifth comparison pass added `poe1-map-monster-rules.json`, confirming representative map effects such as Hexproof, enemy resistance, monster Life, ailment avoidance, and gain-as-extra damage. The full map-modifier catalog remains data-driven and is not summarized as one universal rule.
