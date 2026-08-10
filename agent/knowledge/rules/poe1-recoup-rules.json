@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "recovery.recoup.resources",
+      "category": "recovery",
+      "statement": "PoB supports Recoup into Life, Mana, and Energy Shield as separate recovery outputs.",
+      "facts": {"resources": ["life", "mana", "energy_shield"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcDefence.lua:1385-1399"}],
+      "verification": "verified"
+    },
+    {
+      "id": "recovery.recoup.duration",
+      "category": "recovery",
+      "statement": "PoB models Recoup as a percentage recovered over a duration, normally 4 seconds or 3 seconds when a 3-second Recoup flag is active.",
+      "facts": {"defaultDurationSeconds": 4, "alternateDurationSeconds": 3},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcDefence.lua:1399-1406"}],
+      "verification": "verified"
+    },
+    {
+      "id": "recovery.recoup_damage_type",
+      "category": "recovery",
+      "statement": "PoB tracks damage-type-specific Recoup and applies recovery-rate modifiers to the resulting resource recovery.",
+      "facts": {"tracksByDamageType": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcDefence.lua:1424-1441"}],
+      "verification": "verified"
+    },
+    {
+      "id": "recovery.recoup_conversion",
+      "category": "recovery",
+      "statement": "PoB supports conversion or redirection of Life Recoup into Energy Shield Recoup and can add Recoup sources together.",
+      "facts": {"supportsLifeToEnergyShield": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcDefence.lua:1391-1396"}, {"type": "pob", "ref": "src/Modules/CalcDefence.lua:1410-1415"}],
+      "verification": "verified"
+    },
+    {
+      "id": "recovery.recoup_mitigation_tracking",
+      "category": "recovery",
+      "statement": "PoB tracks recoupable damage during damage simulation and exposes per-damage-type recoupable damage outputs.",
+      "facts": {"simulationTracking": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcDefence.lua:2615-2622"}, {"type": "pob", "ref": "src/Modules/CalcDefence.lua:2708-2710"}],
+      "verification": "verified"
+    },
+    {
+      "id": "recovery.recoup_pseudo_sources",
+      "category": "recovery",
+      "statement": "PoB separately supports pseudo-Recoup sources based on mitigated physical damage and applies their own duration and recovery modifiers.",
+      "facts": {"sourceKind": "mitigated_physical_damage"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcDefence.lua:1452-1476"}],
+      "verification": "verified"
+    }
+  ]
+}

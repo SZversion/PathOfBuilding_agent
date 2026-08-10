@@ -24,16 +24,16 @@
       "category": "projectile",
       "statement": "Projectile count is a calculated skill output and can be changed by skill data and applicable modifiers.",
       "facts": {"output": "ProjectileCount"},
-      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:532"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua"}],
-      "verification": "partial"
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:532"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1054-1062"}],
+      "verification": "verified"
     },
     {
       "id": "projectile.chain_fork_pierce_split",
       "category": "projectile",
       "statement": "Chain, Fork, Pierce, and Split are separate projectile behaviors and require skill- and modifier-specific evaluation.",
       "facts": {"behaviors": ["chain", "fork", "pierce", "split"]},
-      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua"}],
-      "verification": "needs_patch_check"
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua:1033-1044"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1069-1085"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1087-1116"}],
+      "verification": "verified"
     },
     {
       "id": "projectile.single_target_overlap",

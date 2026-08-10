@@ -29,3 +29,5 @@ Attribute, buff, flask, guard, character-level, and monster-level rules are in `
 Projectile count, projectile scope, and trap/mine throwing rules are in `poe1-projectile-rules.json`.
 
 Map and monster modifier behavior is indexed in `poe1-map-monster-rules.json`.
+
+Recoup behavior is in `poe1-recoup-rules.json`; experience, passive-point, Labyrinth, and Ascendancy progression is in `poe1-progression-rules.json`.

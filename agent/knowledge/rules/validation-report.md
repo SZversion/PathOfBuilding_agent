@@ -51,3 +51,5 @@ The third comparison pass added `poe1-buffs-flasks-attributes.json`, covering at
 The fourth comparison pass added `poe1-projectile-rules.json`, confirming the default projectile count, projectile skill gating, and separate trap/mine throwing calculations. Chain/Fork/Pierce/Split and single-target overlap remain fixture-dependent.
 
 The fifth comparison pass added `poe1-map-monster-rules.json`, confirming representative map effects such as Hexproof, enemy resistance, monster Life, ailment avoidance, and gain-as-extra damage. The full map-modifier catalog remains data-driven and is not summarized as one universal rule.
+
+The sixth comparison pass added `poe1-recoup-rules.json` and `poe1-progression-rules.json`. Recoup is now fully indexed from the damage simulation path, including resource conversion and duration. Experience penalties, act/level estimation, Labyrinth recommendations, and Ascendancy point validation are also indexed; the complete quest reward catalog remains a data-indexing task.

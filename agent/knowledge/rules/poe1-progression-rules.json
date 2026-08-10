@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "progression.experience.level_difference",
+      "category": "progression",
+      "statement": "PoB calculates an experience multiplier from player level, monster experience level, and a safe-zone level difference.",
+      "facts": {"source": "monsterExperienceLevelMap", "safeZone": "level_dependent"},
+      "sources": [{"type": "pob", "ref": "src/Modules/Build.lua:229-242"}],
+      "verification": "verified"
+    },
+    {
+      "id": "progression.experience.high_level_penalty",
+      "category": "progression",
+      "statement": "PoB applies additional experience penalties at player levels 95 and above.",
+      "facts": {"thresholdLevel": 95},
+      "sources": [{"type": "pob", "ref": "src/Modules/Build.lua:236-240"}],
+      "verification": "verified"
+    },
+    {
+      "id": "progression.passive_points_act_estimate",
+      "category": "progression",
+      "statement": "PoB estimates campaign act and level progress from passive points used, quest points, extra points, and act level thresholds.",
+      "facts": {"uses": ["PointsUsed", "questPoints", "extraSkillpoints"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/Build.lua:898-919"}],
+      "verification": "verified"
+    },
+    {
+      "id": "progression.ascendancy_point_validation",
+      "category": "progression",
+      "statement": "PoB validates allocated Ascendancy and secondary Ascendancy points against calculated maximums and warns when they exceed those limits.",
+      "facts": {"checks": ["ascMax", "secondaryAscMax"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/Build.lua:919-920"}],
+      "verification": "verified"
+    },
+    {
+      "id": "progression.labyrinth_recommendation",
+      "category": "progression",
+      "statement": "PoB provides level-based Labyrinth recommendations for Normal, Cruel, Merciless, and Uber Lab.",
+      "facts": {"labs": ["normal", "cruel", "merciless", "uber"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/Build.lua:900-909"}],
+      "verification": "verified"
+    },
+    {
+      "id": "progression.quest_reward_catalog",
+      "category": "progression",
+      "statement": "The complete quest reward and campaign point catalog is represented by PoB's build progression data and must be versioned separately from calculated character stats.",
+      "facts": {"status": "data_index_required"},
+      "sources": [{"type": "pob", "ref": "src/Modules/Build.lua:898-919"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}

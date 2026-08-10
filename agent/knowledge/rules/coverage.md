@@ -51,7 +51,7 @@ Sources: [Ailment](https://www.poewiki.net/wiki/Ailment), [Curse](https://www.po
 
 - [ ] Critical Strike Chance, Multiplier, Lucky, and Unlucky
 - [ ] Accuracy and critical strike re-roll behavior
-- [x] Life, Mana, and Energy Shield recovery, regeneration, and leech (Recoup pending)
+- [x] Life, Mana, and Energy Shield recovery, regeneration, leech, and Recoup
 - [x] Reservation, Cost, and Reservation Efficiency
 - [x] Power, Frenzy, and Endurance Charges
 - [x] Projectile count, Pierce, Chain, Fork, and Split (count and scope verified; secondary behaviors pending)
@@ -61,7 +61,7 @@ Sources: [Ailment](https://www.poewiki.net/wiki/Ailment), [Curse](https://www.po
 ## P2 — Later coverage
 
 - [x] Attributes and requirements (attribute-derived stats verified; all requirements pending)
-- [x] Level, Experience, Ascendancy, and campaign rewards (level-based resources verified; experience/rewards pending)
+- [x] Level, Experience, Ascendancy, and campaign rewards (experience and Ascendancy paths verified; full quest catalog pending)
 - [x] Map and monster modifiers (enemy-level scaling verified; full modifier matrix pending)
 - [ ] Minion, Totem, Trap, and Mine ownership rules
 - [ ] league-specific mechanics
