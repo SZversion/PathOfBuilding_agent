@@ -351,11 +351,13 @@ local function get_duration(build, skillIndex, durationType)
 	local output = calculatedOutput(player, skill)
 	local outputKey = ({ skill_effect = "Duration", secondary = "DurationSecondary", tertiary = "DurationTertiary", aura = "AuraDuration", reserve = "ReserveDuration", totem = "TotemDuration" })[durationType]
 	if outputKey and type(output[outputKey]) == "number" then
+		local sourceSkill = skill
+		if (not sourceSkill.breakdown or not sourceSkill.breakdown.DurationMod) and player.mainSkill then sourceSkill = player.mainSkill end
 		local trace = { }
-		local breakdown = skill.breakdown or (skill.actor and skill.actor.breakdown) or { }
+		local breakdown = sourceSkill.breakdown or (sourceSkill.actor and sourceSkill.actor.breakdown) or { }
 		for _, entry in ipairs(breakdown[outputKey] or breakdown.DurationMod or { }) do trace[#trace + 1] = entry end
 		local traceTool = (LoadModule and LoadModule("Modules/AgentTrace")) or dofile("src/Modules/AgentTrace.lua")
-		local modifierTerms = traceTool.collectCombined(skill, "Duration")
+		local modifierTerms = traceTool.collectCombined(sourceSkill, "Duration")
 		for _, term in ipairs(modifierTerms) do
 			trace[#trace + 1] = {
 				operation = "DURATION_MODIFIER_SOURCE",
