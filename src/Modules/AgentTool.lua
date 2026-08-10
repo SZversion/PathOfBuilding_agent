@@ -36,6 +36,21 @@ local function skillFor(player, skillIndex)
 	return player.activeSkillList[skillIndex]
 end
 
+local function calculatedOutput(player, skill)
+	local output = skill and skill.output or { }
+	if next(output) == nil and player and player.mainSkill and player.mainSkill.actor then
+		output = player.mainSkill.actor.output or output
+	end
+	return output
+end
+
+local function finalTrace(skill, stat, value)
+	local result = { }
+	for _, entry in ipairs((skill and skill.breakdown and skill.breakdown[stat]) or { }) do result[#result + 1] = entry end
+	result[#result + 1] = { operation = "FINAL_OUTPUT", stat = stat, value = value, source = "PoB calculated output" }
+	return result
+end
+
 local function envelope(build, facts, sources, trace)
 	return {
 		calculationVersion = tostring(build and build.targetVersion or "unknown"),
@@ -82,8 +97,7 @@ local function get_skill_stats(build, skillIndex)
 		return nil, skillErr
 	end
 	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
-	local output = skill.output or { }
-	if next(output) == nil and player.mainSkill and player.mainSkill.actor then output = player.mainSkill.actor.output or output end
+	local output = calculatedOutput(player, skill)
 	return envelope(build, {
 		skillIndex = skillIndex,
 		name = effect and effect.name,
@@ -109,9 +123,10 @@ local function get_skill_dps(build, skillIndex)
 	if not player then return nil, err end
 	local skill, skillErr = skillFor(player, skillIndex)
 	if not skill then return nil, skillErr end
-	local value = skill.output and skill.output.TotalDPS
+	local output = calculatedOutput(player, skill)
+	local value = output.TotalDPS
 	if type(value) ~= "number" then return nil, "TotalDPS is unavailable for this skill" end
-	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), value = value }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output.TotalDPS" })
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), value = value }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output.TotalDPS" }, (skill.breakdown and skill.breakdown.TotalDPS) or { })
 end
 
 local function get_highest_dps_skill(build)
@@ -119,7 +134,7 @@ local function get_highest_dps_skill(build)
 	if not player then return nil, err end
 	local bestIndex, bestValue
 	for index, skill in ipairs(player.activeSkillList or { }) do
-		local value = skill.output and skill.output.TotalDPS
+		local value = calculatedOutput(player, skill).TotalDPS
 		if type(value) == "number" and (bestValue == nil or value > bestValue) then
 			bestIndex, bestValue = index, value
 		end
@@ -177,16 +192,13 @@ local function get_projectile_behavior(build, skillIndex)
 	if not player then return nil, err end
 	local skill, skillErr = skillFor(player, skillIndex)
 	if not skill then return nil, skillErr end
-	local output = skill.output or { }
-	if next(output) == nil and player.mainSkill and player.mainSkill.actor then
-		output = player.mainSkill.actor.output or output
-	end
+	local output = calculatedOutput(player, skill)
 	local values = { }
 	for _, key in ipairs({ "ProjectileCount", "PierceCount", "Chain", "ChainMax", "ChainRemaining", "ForkCount", "SplitCount" }) do
 		if type(output[key]) == "number" then values[key] = output[key] end
 	end
 	if next(values) == nil then return nil, "projectile behavior is unavailable for this skill" end
-	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" })
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" }, finalTrace(skill, "ProjectileBehavior", values))
 end
 
 local function get_trigger_sequence(build, skillIndex)
@@ -211,11 +223,11 @@ local function get_ailment_effect(build, skillIndex)
 	local skill, skillErr = skillFor(player, skillIndex)
 	if not skill then return nil, skillErr end
 	local values = { }
-	for key, value in pairs(skill.output or { }) do
+	for key, value in pairs(calculatedOutput(player, skill)) do
 		if type(key) == "string" and type(value) == "number" and (key:lower():find("chance", 1, true) or key:lower():find("ailment", 1, true)) then values[key] = value end
 	end
 	if next(values) == nil then return nil, "ailment effect is unavailable for this skill" end
-	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" })
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" }, finalTrace(skill, "Ailment", values))
 end
 
 local function get_damage_breakdown(build, skillIndex)
@@ -249,10 +261,10 @@ local function get_effective_resistance(build, skillIndex)
 	if not skill then return nil, skillErr end
 	local values = { }
 	for _, key in ipairs({ "PhysicalEffMult", "FireEffMult", "ColdEffMult", "LightningEffMult", "ChaosEffMult" }) do
-		if type(skill.output and skill.output[key]) == "number" then values[key] = skill.output[key] end
+		if type(calculatedOutput(player, skill)[key]) == "number" then values[key] = calculatedOutput(player, skill)[key] end
 	end
 	if next(values) == nil then return nil, "effective resistance multipliers are unavailable for this skill" end
-	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:Modules/CalcOffence.lua:3515-3522" })
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:Modules/CalcOffence.lua:3515-3522" }, finalTrace(skill, "EffectiveResistance", values))
 end
 
 local function get_support_links(build, skillSetSelector, skillNameValue)
@@ -276,7 +288,7 @@ local function compare_build_states(buildA, buildB, skillIndexA, skillIndexB)
 	if not skillA then return nil, skillErrA end
 	local skillB, skillErrB = skillFor(playerB, skillIndexB)
 	if not skillB then return nil, skillErrB end
-	local before, after, delta = scalarTable(skillA.output), scalarTable(skillB.output), { }
+	local before, after, delta = scalarTable(calculatedOutput(playerA, skillA)), scalarTable(calculatedOutput(playerB, skillB)), { }
 	for key, value in pairs(before) do
 		if type(value) == "number" and type(after[key]) == "number" then delta[key] = after[key] - value end
 	end
@@ -292,7 +304,8 @@ local function get_projectile_count(build, skillIndex)
 	if not skill then
 		return nil, skillErr
 	end
-	local value = skill.output and skill.output.ProjectileCount
+	local output = calculatedOutput(player, skill)
+	local value = output.ProjectileCount
 	if value == nil then
 		return nil, "ProjectileCount is unavailable for this skill"
 	end
@@ -307,14 +320,14 @@ local function get_elemental_penetration(build, skillIndex)
 	if not player then return nil, err end
 	local skill, skillErr = skillFor(player, skillIndex)
 	if not skill then return nil, skillErr end
-	local output = skill.output and skill.output.ElementalPenetration or { }
+	local output = calculatedOutput(player, skill).ElementalPenetration or { }
 	local values = { }
 	for _, damageType in ipairs({ "Fire", "Cold", "Lightning" }) do
 		if output[damageType] ~= nil then values[damageType] = output[damageType] end
 	end
 	if next(values) == nil then return nil, "ElementalPenetration is unavailable for this skill" end
 	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
-	return envelope(build, { skillIndex = skillIndex, name = effect and effect.name, values = values }, { "PoB:Modules/CalcOffence.lua:3466-3475" })
+	return envelope(build, { skillIndex = skillIndex, name = effect and effect.name, values = values }, { "PoB:Modules/CalcOffence.lua:3466-3475" }, finalTrace(skill, "ElementalPenetration", values))
 end
 
 local function get_curse_limit(build)
@@ -326,7 +339,7 @@ local function get_curse_limit(build)
 	if value == nil then
 		return nil, "EnemyCurseLimit is unavailable"
 	end
-	return envelope(build, { value = value }, { "PoB:Modules/CalcPerform.lua:3156-3158" })
+	return envelope(build, { value = value }, { "PoB:Modules/CalcPerform.lua:3156-3158" }, finalTrace(player, "EnemyCurseLimit", value))
 end
 
 local function get_duration(build, skillIndex, durationType)
@@ -335,10 +348,7 @@ local function get_duration(build, skillIndex, durationType)
 	if not player then return nil, err end
 	local skill, skillErr = skillFor(player, skillIndex)
 	if not skill then return nil, skillErr end
-	local output = skill.output or { }
-	if next(output) == nil and player.mainSkill and player.mainSkill.actor then
-		output = player.mainSkill.actor.output or output
-	end
+	local output = calculatedOutput(player, skill)
 	local outputKey = ({ skill_effect = "Duration", secondary = "DurationSecondary", tertiary = "DurationTertiary", aura = "AuraDuration", reserve = "ReserveDuration", totem = "TotemDuration" })[durationType]
 	if outputKey and type(output[outputKey]) == "number" then
 		local trace = { }

@@ -4,6 +4,14 @@ local tostring = tostring
 
 local agentTool = (LoadModule and LoadModule("Modules/AgentTool")) or dofile("src/Modules/AgentTool.lua")
 
+local function calculatedOutput(player, skill)
+	local output = skill and skill.output or { }
+	if next(output) == nil and player and player.mainSkill and player.mainSkill.actor then
+		output = player.mainSkill.actor.output or output
+	end
+	return output
+end
+
 local function scalarTable(source)
 	local result = { }
 	if type(source) ~= "table" then return result end
@@ -81,7 +89,7 @@ local function skills(player)
 			name = effect and effect.name,
 			skillPart = skill.skillPartName,
 			trigger = skill.infoTrigger,
-			output = scalarTable(skill.output),
+			output = scalarTable(calculatedOutput(player, skill)),
 			breakdown = breakdownTable(skill.breakdown),
 		}
 	end
@@ -94,7 +102,7 @@ local function get_mechanism_snapshot(build)
 
 	local projectileValues = { }
 	for index, skill in ipairs(player.activeSkillList or { }) do
-		if skill.output and skill.output.ProjectileCount ~= nil then
+		if calculatedOutput(player, skill).ProjectileCount ~= nil then
 			local projectile, projectileErr = agentTool.get_projectile_count(build, index)
 			if not projectile then return nil, projectileErr end
 			projectileValues[#projectileValues + 1] = { skillIndex = index, value = projectile.facts.value }
@@ -208,8 +216,7 @@ local function get_skill_chain(build, skillSetSelector, name)
 		local skill = player and player.activeSkillList and player.activeSkillList[resolved.skillIndex]
 		if not skill then return nil, "calculated skill was not found" end
 		if skill.disableReason then return nil, "skill is disabled: " .. skill.disableReason end
-		local output = skill.output or { }
-		if output.Chain == nil and player.mainSkill and player.mainSkill.actor then output = player.mainSkill.actor.output or output end
+		local output = calculatedOutput(player, skill)
 		if output.Chain == nil and output.ChainMax == nil and output.ChainRemaining == nil and output.ChainMaxString == nil then
 			return nil, "chain output is unavailable for selected skill"
 		end
