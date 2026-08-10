@@ -413,7 +413,9 @@ local function explain_stat(build, stat, skillIndex)
 	if explanation.value == nil then
 		return nil, "requested stat is unavailable"
 	end
-	return envelope(build, { stat = stat, value = explanation.value }, { explanation.source }, explanation.trace or { })
+	local trace = explanation.trace or { }
+	for _, entry in ipairs(explanation.modifierSources or { }) do trace[#trace + 1] = entry end
+	return envelope(build, { stat = stat, value = explanation.value, modifierSources = explanation.modifierSources or { } }, { explanation.source }, trace)
 end
 
 local function mechanism(name, build, skillSetSelector, skillNameValue, supportName)

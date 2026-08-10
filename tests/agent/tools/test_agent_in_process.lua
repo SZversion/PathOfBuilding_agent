@@ -6,6 +6,8 @@ assert(result.facts.value == 10)
 assert(result.sources[1] and result.trace[1] == "base 10")
 local explanation = assert(tools.dispatch("explain_stat", { stat = "TotalDPS", skillName = "Fireball" }))
 assert(explanation.facts.value == 10)
+local snapshot = assert(tools.dispatch("capture_snapshot", {}))
+assert(snapshot.skills[1].output.TotalDPS == 10 and snapshot.skills[1].gems[1].level == nil)
 local missing, err = tools.dispatch("get_skill_dps", { skillName = "Missing" })
 assert(missing == nil and type(err) == "string")
 build = previousBuild

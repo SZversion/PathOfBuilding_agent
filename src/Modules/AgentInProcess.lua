@@ -2,6 +2,7 @@
 local type = type
 
 local tools = (LoadModule and LoadModule("Modules/AgentTool")) or dofile("src/Modules/AgentTool.lua")
+local snapshot = (LoadModule and LoadModule("Modules/AgentSnapshot")) or dofile("src/Modules/AgentSnapshot.lua")
 
 local function currentBuild()
 	if type(build) ~= "table" then return nil, "current PoB build is unavailable" end
@@ -33,6 +34,7 @@ local function dispatch(name, args)
 		if not args.skillIndex then return nil, err end
 	end
 	local tool = tools[name]
+	if name == "capture_snapshot" then return snapshot.capture(current) end
 	if type(tool) ~= "function" then return nil, "unknown PoB tool: " .. tostring(name) end
 	if name == "get_item_modifiers" then return tool(current, args.itemId) end
 	if name == "get_duration" then return tool(current, args.skillIndex, args.durationType) end

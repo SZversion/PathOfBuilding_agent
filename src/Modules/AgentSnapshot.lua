@@ -5,6 +5,33 @@ local type = type
 local tostring = tostring
 local io = io
 
+local function calculatedOutput(player, skill)
+	local output = skill and skill.output or { }
+	if next(output) == nil and player and player.mainSkill and player.mainSkill.actor then
+		output = player.mainSkill.actor.output or output
+	end
+	return output
+end
+
+local function gemSnapshot(skill)
+	local result = { }
+	local function add(effect, role)
+		local granted = effect and effect.grantedEffect
+		if not granted then return end
+		result[#result + 1] = {
+			name = granted.name,
+			role = role,
+			level = effect.srcInstance and effect.srcInstance.level or effect.level,
+			quality = effect.srcInstance and effect.srcInstance.quality or effect.quality,
+		}
+	end
+	add(skill.activeEffect, "active")
+	for _, effect in ipairs(skill.effectList or { }) do
+		if effect.grantedEffect and effect.grantedEffect.support then add(effect, "support") end
+	end
+	return result
+end
+
 local function copyTrace(value, depth)
 	if depth > 4 then
 		return "[trace depth limit]"
@@ -56,11 +83,14 @@ local function capture(build)
 
 	if player and player.activeSkillList then
 		for index, skill in ipairs(player.activeSkillList) do
+			local output = calculatedOutput(player, skill)
 			snapshot.skills[index] = {
 				name = skill.activeEffect and skill.activeEffect.grantedEffect and skill.activeEffect.grantedEffect.name,
 				skillPart = skill.skillPartName,
 				trigger = skill.infoTrigger,
-				output = scalarTable(skill.output),
+				gems = gemSnapshot(skill),
+				output = scalarTable(output),
+				breakdown = copyTrace(skill.breakdown or (skill.actor and skill.actor.breakdown) or { }, 0),
 			}
 		end
 	end
@@ -100,14 +130,18 @@ local function explain(build, stat, skillIndex)
 	if not subject then
 		return nil, "calculation subject not found"
 	end
-	local output = subject.output or { }
-	local breakdown = subject.breakdown or { }
+	local output = calculatedOutput(player, subject)
+	local breakdown = subject.breakdown or (subject.actor and subject.actor.breakdown) or { }
+	local modifierSources = { }
+	local traceTool = (LoadModule and LoadModule("Modules/AgentTrace")) or dofile("src/Modules/AgentTrace.lua")
+	for _, entry in ipairs(traceTool.collectCombined(subject, stat)) do modifierSources[#modifierSources + 1] = entry end
 	return {
 		schemaVersion = 1,
 		calculationVersion = tostring(build and build.targetVersion or "unknown"),
 		stat = stat,
 		value = output[stat],
 		trace = copyTrace(breakdown[stat], 0),
+		modifierSources = modifierSources,
 		source = skillIndex and "PoB:CalcsTab.mainEnv.player.activeSkillList" or "PoB:CalcsTab.mainEnv.player",
 	}, nil
 end
