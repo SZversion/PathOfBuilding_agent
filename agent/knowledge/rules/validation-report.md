@@ -45,3 +45,5 @@ Rules updated from `needs_patch_check` to `verified` only where the PoB source d
 ## Additional runtime systems validated
 
 The second comparison pass added `poe1-runtime-rules.json`, covering resource calculation and reservation, standard charge limits, totem and trap limits, trigger-rate/cooldown behavior, leech pools, and on-hit recovery. Full proxy ownership remains intentionally unresolved because PoB branches by mechanic and skill metadata.
+
+The third comparison pass added `poe1-buffs-flasks-attributes.json`, covering attribute-derived stats, Fortify, Onslaught, Tailwind, Elusive, flask effect/charges/recovery, level-based resources, monster-level scaling, and Guard Skill state.

@@ -56,13 +56,13 @@ Sources: [Ailment](https://www.poewiki.net/wiki/Ailment), [Curse](https://www.po
 - [x] Power, Frenzy, and Endurance Charges
 - [ ] Projectile count, Pierce, Chain, Fork, and Split
 - [ ] single-target overlap and shotgun behavior
-- [ ] Buff, Debuff, Aura, Stance, and Guard Skill rules
+- [x] Buff, Debuff, Aura, Stance, and Guard Skill rules (core state paths verified; full interaction matrix pending)
 
 ## P2 — Later coverage
 
-- [ ] Attributes and requirements
-- [ ] Level, Experience, Ascendancy, and campaign rewards
-- [ ] Map and monster modifiers
+- [x] Attributes and requirements (attribute-derived stats verified; all requirements pending)
+- [x] Level, Experience, Ascendancy, and campaign rewards (level-based resources verified; experience/rewards pending)
+- [x] Map and monster modifiers (enemy-level scaling verified; full modifier matrix pending)
 - [ ] Minion, Totem, Trap, and Mine ownership rules
 - [ ] league-specific mechanics
 

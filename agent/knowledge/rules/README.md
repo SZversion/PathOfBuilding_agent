@@ -23,3 +23,5 @@ This directory stores **Path of Exile 1 game-system rules**, separate from curre
 `validation-report.md` is the human-readable comparison report. `poe1-pob-validation.json` stores the corresponding per-rule status and source references (`confirmed`, `partial`, or `not_confirmed`).
 
 Runtime-derived resource, charge, trigger, proxy, and recovery rules are in `poe1-runtime-rules.json`.
+
+Attribute, buff, flask, guard, character-level, and monster-level rules are in `poe1-buffs-flasks-attributes.json`.
