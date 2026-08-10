@@ -6,6 +6,8 @@ from .runtime import execute_plan
 ALLOWED_TOOLS = frozenset({
     "search_knowledge", "get_projectile_count", "get_curse_limit", "get_elemental_penetration",
     "get_socket_order", "get_skill_chain", "compare_support_effect", "explain_damage_change",
+    "get_skill_dps", "get_highest_dps_skill", "get_skill_breakdown", "get_item_modifiers",
+    "get_projectile_behavior", "get_trigger_sequence", "get_curse_application_order", "get_ailment_effect",
 })
 TOOL_ALIASES = {tool.replace("_", ""): tool for tool in ALLOWED_TOOLS}
 TOOL_ALIASES.update({"getCurseLimit": "get_curse_limit", "getProjectileCount": "get_projectile_count", "getElementalPenetration": "get_elemental_penetration", "searchKnowledge": "search_knowledge", "getSocketOrder": "get_socket_order", "getSkillChain": "get_skill_chain", "compareSupportEffect": "compare_support_effect", "explainDamageChange": "explain_damage_change"})

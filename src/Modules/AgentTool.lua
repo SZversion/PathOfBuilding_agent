@@ -145,6 +145,49 @@ local function get_item_modifiers(build, itemId)
 	return envelope(build, { itemId = itemId, name = item.name, baseName = item.baseName, raw = item.raw, modLines = lines }, { "PoB:ItemsTab.items.modLines" })
 end
 
+local function get_projectile_behavior(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local output = skill.output or { }
+	local values = { }
+	for _, key in ipairs({ "ProjectileCount", "PierceCount", "Chain", "ChainMax", "ChainRemaining", "ForkCount", "SplitCount" }) do
+		if type(output[key]) == "number" then values[key] = output[key] end
+	end
+	if next(values) == nil then return nil, "projectile behavior is unavailable for this skill" end
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" })
+end
+
+local function get_trigger_sequence(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local infoTrigger = type(skill.infoTrigger) == "string" and skill.infoTrigger or nil
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), trigger = infoTrigger, infoTrigger = infoTrigger, triggered = skill.triggered == true }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.infoTrigger" })
+end
+
+local function get_curse_application_order(build, skillSetSelector, skillNameValue)
+	local mechanism = (LoadModule and LoadModule("Modules/AgentMechanismTool")) or dofile("src/Modules/AgentMechanismTool.lua")
+	local order, err = mechanism.get_socket_order(build, skillSetSelector, skillNameValue)
+	if not order then return nil, err end
+	return envelope(build, { status = "not_simulated", basis = "socket order only", gems = order.facts.gems }, order.sources, { "Curse application timing is not simulated" })
+end
+
+local function get_ailment_effect(build, skillIndex)
+	local player, err = playerFor(build)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	local values = { }
+	for key, value in pairs(skill.output or { }) do
+		if type(key) == "string" and type(value) == "number" and (key:lower():find("chance", 1, true) or key:lower():find("ailment", 1, true)) then values[key] = value end
+	end
+	if next(values) == nil then return nil, "ailment effect is unavailable for this skill" end
+	return envelope(build, { skillIndex = skillIndex, name = skillName(skill), values = values }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" })
+end
+
 local function get_projectile_count(build, skillIndex)
 	local player, err = playerFor(build)
 	if not player then
@@ -220,6 +263,10 @@ return {
 	get_highest_dps_skill = get_highest_dps_skill,
 	get_skill_breakdown = get_skill_breakdown,
 	get_item_modifiers = get_item_modifiers,
+	get_projectile_behavior = get_projectile_behavior,
+	get_trigger_sequence = get_trigger_sequence,
+	get_curse_application_order = get_curse_application_order,
+	get_ailment_effect = get_ailment_effect,
 	get_projectile_count = get_projectile_count,
 	get_elemental_penetration = get_elemental_penetration,
 	get_curse_limit = get_curse_limit,
