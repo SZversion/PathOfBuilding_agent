@@ -50,41 +50,95 @@ local function gem_name(gem)
 	return gem and (gem.nameSpec or gem.name or gem.baseName)
 end
 
+local function summarize_item(item)
+	if type(item) ~= "table" then return nil end
+	local result = {}
+	if type(item.name) == "string" then result.name = item.name end
+	if type(item.baseName) == "string" then result.baseName = item.baseName end
+	return next(result) and result or nil
+end
+
+local function effective_gems(group)
+	if type(group.displayGemList) == "table" and #group.displayGemList > 0 then
+		return group.displayGemList
+	end
+	return group.gemList or { }
+end
+
+local function support_name(gem)
+	local effect = gem and gem.grantedEffect
+	local dataEffect = gem and gem.gemData and gem.gemData.grantedEffect
+	if not ((effect and effect.support) or (dataEffect and dataEffect.support) or (gem and gem.support)) then return nil end
+	return gem_name(gem) or (effect and effect.name) or (dataEffect and dataEffect.name)
+end
+
+local function provenance(group, firstGem)
+	if group.sourceItem or (firstGem and firstGem.fromItem) then
+		return "item_granted", summarize_item(group.sourceItem)
+	end
+	if group.sourceNode ~= nil then
+		local node = group.sourceNode
+		if type(node) == "table" then node = node.id or node.dn or node.name end
+		return "tree_granted", node
+	end
+	if group.source ~= nil then return "generated", nil end
+	return "socketed", nil
+end
+
 local function find_skill(build, selector, name)
 	if type(name) ~= "string" or name == "" then return nil, "skill name is required" end
 	local set, setId = skill_set(build, selector)
 	if not set then return nil, setId end
 	local needle = name:lower()
-	local groupIndex
-	for index, group in ipairs(set.socketGroupList or { }) do
-		for _, gem in ipairs(group.gemList or { }) do
-			if lower(gem_name(gem)) == needle then
-				if groupIndex then return nil, "skill name is ambiguous in Skill Set" end
-				groupIndex = index
-			end
-		end
-	end
-	if not groupIndex then return nil, "skill was not found in Skill Set" end
 	local tab, calcs = build.skillsTab, build.calcsTab
 	if type(tab.SetActiveSkillSet) ~= "function" or not calcs or type(calcs.BuildOutput) ~= "function" then
 		return nil, "PoB calculation context cannot be switched"
 	end
 	tab:SetActiveSkillSet(setId)
-	build.mainSocketGroup = groupIndex
+	-- PoB rebuilds this list from the selected Skill Set, including item/tree grants.
+	if type(tab.socketGroupList) ~= "table" then tab.socketGroupList = { } end
 	calcs.input = calcs.input or { }
+	calcs:BuildOutput()
+	local matches = {}
+	for groupIndex, group in ipairs(tab.socketGroupList or { }) do
+		local gems = effective_gems(group)
+		local first = gems[1]
+		if lower(gem_name(first) or (first and first.grantedEffect and first.grantedEffect.name)) == needle then
+			local sourceType, sourceValue = provenance(group, first)
+			local supports = {}
+			for index = 2, #gems do
+				local support = support_name(gems[index])
+				if support then supports[#supports + 1] = support end
+			end
+			matches[#matches + 1] = { groupIndex, group, first, sourceType, sourceValue, supports, #gems }
+		end
+	end
+	if #matches == 0 then return nil, "skill was not found in calculated Skill Set" end
+	if #matches > 1 then return nil, "skill name is ambiguous in Skill Set" end
+	local match = matches[1]
+	local groupIndex, group, first, sourceType, sourceValue, supports, linkCount = unpack(match)
+	build.mainSocketGroup = groupIndex
 	calcs.input.skill_number = groupIndex
 	calcs:BuildOutput()
+	group = tab.socketGroupList[groupIndex] or group
 	local found
 	for index, skill in ipairs(calcs.mainEnv and calcs.mainEnv.player and calcs.mainEnv.player.activeSkillList or { }) do
 		local effect = skill.activeEffect and skill.activeEffect.grantedEffect
 		local skillName = effect and effect.name or skill.name or skill.baseName
-		if lower(skillName) == needle then
+		if lower(skillName) == needle and (not skill.socketGroup or skill.socketGroup == group) then
 			if found then return nil, "calculated skill is ambiguous" end
 			found = index
 		end
 	end
 	if not found then return nil, "calculated skill was not found" end
-	return { skillSet = { id = setId, title = set.title or "Default" }, socketGroup = groupIndex, skillIndex = found, name = name }
+	return {
+		skillSet = { id = setId, title = set.title or "Default" }, socketGroup = groupIndex,
+		skillIndex = found, name = name, sourceType = sourceType,
+		sourceItem = sourceType == "item_granted" and sourceValue or nil,
+		sourceNode = sourceType == "tree_granted" and sourceValue or nil,
+		slot = group.slot, supports = supports, linkCount = linkCount,
+		enabled = group.enabled ~= false and (not first or first.enabled ~= false),
+	}
 end
 
 return { load_xml_file = load_xml_file, find_skill = find_skill }
