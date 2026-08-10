@@ -15,7 +15,7 @@
 <ol><li>Implement exact title/order Skill Set lookup.</li><li>Implement case-insensitive skill-name matching across active calculated skills.</li><li>Save active set, main group, and calculation input; switch target; rebuild; extract chain fields; restore and rebuild in a protected call.</li><li>Return <code>nil, error</code> for missing state, selector, skill, ambiguity, or chain output.</li></ol>
 <h2>Task 3: real smoke test</h2>
 <p><strong>File:</strong> <code>tests/agent/tools/test_user_build_headless.lua</code></p>
-<ol><li>Load <code>pcob leveling.xml</code> through <code>POB_AGENT_TEST_BUILD</code>.</li><li>Call the named Skill Set and skill query.</li><li>Print the four chain outputs and verify the original active context is unchanged.</li></ol>
+<ol><li>Load <code>pcob leveling.xml</code> through <code>POB_AGENT_TEST_BUILD</code>.</li><li>Call the named Skill Set and skill query.</li><li>Print the four chain outputs, or the explicit PoB disabled/unavailable reason, and verify the original active context is unchanged.</li></ol>
 <h2>Task 4: verification</h2>
 <ol><li>Run mechanism, tool, snapshot, and external smoke tests.</li><li>Run <code>git diff --check</code> and verify no PoB calculation module changed.</li><li>Commit with <code>feat: query skill set chain facts</code>.</li></ol>
 </body></html>

@@ -29,4 +29,33 @@ assert(result.facts.simulations.curseApplicationOrder.status == "not_simulated")
 
 local missing, err = tool.get_mechanism_snapshot(nil)
 assert(missing == nil and err)
+
+local skillSets = {
+	[1] = { id = 1, title = "Leveling", socketGroupList = { } },
+	[2] = { id = 2, title = "6) endgame setup", socketGroupList = {
+		{ slot = "Body Armour", gemList = { { name = "Poisonous Concoction of Bouncing", baseName = "Poisonous Concoction of Bouncing" } } },
+	} },
+}
+build.skillsTab.skillSets = skillSets
+build.skillsTab.skillSetOrderList = { 1, 2 }
+build.skillsTab.activeSkillSetId = 1
+build.skillsTab.SetActiveSkillSet = function(tab, id)
+	tab.activeSkillSetId = id
+	tab.socketGroupList = skillSets[id].socketGroupList
+	build.calcsTab.mainEnv.player.activeSkillList = id == 2 and {
+		{ activeEffect = { grantedEffect = { name = "Poisonous Concoction of Bouncing" } }, output = { Chain = 2, ChainMax = 3, ChainRemaining = 1, ChainMaxString = 3 } },
+	} or { }
+end
+build.skillsTab.socketGroupList = skillSets[1].socketGroupList
+build.mainSocketGroup = 1
+build.calcsTab.input = { skill_number = 1 }
+build.calcsTab.BuildOutput = function() end
+
+local setResult = assert(tool.get_skill_set(build, "6) endgame setup"))
+assert(setResult.facts.title == "6) endgame setup")
+local chainResult = assert(tool.get_skill_chain(build, "6) endgame setup", "Poisonous Concoction of Bouncing"))
+assert(chainResult.facts.chain.Chain == 2 and chainResult.facts.chain.ChainMax == 3)
+assert(build.skillsTab.activeSkillSetId == 1 and build.mainSocketGroup == 1)
+local noChain, noChainErr = tool.get_skill_chain(build, "6) endgame setup", "Missing Skill")
+assert(noChain == nil and noChainErr and build.skillsTab.activeSkillSetId == 1 and build.mainSocketGroup == 1)
 print("agent mechanism tool contract self-check passed")

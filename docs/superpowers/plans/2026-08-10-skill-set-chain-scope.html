@@ -31,7 +31,7 @@ get_skill_chain.facts = {
   chain = { Chain, ChainMax, ChainRemaining, ChainMaxString }
 }</code></pre>
 <h2>Acceptance criteria</h2>
-<ul><li>Original active Skill Set and selected skill are restored after success or error.</li><li>Fake test verifies title resolution, exact skill resolution, chain keys, and restoration.</li><li>External <code>pcob leveling.xml</code> smoke test queries <code>6) endgame setup</code> and <code>Poisonous Concoction of Bouncing</code>; missing values fail explicitly rather than being guessed.</li></ul>
+<ul><li>Original active Skill Set and selected skill are restored after success or error.</li><li>Fake test verifies title resolution, exact skill resolution, chain keys, and restoration.</li><li>External <code>pcob leveling.xml</code> smoke test queries <code>6) endgame setup</code> and <code>Poisonous Concoction of Bouncing</code>; a calculated chain is printed, or an explicit unavailable reason is printed when PoB marks the skill disabled.</li></ul>
 <h2>Files allowed to change</h2>
 <ul><li><code>src/Modules/AgentMechanismTool.lua</code></li><li><code>tests/agent/tools/test_agent_mechanism_tool.lua</code></li><li><code>tests/agent/tools/test_user_build_headless.lua</code></li><li>This scope and implementation plan</li></ul>
 </body></html>

@@ -127,4 +127,106 @@ local function get_mechanism_snapshot(build)
 	}
 end
 
-return { get_mechanism_snapshot = get_mechanism_snapshot }
+local function skillSetFor(build, selector)
+	local tab = build and build.skillsTab
+	if not tab or not tab.skillSets then return nil, "Skill Set state is unavailable" end
+	local id
+	if type(selector) == "number" then
+		id = tab.skillSetOrderList and tab.skillSetOrderList[selector]
+	elseif type(selector) == "string" then
+		local needle = selector:lower()
+		for candidateId, set in pairs(tab.skillSets) do
+			if type(set.title) == "string" and set.title:lower() == needle then
+				if id then return nil, "Skill Set selector is ambiguous" end
+				id = candidateId
+			end
+		end
+	end
+	if not id or not tab.skillSets[id] then return nil, "Skill Set was not found" end
+	return tab.skillSets[id], id
+end
+
+local function get_skill_set(build, selector)
+	local set, id = skillSetFor(build, selector)
+	if not set then return nil, id end
+	local order
+	for index, candidateId in ipairs(build.skillsTab.skillSetOrderList or { }) do
+		if candidateId == id then order = index break end
+	end
+	return {
+		calculationVersion = tostring(build.targetVersion or "unknown"),
+		facts = { id = id, title = set.title or "Default", order = order, socketGroupCount = #(set.socketGroupList or { }) },
+		sources = { "PoB:SkillsTab.skillSets" },
+		trace = { },
+	}
+end
+
+local function skillName(skill)
+	local effect = skill.activeEffect and skill.activeEffect.grantedEffect
+	return (effect and effect.name) or skill.name or skill.baseName
+end
+
+local function skillGroupFor(set, name)
+	local needle = name:lower()
+	local found
+	for index, group in ipairs(set.socketGroupList or { }) do
+		for _, gem in ipairs(group.gemList or { }) do
+			local gemName = gem.nameSpec or gem.name or gem.baseName
+			if type(gemName) == "string" and gemName:lower() == needle then
+				if found then return nil, "skill name is ambiguous in Skill Set" end
+				found = index
+			end
+		end
+	end
+	return found
+end
+
+local function get_skill_chain(build, skillSetSelector, name)
+	if type(name) ~= "string" or name == "" then return nil, "skill name is required" end
+	local target, targetId = skillSetFor(build, skillSetSelector)
+	if not target then return nil, targetId end
+	local groupIndex, groupErr = skillGroupFor(target, name)
+	if not groupIndex then return nil, groupErr or "skill was not found in Skill Set" end
+	local tab = build.skillsTab
+	local calcs = build.calcsTab
+	if not tab.SetActiveSkillSet or not calcs or not calcs.BuildOutput then return nil, "PoB calculation context cannot be switched" end
+	local oldId, oldGroup = tab.activeSkillSetId, build.mainSocketGroup
+	local oldInput = calcs.input and calcs.input.skill_number
+	local function restore()
+		tab:SetActiveSkillSet(oldId)
+		build.mainSocketGroup = oldGroup
+		if calcs.input then calcs.input.skill_number = oldInput end
+		calcs:BuildOutput()
+	end
+	local ok, result, err = pcall(function()
+		tab:SetActiveSkillSet(targetId)
+		build.mainSocketGroup = groupIndex
+		calcs.input = calcs.input or { }
+		calcs.input.skill_number = groupIndex
+		calcs:BuildOutput()
+		local player = calcs.mainEnv and calcs.mainEnv.player
+		for index, skill in ipairs(player and player.activeSkillList or { }) do
+			if skillName(skill) and skillName(skill):lower() == name:lower() then
+				if skill.disableReason then return nil, "skill is disabled: " .. skill.disableReason end
+				local output = skill.output or { }
+				if output.Chain == nil and output.ChainMax == nil and output.ChainRemaining == nil and output.ChainMaxString == nil then
+					return nil, "chain output is unavailable for selected skill"
+				end
+				return {
+					calculationVersion = tostring(build.targetVersion or "unknown"),
+					facts = { skillSet = { id = targetId, title = target.title }, skill = { name = skillName(skill), socketGroup = groupIndex, skillIndex = index }, chain = { Chain = output.Chain, ChainMax = output.ChainMax, ChainRemaining = output.ChainRemaining, ChainMaxString = output.ChainMaxString } },
+					sources = { "PoB:Modules/CalcOffence.lua:1032-1044" },
+					trace = { },
+				}
+			end
+		end
+		return nil, "calculated skill was not found"
+	end)
+	local restored, restoreErr = pcall(restore)
+	if not restored then return nil, restoreErr end
+	if not ok then return nil, result end
+	if not result then return nil, err end
+	return result
+end
+
+return { get_mechanism_snapshot = get_mechanism_snapshot, get_skill_set = get_skill_set, get_skill_chain = get_skill_chain }
