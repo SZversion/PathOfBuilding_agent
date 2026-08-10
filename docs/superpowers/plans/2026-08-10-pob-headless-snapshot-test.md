@@ -80,6 +80,7 @@ Create (the runner is invoked from `src`, so it prepends the repository Lua modu
 ```lua
 local buildPath = assert(os.getenv("POB_AGENT_TEST_BUILD"), "POB_AGENT_TEST_BUILD is required")
 package.path = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;" .. package.path
+package.cpath = "../runtime/?.dll;" .. package.cpath
 local file = assert(io.open(buildPath, "r"))
 local xml = file:read("*a")
 file:close()
