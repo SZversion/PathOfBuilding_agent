@@ -28,7 +28,7 @@ assert(skill.facts.output.TotalDPS == 1000)
 
 local projectile = assert(tools.get_projectile_count(build, 1))
 assert(projectile.facts.value == 3)
-assert(#projectile.trace == 0)
+assert(projectile.trace[1].operation == "PROJECTILE_COUNT")
 
 local penetration = assert(tools.get_elemental_penetration(build, 1))
 assert(penetration.facts.name == "Fireball")

@@ -213,11 +213,38 @@ local function get_skill_chain(build, skillSetSelector, name)
 		if output.Chain == nil and output.ChainMax == nil and output.ChainRemaining == nil and output.ChainMaxString == nil then
 			return nil, "chain output is unavailable for selected skill"
 		end
+		local traceTool = (LoadModule and LoadModule("Modules/AgentTrace")) or dofile("src/Modules/AgentTrace.lua")
+		local maxTerms = traceTool.collect(skill, "ChainCountMax", "BASE")
+		local moreTerms = traceTool.collect(skill, "ChainCountMax", "MORE")
+		local chainTerms = traceTool.collect(skill, "ChainCount", "BASE")
+		local baseMax = traceTool.sum(maxTerms, "BASE")
+		local moreMax = traceTool.sum(moreTerms, "MORE")
+		local addedProjectiles = 0
+		local projectileTerms = { }
+		if skill.skillModList and skill.skillCfg and skill.skillModList:Flag(skill.skillCfg, "AdditionalProjectilesAddChainsInstead") and not skill.skillModList:Flag(skill.skillCfg, "SingleProjectile") then
+			local projectileBase = skill.skillModList:Sum("BASE", skill.skillCfg, "ProjectileCount")
+			local projectileMore = skill.skillModList:More(skill.skillCfg, "ProjectileCount")
+			addedProjectiles = math.floor((projectileBase - 1) * projectileMore)
+			projectileTerms = {
+				{ operation = "SUM_BASE", stat = "ProjectileCount", value = projectileBase },
+				{ operation = "PRODUCT_MORE", stat = "ProjectileCount", value = projectileMore },
+				{ operation = "PROJECTILE_TO_CHAIN", value = addedProjectiles },
+			}
+		end
+		local globalChainAddition = output.BeidatAdditionalBeamChains or 0
+		local globalTerms = globalChainAddition ~= 0 and { { operation = "GLOBAL_ADD", source = "Pact of Beidat", value = globalChainAddition } } or { }
 		return {
 			calculationVersion = tostring(build.targetVersion or "unknown"),
 			facts = { skillSet = resolved.skillSet, skill = { name = resolved.effectName or name, socketGroup = resolved.socketGroup, skillIndex = resolved.skillIndex }, chain = { Chain = output.Chain, ChainMax = output.ChainMax, ChainRemaining = output.ChainRemaining, ChainMaxString = output.ChainMaxString } },
 			sources = { "PoB:Modules/CalcOffence.lua:1032-1044" },
-			trace = { },
+			trace = {
+				{ operation = "SUM_BASE", stat = "ChainCountMax", value = baseMax, inputs = maxTerms },
+				{ operation = "PRODUCT_MORE", stat = "ChainCountMax", value = moreMax, inputs = moreTerms },
+				{ operation = "SUM_BASE", stat = "ChainCount", value = traceTool.sum(chainTerms, "BASE"), inputs = chainTerms },
+				{ operation = "PROJECTILE_TO_CHAIN", value = addedProjectiles, inputs = projectileTerms },
+				{ operation = "GLOBAL_ADD", stat = "ChainMax", value = globalChainAddition, inputs = globalTerms },
+				{ operation = "FINAL_CHAIN_MAX", value = output.ChainMax, formula = "(SUM_BASE(ChainCountMax) + PROJECTILE_TO_CHAIN) * PRODUCT_MORE(ChainCountMax) + GLOBAL_ADD" },
+			},
 		}
 	end)
 	local restored, restoreErr = pcall(restore)

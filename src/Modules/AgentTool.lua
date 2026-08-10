@@ -77,6 +77,11 @@ local function skillName(skill)
 	return effect and effect.name or skill.name or skill.baseName
 end
 
+local function modifierTrace(skill, stat)
+	local trace = (LoadModule and LoadModule("Modules/AgentTrace")) or dofile("src/Modules/AgentTrace.lua")
+	return trace.collect(skill, stat, "BASE"), trace.collect(skill, stat, "MORE")
+end
+
 local function get_skill_dps(build, skillIndex)
 	local player, err = playerFor(build)
 	if not player then return nil, err end
@@ -266,7 +271,10 @@ local function get_projectile_count(build, skillIndex)
 	if value == nil then
 		return nil, "ProjectileCount is unavailable for this skill"
 	end
-	return envelope(build, { skillIndex = skillIndex, value = value }, { "PoB:Modules/CalcOffence.lua:1054-1062" })
+	local baseTerms, moreTerms = modifierTrace(skill, "ProjectileCount")
+	return envelope(build, { skillIndex = skillIndex, value = value }, { "PoB:Modules/CalcOffence.lua:1054-1062" }, {
+		{ operation = "PROJECTILE_COUNT", value = value, inputs = { base = baseTerms, more = moreTerms }, formula = "floor(SUM_BASE(ProjectileCount) * PRODUCT_MORE(ProjectileCount))" },
+	})
 end
 
 local function get_elemental_penetration(build, skillIndex)
