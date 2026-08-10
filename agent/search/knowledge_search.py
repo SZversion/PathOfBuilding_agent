@@ -1,5 +1,6 @@
 import json
 import re
+from pathlib import Path
 
 
 def _tokens(value):
@@ -10,6 +11,8 @@ class KnowledgeSearch:
     def __init__(self, index_path):
         with open(index_path, encoding="utf-8") as stream:
             self.documents = json.load(stream)["documents"]
+        alias_path = Path(index_path).parents[1] / "aliases" / "ko" / "skills-3.29.json"
+        self.skill_aliases = json.loads(alias_path.read_text(encoding="utf-8"))["entries"] if alias_path.exists() else []
 
     def search(self, query, limit=10, category=None):
         if not isinstance(query, str) or not query.strip():
@@ -62,3 +65,15 @@ class KnowledgeSearch:
             "korean": korean,
             "category": resolved_category,
         }
+
+    def resolve_skill_alias(self, query):
+        if not isinstance(query, str) or not query:
+            raise ValueError("skill name is required")
+        matches = [entry for entry in self.skill_aliases if query == entry["korean"] or query.casefold() == entry["english"].casefold()]
+        identities = {(entry["english"], entry["korean"], entry["variantId"]) for entry in matches}
+        if not identities:
+            return None
+        if len(identities) > 1:
+            raise ValueError("skill alias is ambiguous")
+        entry = matches[0]
+        return {key: entry[key] for key in ("english", "korean", "skillId", "gemId", "variantId")}

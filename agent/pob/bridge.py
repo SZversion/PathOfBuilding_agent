@@ -47,5 +47,10 @@ class PobBridge:
 def make_pob_handlers(build_path, luajit=None, timeout=120):
     bridge = PobBridge(luajit or os.getenv("LUAJIT", "luajit"), timeout=timeout)
     return {name: (lambda arguments, name=name: bridge.call(build_path, name, arguments)) for name in (
-        "get_projectile_count", "get_curse_limit", "get_elemental_penetration",
+        "get_character_stats", "get_skill_stats", "get_skill_dps", "get_highest_dps_skill",
+        "get_skill_breakdown", "get_item_modifiers", "get_projectile_behavior", "get_trigger_sequence",
+        "get_curse_application_order", "get_ailment_effect", "get_damage_breakdown", "get_conversion_chain",
+        "get_effective_resistance", "get_support_links", "resolve_skill_context", "get_projectile_count",
+        "get_curse_limit", "get_elemental_penetration", "get_skill_chain", "get_socket_order",
+        "compare_support_effect", "explain_damage_change",
     )}

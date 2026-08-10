@@ -321,6 +321,27 @@ local function explain_stat(build, stat, skillIndex)
 	return envelope(build, { stat = stat, value = explanation.value }, { explanation.source }, explanation.trace or { })
 end
 
+local function mechanism(name, build, skillSetSelector, skillNameValue, supportName)
+	local module = (LoadModule and LoadModule("Modules/AgentMechanismTool")) or dofile("src/Modules/AgentMechanismTool.lua")
+	return module[name](build, skillSetSelector, skillNameValue, supportName)
+end
+
+local function get_skill_chain(build, skillSetSelector, skillNameValue)
+	return mechanism("get_skill_chain", build, skillSetSelector, skillNameValue)
+end
+
+local function get_socket_order(build, skillSetSelector, skillNameValue)
+	return mechanism("get_socket_order", build, skillSetSelector, skillNameValue)
+end
+
+local function compare_support_effect(build, skillSetSelector, skillNameValue, supportName)
+	return mechanism("compare_support_effect", build, skillSetSelector, skillNameValue, supportName)
+end
+
+local function explain_damage_change(build, skillSetSelector, skillNameValue, supportName)
+	return mechanism("explain_damage_change", build, skillSetSelector, skillNameValue, supportName)
+end
+
 return {
 	get_character_stats = get_character_stats,
 	get_skill_stats = get_skill_stats,
@@ -336,6 +357,10 @@ return {
 	get_conversion_chain = get_conversion_chain,
 	get_effective_resistance = get_effective_resistance,
 	get_support_links = get_support_links,
+	get_skill_chain = get_skill_chain,
+	get_socket_order = get_socket_order,
+	compare_support_effect = compare_support_effect,
+	explain_damage_change = explain_damage_change,
 	resolve_skill_context = resolve_skill_context,
 	compare_build_states = compare_build_states,
 	get_projectile_count = get_projectile_count,

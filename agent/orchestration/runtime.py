@@ -47,6 +47,17 @@ def execute_plan(question, planned, search=None, handlers=None):
             else:
                 output["steps"].append({"tool": tool, "status": "ok" if result else "unavailable", "result": result} if result else {"tool": tool, "status": "unavailable", "error": "item alias was not found"})
             continue
+        if tool == "resolve_skill_alias":
+            if search is None:
+                output["steps"].append({"tool": tool, "status": "unavailable", "error": "knowledge search is not configured"})
+                continue
+            try:
+                result = search.resolve_skill_alias(arguments.get("query", ""))
+            except Exception as error:
+                output["steps"].append({"tool": tool, "status": "error", "error": str(error)})
+            else:
+                output["steps"].append({"tool": tool, "status": "ok", "result": result} if result else {"tool": tool, "status": "unavailable", "error": "skill alias was not found"})
+            continue
         handler = handlers.get(tool)
         if not callable(handler):
             output["steps"].append({"tool": tool, "status": "unavailable", "error": "handler is not configured"})

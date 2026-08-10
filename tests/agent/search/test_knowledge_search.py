@@ -16,4 +16,6 @@ assert searcher.search("파란 진주 목걸이", category="item.base_type")
 assert searcher.search("zzzzzzzz-qwerty") == []
 alias = searcher.resolve_item_alias("모루")
 assert alias and alias["english"] == "The Anvil" and alias["korean"] == "모루"
+skill = searcher.resolve_skill_alias("뇌동의 연쇄 번개")
+assert skill and skill["english"] == "Arc of Oscillating" and skill["variantId"] == "ArcAltY"
 print("knowledge search self-check passed")

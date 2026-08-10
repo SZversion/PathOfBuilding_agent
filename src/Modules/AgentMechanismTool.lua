@@ -189,8 +189,6 @@ local function get_skill_chain(build, skillSetSelector, name)
 	if type(name) ~= "string" or name == "" then return nil, "skill name is required" end
 	local target, targetId = skillSetFor(build, skillSetSelector)
 	if not target then return nil, targetId end
-	local groupIndex, groupErr = skillGroupFor(target, name)
-	if not groupIndex then return nil, groupErr or "skill was not found in Skill Set" end
 	local tab = build.skillsTab
 	local calcs = build.calcsTab
 	if not tab.SetActiveSkillSet or not calcs or not calcs.BuildOutput then return nil, "PoB calculation context cannot be switched" end
@@ -203,29 +201,24 @@ local function get_skill_chain(build, skillSetSelector, name)
 		calcs:BuildOutput()
 	end
 	local ok, result, err = pcall(function()
-		tab:SetActiveSkillSet(targetId)
-		build.mainSocketGroup = groupIndex
-		calcs.input = calcs.input or { }
-		calcs.input.skill_number = groupIndex
-		calcs:BuildOutput()
+		local context = (LoadModule and LoadModule("Modules/AgentContext")) or dofile("src/Modules/AgentContext.lua")
+		local resolved, resolveErr = context.find_skill(build, skillSetSelector, name)
+		if not resolved then return nil, resolveErr end
 		local player = calcs.mainEnv and calcs.mainEnv.player
-		local cachedOutput = cachedSkillOutput(name)
-		for index, skill in ipairs(player and player.activeSkillList or { }) do
-			if skillName(skill) and skillName(skill):lower() == name:lower() then
-				if skill.disableReason then return nil, "skill is disabled: " .. skill.disableReason end
-				local output = cachedOutput or skill.output or { }
-				if output.Chain == nil and output.ChainMax == nil and output.ChainRemaining == nil and output.ChainMaxString == nil then
-					return nil, "chain output is unavailable for selected skill"
-				end
-				return {
-					calculationVersion = tostring(build.targetVersion or "unknown"),
-					facts = { skillSet = { id = targetId, title = target.title }, skill = { name = skillName(skill), socketGroup = groupIndex, skillIndex = index }, chain = { Chain = output.Chain, ChainMax = output.ChainMax, ChainRemaining = output.ChainRemaining, ChainMaxString = output.ChainMaxString } },
-					sources = { "PoB:Modules/CalcOffence.lua:1032-1044" },
-					trace = { },
-				}
-			end
+		local skill = player and player.activeSkillList and player.activeSkillList[resolved.skillIndex]
+		if not skill then return nil, "calculated skill was not found" end
+		if skill.disableReason then return nil, "skill is disabled: " .. skill.disableReason end
+		local output = skill.output or { }
+		if output.Chain == nil and player.mainSkill and player.mainSkill.actor then output = player.mainSkill.actor.output or output end
+		if output.Chain == nil and output.ChainMax == nil and output.ChainRemaining == nil and output.ChainMaxString == nil then
+			return nil, "chain output is unavailable for selected skill"
 		end
-		return nil, "calculated skill was not found"
+		return {
+			calculationVersion = tostring(build.targetVersion or "unknown"),
+			facts = { skillSet = resolved.skillSet, skill = { name = resolved.effectName or name, socketGroup = resolved.socketGroup, skillIndex = resolved.skillIndex }, chain = { Chain = output.Chain, ChainMax = output.ChainMax, ChainRemaining = output.ChainRemaining, ChainMaxString = output.ChainMaxString } },
+			sources = { "PoB:Modules/CalcOffence.lua:1032-1044" },
+			trace = { },
+		}
 	end)
 	local restored, restoreErr = pcall(restore)
 	if not restored then return nil, restoreErr end
