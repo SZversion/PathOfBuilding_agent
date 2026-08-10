@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>XML Loader Scope</title></head><body>
+<h1>XML Loader Scope</h1><h2>Goal</h2><p>Load one user-selected PoB XML file into an in-memory PoB build.</p>
+<h2>In scope</h2><ul><li>Read an explicit XML path and call PoB's existing <code>loadBuildFromXML</code>.</li><li>Return the loaded build or a deterministic error.</li><li>Keep the source file read-only.</li></ul>
+<h2>Out of scope</h2><ul><li>UI file pickers, persistence, XML parsing, network, or model calls.</li><li>Changing PoB's XML format or calculation formulas.</li></ul>
+<h2>Contract</h2><pre><code>load_xml_file(path, name) -&gt; build | nil, error</code></pre>
+</body></html>

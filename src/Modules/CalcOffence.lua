@@ -3477,6 +3477,7 @@ function calcs.offence(env, actor, activeSkill)
 							end
 						end
 						if isElemental[damageType] then
+							output.ElementalPenetration = output.ElementalPenetration or { }
 							output.ElementalPenetration[damageType] = pen
 						end
 						local invertChanceEle = m_max(m_min(skillModList:Sum("CHANCE", cfg, "HitsInvertEleResChance"), 1), 0)
