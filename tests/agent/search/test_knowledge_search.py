@@ -14,4 +14,6 @@ assert result and result[0]["text"] == "Blue Pearl Amulet"
 assert searcher.search("모루", category="item.base_type") == []
 assert searcher.search("파란 진주 목걸이", category="item.base_type")
 assert searcher.search("zzzzzzzz-qwerty") == []
+alias = searcher.resolve_item_alias("모루")
+assert alias and alias["english"] == "The Anvil" and alias["korean"] == "모루"
 print("knowledge search self-check passed")

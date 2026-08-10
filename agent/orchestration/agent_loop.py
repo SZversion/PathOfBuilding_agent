@@ -4,7 +4,7 @@ from .runtime import execute_plan
 
 
 ALLOWED_TOOLS = frozenset({
-    "search_knowledge", "get_projectile_count", "get_curse_limit", "get_elemental_penetration",
+    "search_knowledge", "resolve_item_alias", "get_projectile_count", "get_curse_limit", "get_elemental_penetration",
     "get_socket_order", "get_skill_chain", "compare_support_effect", "explain_damage_change",
     "get_skill_dps", "get_highest_dps_skill", "get_skill_breakdown", "get_item_modifiers",
     "get_projectile_behavior", "get_trigger_sequence", "get_curse_application_order", "get_ailment_effect",

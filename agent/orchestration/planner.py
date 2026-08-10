@@ -27,7 +27,7 @@ def plan(question):
         ], "confidence": 0.95}
     if any(word in lowered for word in ("아이템", "한국어", "이름", "고유", "플라스크")) and not any(word in lowered for word in ("몇", "계산", "왜")):
         return {"intent": "item_alias", "entities": {"query": question}, "steps": [
-            {"tool": "search_knowledge", "arguments": {"query": question}},
+            {"tool": "resolve_item_alias", "arguments": {"query": question}},
         ], "confidence": 0.9}
     if any(word in lowered for word in ("투사체", "projectile")):
         entities["stat"] = "ProjectileCount"

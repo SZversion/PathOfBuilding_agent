@@ -131,8 +131,10 @@ local function skillSetFor(build, selector)
 	local tab = build and build.skillsTab
 	if not tab or not tab.skillSets then return nil, "Skill Set state is unavailable" end
 	local id
-	if type(selector) == "number" then
-		id = tab.skillSetOrderList and tab.skillSetOrderList[selector]
+	if selector == nil then
+		id = tab.activeSkillSetId or (tab.skillSetOrderList and tab.skillSetOrderList[1])
+	elseif type(selector) == "number" then
+		id = tab.skillSets[selector] and selector or (tab.skillSetOrderList and tab.skillSetOrderList[selector])
 	elseif type(selector) == "string" then
 		local needle = selector:lower()
 		for candidateId, set in pairs(tab.skillSets) do

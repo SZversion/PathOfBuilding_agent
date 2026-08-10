@@ -50,6 +50,11 @@ local function gem_name(gem)
 	return gem and (gem.nameSpec or gem.name or gem.baseName)
 end
 
+local function effect_name(skill)
+	local effect = skill and skill.activeEffect and skill.activeEffect.grantedEffect
+	return effect and effect.name or skill and skill.name or skill and skill.baseName
+end
+
 local function summarize_item(item)
 	if type(item) ~= "table" then return nil end
 	local result = {}
@@ -103,29 +108,32 @@ local function find_skill(build, selector, name)
 	for groupIndex, group in ipairs(tab.socketGroupList or { }) do
 		local gems = effective_gems(group)
 		local first = gems[1]
-		if lower(gem_name(first) or (first and first.grantedEffect and first.grantedEffect.name)) == needle then
+		local skillMatch
+		for skillIndex, activeSkill in ipairs(group.displaySkillList or { }) do
+			if lower(effect_name(activeSkill)) == needle then skillMatch = skillIndex end
+		end
+		if lower(gem_name(first) or (first and first.grantedEffect and first.grantedEffect.name)) == needle or skillMatch then
 			local sourceType, sourceValue = provenance(group, first)
 			local supports = {}
 			for index = 2, #gems do
 				local support = support_name(gems[index])
 				if support then supports[#supports + 1] = support end
 			end
-			matches[#matches + 1] = { groupIndex, group, first, sourceType, sourceValue, supports, #gems }
+			matches[#matches + 1] = { groupIndex, group, first, sourceType, sourceValue, supports, #gems, skillMatch }
 		end
 	end
 	if #matches == 0 then return nil, "skill was not found in calculated Skill Set" end
 	if #matches > 1 then return nil, "skill name is ambiguous in Skill Set" end
 	local match = matches[1]
-	local groupIndex, group, first, sourceType, sourceValue, supports, linkCount = unpack(match)
+	local groupIndex, group, first, sourceType, sourceValue, supports, linkCount, requestedSkillIndex = unpack(match)
 	build.mainSocketGroup = groupIndex
 	calcs.input.skill_number = groupIndex
 	calcs:BuildOutput()
 	group = tab.socketGroupList[groupIndex] or group
+	local selected = group.displaySkillList and group.displaySkillList[requestedSkillIndex or group.mainActiveSkill or 1]
 	local found
 	for index, skill in ipairs(calcs.mainEnv and calcs.mainEnv.player and calcs.mainEnv.player.activeSkillList or { }) do
-		local effect = skill.activeEffect and skill.activeEffect.grantedEffect
-		local skillName = effect and effect.name or skill.name or skill.baseName
-		if lower(skillName) == needle and (not skill.socketGroup or skill.socketGroup == group) then
+		if (skill == selected or (not selected and lower(effect_name(skill)) == needle)) and (not skill.socketGroup or skill.socketGroup == group) then
 			if found then return nil, "calculated skill is ambiguous" end
 			found = index
 		end
@@ -133,7 +141,7 @@ local function find_skill(build, selector, name)
 	if not found then return nil, "calculated skill was not found" end
 	return {
 		skillSet = { id = setId, title = set.title or "Default" }, socketGroup = groupIndex,
-		skillIndex = found, name = name, sourceType = sourceType,
+		skillIndex = found, name = name, effectName = effect_name(selected), sourceType = sourceType,
 		sourceItem = sourceType == "item_granted" and sourceValue or nil,
 		sourceNode = sourceType == "tree_granted" and sourceValue or nil,
 		slot = group.slot, supports = supports, linkCount = linkCount,

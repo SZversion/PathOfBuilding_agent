@@ -34,3 +34,31 @@ class KnowledgeSearch:
                 ranked.append((score, document))
         ranked.sort(key=lambda item: (-item[0], item[1]["source"], item[1]["text"]))
         return [{**document, "score": score} for score, document in ranked[:limit]]
+
+    def resolve_item_alias(self, query, category=None):
+        """Resolve an exact English/Korean alias to one stable identity."""
+        if not isinstance(query, str) or not query:
+            raise ValueError("item name is required")
+        matches = []
+        seen = set()
+        for document in self.documents:
+            if category and document.get("category") != category:
+                continue
+            english = document.get("text")
+            korean = document.get("korean")
+            if query == korean or (isinstance(english, str) and query.casefold() == english.casefold()):
+                key = (english, korean, document.get("category"))
+                if key not in seen:
+                    seen.add(key)
+                    matches.append(key)
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise ValueError("item alias is ambiguous")
+        english, korean, resolved_category = matches[0]
+        return {
+            "canonicalId": "%s:%s" % (resolved_category, english),
+            "english": english,
+            "korean": korean,
+            "category": resolved_category,
+        }

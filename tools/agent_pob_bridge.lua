@@ -28,6 +28,11 @@ if args.skillName then
 end
 local tool = tools[request.tool]
 if type(tool) ~= "function" then respond({ ok = false, error = "unknown PoB tool: " .. request.tool }); return end
-local result, err = tool(build, args.skillIndex)
+local result, err
+if request.tool == "resolve_skill_context" or request.tool == "get_support_links" then
+	result, err = tool(build, args.skillSetSelector, args.skillName)
+else
+	result, err = tool(build, args.skillIndex)
+end
 if not result then respond({ ok = false, error = err or "PoB tool failed" }); return end
 respond({ ok = true, result = result })
