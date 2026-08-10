@@ -105,11 +105,11 @@ git commit -m "test: verify internal PoB tool contracts"
 
 - [ ] **Step 1: Add tool loading to the test runner**
 
-Load `Modules/AgentTool` after `HeadlessWrapper.lua` initializes and call `get_projectile_count(build, build.mainSocketGroup)` and `get_curse_limit(build)`.
+Load `Modules/AgentTool` after `HeadlessWrapper.lua` initializes, scan `activeSkillList` for the first skill with `output.ProjectileCount`, call `get_projectile_count` only when found, and always call `get_curse_limit(build)`.
 
-- [ ] **Step 2: Assert real values are present**
+- [ ] **Step 2: Assert real values or the documented absence are present**
 
-Assert both calls return envelopes with non-nil `facts.value`, without hard-coding patch-sensitive numbers.
+Assert the curse call returns a non-nil `facts.value`. If the selected user build has no calculated skill with `ProjectileCount`, assert that the runner reports projectile as unavailable; if one exists, assert a non-nil projectile value. Do not hard-code patch-sensitive numbers.
 
 - [ ] **Step 3: Run the smoke test**
 
@@ -119,7 +119,7 @@ Set-Location src
 & 'C:\Users\SZ\AppData\Local\Programs\LuaJIT\bin\luajit.exe' '../tests/agent/tools/test_user_build_headless.lua'
 ```
 
-Expected: snapshot, projectile, curse, and Life explanation checks pass.
+Expected: snapshot, curse, and Life explanation checks pass; projectile reports a value or the documented unavailable state.
 
 - [ ] **Step 4: Commit the smoke-test update**
 

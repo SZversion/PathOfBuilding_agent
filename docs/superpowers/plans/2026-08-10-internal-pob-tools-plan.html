@@ -90,7 +90,7 @@ envelope = {
     <li>Every tool is read-only and returns the same envelope shape.</li>
     <li>Invalid input returns an explicit error instead of throwing an opaque error.</li>
     <li>Projectile and curse results expose the exact PoB output keys above.</li>
-    <li>Focused user-build testing is a smoke test: it asserts snapshot creation, skill count, and non-nil projectile/curse values without hard-coding patch-sensitive numbers.</li>
+    <li>Focused user-build testing is a smoke test: it asserts snapshot creation, skill count, and a non-nil curse value; projectile is non-nil when the fixture has a projectile skill and otherwise reports the documented unavailable state.</li>
   </ul>
 
   <h2>Files allowed to change</h2>

@@ -13,6 +13,22 @@ assert(build.agentSnapshot, "agent snapshot was not created")
 assert(build.agentSnapshot.outputs, "snapshot outputs are missing")
 assert(#build.agentSnapshot.skills > 0, "snapshot skills are missing")
 
+local tools = LoadModule("Modules/AgentTool")
+local projectileIndex
+for index, skill in ipairs(build.calcsTab.mainEnv.player.activeSkillList) do
+	if skill.output and skill.output.ProjectileCount ~= nil then
+		projectileIndex = index
+		break
+	end
+end
+local projectileValue = "unavailable"
+if projectileIndex then
+	local projectile = assert(tools.get_projectile_count(build, projectileIndex))
+	assert(projectile.facts.value ~= nil, "projectile tool has no value")
+	projectileValue = tostring(projectile.facts.value)
+end
+local curse = assert(tools.get_curse_limit(build))
+assert(curse.facts.value ~= nil, "curse tool has no value")
 local explanation = assert(build.explainAgentStat("Life"))
 assert(explanation.value ~= nil, "Life explanation has no value")
-print("user build snapshot test passed: skills=" .. #build.agentSnapshot.skills .. ", life=" .. tostring(explanation.value))
+print("user build tool smoke test passed: skills=" .. #build.agentSnapshot.skills .. ", projectile=" .. projectileValue .. ", curse=" .. tostring(curse.facts.value) .. ", life=" .. tostring(explanation.value))
