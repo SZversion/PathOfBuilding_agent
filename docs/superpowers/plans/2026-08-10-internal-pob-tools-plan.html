@@ -49,7 +49,7 @@
   </div>
 
   <h2>Interface contract</h2>
-  <pre><code>get_character_stats(build) -&gt; envelope
+  <pre><code>get_character_stats(build) -&gt; envelope | nil, error
 get_skill_stats(build, skillIndex) -&gt; envelope | nil, error
 get_projectile_count(build, skillIndex) -&gt; envelope | nil, error
 get_curse_limit(build) -&gt; envelope | nil, error
@@ -63,6 +63,12 @@ envelope = {
 }</code></pre>
   <p><code>AgentTool.lua</code> must normalize the existing snapshot shapes into this envelope; it must not expose <code>outputs</code> or <code>skills</code> as the top-level tool contract.</p>
   <ul>
+    <li><code>get_character_stats</code> returns <code>nil, error</code> when build state is unavailable.</li>
+    <li><code>get_character_stats.facts</code> is the scalar character output map.</li>
+    <li><code>get_skill_stats.facts</code> is <code>{ skillIndex, name, skillPart, trigger, output }</code>.</li>
+    <li><code>get_projectile_count.facts</code> is <code>{ skillIndex, value }</code>.</li>
+    <li><code>get_curse_limit.facts</code> is <code>{ value }</code>.</li>
+    <li><code>explain_stat.facts</code> is <code>{ stat, value }</code>.</li>
     <li><code>get_projectile_count</code> reads <code>activeSkillList[skillIndex].output.ProjectileCount</code>.</li>
     <li><code>get_curse_limit</code> reads <code>player.output.EnemyCurseLimit</code>.</li>
     <li>Missing build state, invalid/non-integer skill indexes, and missing stats return <code>nil, error</code> with the same error convention.</li>
