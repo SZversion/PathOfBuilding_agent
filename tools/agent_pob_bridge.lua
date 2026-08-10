@@ -33,6 +33,8 @@ if request.tool == "resolve_skill_context" or request.tool == "get_support_links
 	result, err = tool(build, args.skillSetSelector, args.skillName)
 elseif request.tool == "compare_support_effect" or request.tool == "explain_damage_change" then
 	result, err = tool(build, args.skillSetSelector, args.skillName, args.supportName)
+elseif request.tool == "get_item_modifiers" then
+	result, err = tool(build, args.itemId)
 else
 	result, err = tool(build, args.skillIndex)
 end
