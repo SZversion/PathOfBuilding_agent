@@ -58,4 +58,16 @@ assert(chainResult.facts.chain.Chain == 2 and chainResult.facts.chain.ChainMax =
 assert(build.skillsTab.activeSkillSetId == 1 and build.mainSocketGroup == 1)
 local noChain, noChainErr = tool.get_skill_chain(build, "6) endgame setup", "Missing Skill")
 assert(noChain == nil and noChainErr and build.skillsTab.activeSkillSetId == 1 and build.mainSocketGroup == 1)
+
+build.skillsTab.skillSets[2].socketGroupList[1].gemList[2] = { name = "Greater Volley", nameSpec = "Greater Volley", enabled = true }
+GlobalCache = { cachedData = { MAIN = { }, CALCS = { } } }
+wipeGlobalCache = function() GlobalCache.cachedData.MAIN = { } end
+build.calcsTab.BuildOutput = function()
+	local support = build.skillsTab.skillSets[2].socketGroupList[1].gemList[2].enabled
+	GlobalCache.cachedData.MAIN[1] = { Name = "Poisonous Concoction of Bouncing", Env = { player = { output = support and { ProjectileCount = 5, Chain = 4, ChainMax = 5, ChainRemaining = 1, TotalDPS = 1000 } or { ProjectileCount = 3, Chain = 2, ChainMax = 3, ChainRemaining = 1, TotalDPS = 700 } } } }
+end
+local comparison = assert(tool.compare_support_effect(build, "6) endgame setup", "Poisonous Concoction of Bouncing", "Greater Volley"))
+assert(comparison.facts.enabled.output.Chain == 4 and comparison.facts.disabled.output.Chain == 2)
+assert(comparison.facts.delta.Chain == 2 and comparison.facts.delta.ChainMax == 2 and comparison.facts.delta.TotalDPS == 300)
+assert(build.skillsTab.skillSets[2].socketGroupList[1].gemList[2].enabled == true)
 print("agent mechanism tool contract self-check passed")

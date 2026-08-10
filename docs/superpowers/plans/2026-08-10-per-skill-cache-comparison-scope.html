@@ -9,7 +9,7 @@
 <p>Expose the individual skill calculation cached by PoB and compare a support gem enabled versus disabled, including projectile count, chain count, remaining chains, and DPS.</p>
 <h2>In scope</h2>
 <div class="scope"><ul>
-<li>Read per-skill results from <code>GlobalCache.cachedData.MAIN/CALCS[*].Env.player.mainSkill.output</code>.</li>
+<li>Read per-skill results from <code>GlobalCache.cachedData.MAIN/CALCS[*].Env.player.output</code>; the cache entry's <code>Name</code> identifies the calculated main skill.</li>
 <li>Use PoB's existing <code>cacheSkillUUID(skill, env)</code> and cache entries; do not copy or reimplement formulas.</li>
 <li>Add a Tool that compares one named support gem in one named skill group with <code>enabled=true</code> and <code>enabled=false</code>.</li>
 <li>For each state expose <code>ProjectileCount</code>, <code>Chain</code>, <code>ChainMax</code>, <code>ChainRemaining</code>, <code>ChainMaxString</code>, and <code>TotalDPS</code> when present.</li>
