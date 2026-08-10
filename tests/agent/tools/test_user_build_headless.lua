@@ -14,6 +14,10 @@ assert(build.agentSnapshot.outputs, "snapshot outputs are missing")
 assert(#build.agentSnapshot.skills > 0, "snapshot skills are missing")
 
 local tools = LoadModule("Modules/AgentTool")
+local mechanisms = LoadModule("Modules/AgentMechanismTool")
+local mechanism = assert(mechanisms.get_mechanism_snapshot(build))
+assert(#mechanism.facts.skills > 0, "mechanism skills are missing")
+local socketGroupCount = #mechanism.facts.socketGroups
 local projectileIndex
 for index, skill in ipairs(build.calcsTab.mainEnv.player.activeSkillList) do
 	if skill.output and skill.output.ProjectileCount ~= nil then
@@ -31,4 +35,4 @@ local curse = assert(tools.get_curse_limit(build))
 assert(curse.facts.value ~= nil, "curse tool has no value")
 local explanation = assert(build.explainAgentStat("Life"))
 assert(explanation.value ~= nil, "Life explanation has no value")
-print("user build tool smoke test passed: skills=" .. #build.agentSnapshot.skills .. ", projectile=" .. projectileValue .. ", curse=" .. tostring(curse.facts.value) .. ", life=" .. tostring(explanation.value))
+print("user build tool smoke test passed: skills=" .. #build.agentSnapshot.skills .. ", socketGroups=" .. socketGroupCount .. ", projectile=" .. projectileValue .. ", curse=" .. tostring(curse.facts.value) .. ", life=" .. tostring(explanation.value) .. ", combatSimulation=" .. mechanism.facts.simulations.combatOutcome.status)

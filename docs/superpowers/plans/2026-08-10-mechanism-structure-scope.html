@@ -16,10 +16,10 @@
   <h2>In scope</h2>
   <div class="scope"><ul>
     <li>Add one read-only <code>AgentMechanismTool.lua</code> module.</li>
-    <li>Expose socket groups, gem order, item slot, enabled state, and main-skill indexes.</li>
+    <li>Expose socket groups, gem order, item slot, enabled state, and main-skill indexes from <code>build.skillsTab.socketGroupList</code>.</li>
     <li>Expose calculated skill metadata, trigger metadata, and scalar output values.</li>
     <li>Expose available projectile and curse facts through the existing <code>AgentTool</code>.</li>
-    <li>Expose PoB breakdown traces when present.</li>
+    <li>Expose scalar entries from <code>player.breakdown</code> and each active skill's <code>breakdown</code> when present.</li>
     <li>Attach <code>status = calculated</code>, <code>unavailable</code>, or <code>not_simulated</code> to each derived area.</li>
     <li>Return the existing Fact Envelope shape and use only Lua standard features.</li>
     <li>Add one deterministic fake-build self-check and extend the external smoke test.</li>
