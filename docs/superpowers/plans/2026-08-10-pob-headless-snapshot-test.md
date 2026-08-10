@@ -4,7 +4,7 @@
 
 **Goal:** Execute the existing PoB calculation pipeline against the user's `Imported build.xml` and verify the AgentSnapshot and explanation contracts.
 
-**Architecture:** Keep the PoB source and AgentSnapshot bridge unchanged. Add one test-only Lua runner that reads an external XML path from `POB_AGENT_TEST_BUILD`, invokes `HeadlessWrapper.lua`, loads the XML through `loadBuildFromXML`, and asserts the recalculated in-memory snapshot. The user file remains outside the repository and is never overwritten.
+**Architecture:** Keep the PoB source and AgentSnapshot bridge unchanged. Add one test-only Lua runner that reads an external XML path from `POB_AGENT_TEST_BUILD`, invokes `HeadlessWrapper.lua` from the `src` working directory, loads the XML through `loadBuildFromXML`, and asserts the recalculated in-memory snapshot. The user file remains outside the repository and is never overwritten.
 
 **Tech Stack:** PoB Lua runtime, LuaJIT, PowerShell environment variable, existing Lua `assert` checks.
 
@@ -29,7 +29,7 @@
 
 - [ ] **Step 1: Check for an existing runtime**
 
-Run:
+Run from the repository's `src` directory:
 
 ```powershell
 Get-Command luajit -ErrorAction SilentlyContinue
@@ -75,10 +75,11 @@ Expected: A successful Lua version line; do not commit machine-specific install 
 
 - [ ] **Step 1: Write the test runner**
 
-Create:
+Create (the runner is invoked from `src`, so it prepends the repository Lua module paths):
 
 ```lua
 local buildPath = assert(os.getenv("POB_AGENT_TEST_BUILD"), "POB_AGENT_TEST_BUILD is required")
+package.path = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;" .. package.path
 local file = assert(io.open(buildPath, "r"))
 local xml = file:read("*a")
 file:close()
@@ -137,7 +138,7 @@ $env:POB_AGENT_TEST_BUILD = 'C:\Users\SZ\Documents\Path of Building\Builds\3.29\
 Run:
 
 ```powershell
-luajit tests/agent/tools/test_user_build_headless.lua
+luajit ../tests/agent/tools/test_user_build_headless.lua
 ```
 
 Expected: `user build snapshot test passed: ...` and exit code 0.

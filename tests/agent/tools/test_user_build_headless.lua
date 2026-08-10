@@ -1,9 +1,10 @@
 local buildPath = assert(os.getenv("POB_AGENT_TEST_BUILD"), "POB_AGENT_TEST_BUILD is required")
+package.path = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;" .. package.path
 local file = assert(io.open(buildPath, "r"))
 local xml = file:read("*a")
 file:close()
 
-dofile("src/HeadlessWrapper.lua")
+dofile("HeadlessWrapper.lua")
 loadBuildFromXML(xml, "Agent external build test")
 runCallback("OnFrame")
 
