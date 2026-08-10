@@ -59,8 +59,14 @@ envelope = {
   calculationVersion = string,
   facts = table,
   sources = string[],
-  trace = table[] -- only for requested explanations
+  trace = table[] -- empty for non-explain tools
 }</code></pre>
+  <p><code>AgentTool.lua</code> must normalize the existing snapshot shapes into this envelope; it must not expose <code>outputs</code> or <code>skills</code> as the top-level tool contract.</p>
+  <ul>
+    <li><code>get_projectile_count</code> reads <code>activeSkillList[skillIndex].output.ProjectileCount</code>.</li>
+    <li><code>get_curse_limit</code> reads <code>player.output.EnemyCurseLimit</code>.</li>
+    <li>Missing build state, invalid/non-integer skill indexes, and missing stats return <code>nil, error</code> with the same error convention.</li>
+  </ul>
 
   <h2>Implementation steps</h2>
   <ol>
@@ -77,8 +83,8 @@ envelope = {
     <li>No PoB calculation module is modified.</li>
     <li>Every tool is read-only and returns the same envelope shape.</li>
     <li>Invalid input returns an explicit error instead of throwing an opaque error.</li>
-    <li>Projectile and curse results match the recalculated PoB output.</li>
-    <li>Focused tests pass with the user's external build.</li>
+    <li>Projectile and curse results expose the exact PoB output keys above.</li>
+    <li>Focused user-build testing is a smoke test: it asserts snapshot creation, skill count, and non-nil projectile/curse values without hard-coding patch-sensitive numbers.</li>
   </ul>
 
   <h2>Files allowed to change</h2>
