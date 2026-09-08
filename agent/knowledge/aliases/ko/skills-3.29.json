@@ -1,0 +1,5945 @@
+{
+  "schemaVersion": 1,
+  "game": "PoE1",
+  "patchRange": "3.29",
+  "source": "POE1 Korean PoB (2026.08.07) 3.29_ALL_translations.csv",
+  "exactStringPolicy": "Korean spelling and spacing are preserved exactly.",
+  "entries": [
+    {
+      "english": "Absolution",
+      "skillId": "Absolution",
+      "gemId": "Metadata/Items/Gems/SkillGemAbsolution",
+      "variantId": "Absolution",
+      "korean": "면죄",
+      "category": "skill"
+    },
+    {
+      "english": "Absolution of Inspiring",
+      "skillId": "AbsolutionAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemAbsolutionAltX",
+      "variantId": "AbsolutionAltX",
+      "korean": "격려의 면죄",
+      "category": "skill"
+    },
+    {
+      "english": "Added Chaos Damage",
+      "skillId": "SupportAddedChaosDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAddedChaosDamage",
+      "variantId": "SupportAddedChaosDamage",
+      "korean": "카오스 피해 추가",
+      "category": "skill"
+    },
+    {
+      "english": "Added Cold Damage",
+      "skillId": "SupportAddedColdDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAddedColdDamage",
+      "variantId": "SupportAddedColdDamage",
+      "korean": "냉기 피해 추가",
+      "category": "skill"
+    },
+    {
+      "english": "Added Fire Damage",
+      "skillId": "SupportAddedFireDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAddedFireDamage",
+      "variantId": "SupportAddedFireDamage",
+      "korean": "화염 피해 추가",
+      "category": "skill"
+    },
+    {
+      "english": "Added Lightning Damage",
+      "skillId": "SupportAddedLightningDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAddedLightningDamage",
+      "variantId": "SupportAddedLightningDamage",
+      "korean": "번개 피해 추가",
+      "category": "skill"
+    },
+    {
+      "english": "Additional Accuracy",
+      "skillId": "SupportAdditionalAccuracy",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAdditionalAccuracy",
+      "variantId": "SupportAdditionalAccuracy",
+      "korean": "정확도 추가",
+      "category": "skill"
+    },
+    {
+      "english": "Advanced Traps",
+      "skillId": "SupportAdvancedTraps",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAdvancedTraps",
+      "variantId": "SupportAdvancedTraps",
+      "korean": "향상된 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Alchemist's Mark",
+      "skillId": "AlchemistsMark",
+      "gemId": "Metadata/Items/Gems/SkillGemAlchemistsMark",
+      "variantId": "AlchemistsMark",
+      "korean": "연금술사의 징표",
+      "category": "skill"
+    },
+    {
+      "english": "Ambush",
+      "skillId": "Ambush",
+      "gemId": "Metadata/Items/Gems/SkillGemAmbush",
+      "variantId": "Ambush",
+      "korean": "매복",
+      "category": "skill"
+    },
+    {
+      "english": "Ancestral Call",
+      "skillId": "SupportAncestralCall",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAncestralCall",
+      "variantId": "SupportAncestralCall",
+      "korean": "선대의 부름",
+      "category": "skill"
+    },
+    {
+      "english": "Ancestral Cry",
+      "skillId": "AncestralCry",
+      "gemId": "Metadata/Items/Gems/SkillGemAncestralCry",
+      "variantId": "AncestralCry",
+      "korean": "선대의 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Anger",
+      "skillId": "Anger",
+      "gemId": "Metadata/Items/Gems/SkillGemAnger",
+      "variantId": "Anger",
+      "korean": "분노",
+      "category": "skill"
+    },
+    {
+      "english": "Animate Guardian",
+      "skillId": "AnimateGuardian",
+      "gemId": "Metadata/Items/Gems/SkillGemAnimateGuardian",
+      "variantId": "AnimateGuardian",
+      "korean": "수호자 기동",
+      "category": "skill"
+    },
+    {
+      "english": "Animate Guardian of Smiting",
+      "skillId": "AnimateGuardianAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemAnimateGuardianAltX",
+      "variantId": "AnimateGuardianAltX",
+      "korean": "징벌의 수호자 기동",
+      "category": "skill"
+    },
+    {
+      "english": "Animate Weapon",
+      "skillId": "AnimateWeapon",
+      "gemId": "Metadata/Items/Gems/SkillGemAnimateWeapon",
+      "variantId": "AnimateWeapon",
+      "korean": "무기 기동",
+      "category": "skill"
+    },
+    {
+      "english": "Animate Weapon of Ranged Arms",
+      "skillId": "AnimateWeaponAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemAnimateWeaponAltY",
+      "variantId": "AnimateWeaponAltY",
+      "korean": "원거리 병기의 무기 기동",
+      "category": "skill"
+    },
+    {
+      "english": "Animate Weapon of Self Reflection",
+      "skillId": "AnimateWeaponAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemAnimateWeaponAltX",
+      "variantId": "AnimateWeaponAltX",
+      "korean": "자기 반사의 무기 기동",
+      "category": "skill"
+    },
+    {
+      "english": "Annihilation",
+      "skillId": "SupportAnnhilation",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportAnnhilation",
+      "variantId": "SupportAnnhilation",
+      "korean": "전멸",
+      "category": "skill"
+    },
+    {
+      "english": "Arc",
+      "skillId": "Arc",
+      "gemId": "Metadata/Items/Gems/SkillGemArc",
+      "variantId": "Arc",
+      "korean": "연쇄 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Arc of Oscillating",
+      "skillId": "ArcAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemArcAltY",
+      "variantId": "ArcAltY",
+      "korean": "뇌동의 연쇄 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Arc of Surging",
+      "skillId": "ArcAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemArcAltX",
+      "variantId": "ArcAltX",
+      "korean": "쇄도의 연쇄 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Arcane Cloak",
+      "skillId": "ArcaneCloak",
+      "gemId": "Metadata/Items/Gems/SkillGemArcaneCloak",
+      "variantId": "ArcaneCloak",
+      "korean": "비전의 망토",
+      "category": "skill"
+    },
+    {
+      "english": "Arcane Surge",
+      "skillId": "SupportArcaneSurge",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportArcaneSurge",
+      "variantId": "SupportArcaneSurge",
+      "korean": "비전 쇄도",
+      "category": "skill"
+    },
+    {
+      "english": "Arcanist Brand",
+      "skillId": "BrandSupport",
+      "gemId": "Metadata/Items/Gems/SkillGemBrandSupport",
+      "variantId": "BrandSupport",
+      "korean": "신비학자 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Archmage",
+      "skillId": "SupportArchmage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportArchmage",
+      "variantId": "SupportArchmage",
+      "korean": "대마법사",
+      "category": "skill"
+    },
+    {
+      "english": "Arctic Armour",
+      "skillId": "ArcticArmour",
+      "gemId": "Metadata/Items/Gems/SkillGemArcticArmour",
+      "variantId": "ArcticArmour",
+      "korean": "한기의 방어구",
+      "category": "skill"
+    },
+    {
+      "english": "Armageddon Brand",
+      "skillId": "ArmageddonBrand",
+      "gemId": "Metadata/Items/Gems/SkillGemArmageddonBrand",
+      "variantId": "ArmageddonBrand",
+      "korean": "종말의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Armageddon Brand of Recall",
+      "skillId": "ArmageddonBrandAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemArmageddonBrandAltY",
+      "variantId": "ArmageddonBrandAltY",
+      "korean": "소환의 종말의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Armageddon Brand of Volatility",
+      "skillId": "ArmageddonBrandAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemArmageddonBrandAltX",
+      "variantId": "ArmageddonBrandAltX",
+      "korean": "일촉즉발의 종말의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Arrogance",
+      "skillId": "SupportArrogance",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportArrogance",
+      "variantId": "SupportArrogance",
+      "korean": "오만",
+      "category": "skill"
+    },
+    {
+      "english": "Arrow Nova",
+      "skillId": "SupportArrowNova",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportArrowNova",
+      "variantId": "SupportArrowNova",
+      "korean": "화살 산개",
+      "category": "skill"
+    },
+    {
+      "english": "Artillery Ballista",
+      "skillId": "ArtilleryBallista",
+      "gemId": "Metadata/Items/Gems/SkillGemArtilleryBallista",
+      "variantId": "ArtilleryBallista",
+      "korean": "포대 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Artillery Ballista of Cross Strafe",
+      "skillId": "ArtilleryBallistaAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemArtilleryBallistaAltX",
+      "variantId": "ArtilleryBallistaAltX",
+      "korean": "십자 포화의 포대 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Artillery Ballista of Focus Fire",
+      "skillId": "ArtilleryBallistaAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemArtilleryBallistaAltY",
+      "variantId": "ArtilleryBallistaAltY",
+      "korean": "집중 사격의 포대 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Assassin's Mark",
+      "skillId": "AssassinsMark",
+      "gemId": "Metadata/Items/Gems/SkillGemAssassinsMark",
+      "variantId": "AssassinsMark",
+      "korean": "암살자의 징표",
+      "category": "skill"
+    },
+    {
+      "english": "Autoexertion",
+      "skillId": "Autoexertion",
+      "gemId": "Metadata/Items/Gems/SkillGemAutoexertion",
+      "variantId": "Autoexertion",
+      "korean": "자동 전력",
+      "category": "skill"
+    },
+    {
+      "english": "Automation",
+      "skillId": "Automation",
+      "gemId": "Metadata/Items/Gems/SkillGemAutomation",
+      "variantId": "Automation",
+      "korean": "자동화",
+      "category": "skill"
+    },
+    {
+      "english": "Ball Lightning",
+      "skillId": "BallLightning",
+      "gemId": "Metadata/Items/Gems/SkillGemBallLightning",
+      "variantId": "BallLightning",
+      "korean": "구형 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Ball Lightning of Orbiting",
+      "skillId": "BallLightningAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBallLightningAltX",
+      "variantId": "BallLightningAltX",
+      "korean": "공전의 구형 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Ball Lightning of Static",
+      "skillId": "BallLightningAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemBallLightningAltY",
+      "variantId": "BallLightningAltY",
+      "korean": "정전기의 구형 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Ballista Totem",
+      "skillId": "SupportBallistaTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBallistaTotem",
+      "variantId": "SupportBallistaTotem",
+      "korean": "쇠뇌 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Bane",
+      "skillId": "Bane",
+      "gemId": "Metadata/Items/Gems/SkillGemBane",
+      "variantId": "Bane",
+      "korean": "파멸",
+      "category": "skill"
+    },
+    {
+      "english": "Bane of Condemnation",
+      "skillId": "BaneAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBaneAltX",
+      "variantId": "BaneAltX",
+      "korean": "규탄의 파멸",
+      "category": "skill"
+    },
+    {
+      "english": "Barrage",
+      "skillId": "Barrage",
+      "gemId": "Metadata/Items/Gems/SkillGemBarrage",
+      "variantId": "Barrage",
+      "korean": "연발 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Barrage Support",
+      "skillId": "SupportBarrage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBarrage",
+      "variantId": "SupportBarrage",
+      "korean": "연발 사격 보조",
+      "category": "skill"
+    },
+    {
+      "english": "Barrage of Volley Fire",
+      "skillId": "BarrageAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBarrageAltX",
+      "variantId": "BarrageAltX",
+      "korean": "일제 포격의 연발 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Battlemage's Cry",
+      "skillId": "BattlemagesCry",
+      "gemId": "Metadata/Items/Gems/SkillGemBattlemagesCry",
+      "variantId": "BattlemagesCry",
+      "korean": "전투마법사의 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Bear Trap",
+      "skillId": "BearTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemBearTrap",
+      "variantId": "BearTrap",
+      "korean": "곰 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Bear Trap of Skewers",
+      "skillId": "BearTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBearTrapAltX",
+      "variantId": "BearTrapAltX",
+      "korean": "꼬챙이의 곰 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Behead",
+      "skillId": "SupportBehead",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBehead",
+      "variantId": "SupportBehead",
+      "korean": "참수",
+      "category": "skill"
+    },
+    {
+      "english": "Berserk",
+      "skillId": "Berserk",
+      "gemId": "Metadata/Items/Gems/SkillGemBerserk",
+      "variantId": "Berserk",
+      "korean": "광폭",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Blast",
+      "skillId": "BladeBlast",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeBlast",
+      "variantId": "BladeBlast",
+      "korean": "칼날 폭격",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Blast of Dagger Detonation",
+      "skillId": "BladeBlastAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeBlastAltY",
+      "variantId": "BladeBlastAltY",
+      "korean": "단검 폭파의 칼날 폭격",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Blast of Unloading",
+      "skillId": "BladeBlastAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeBlastAltX",
+      "variantId": "BladeBlastAltX",
+      "korean": "난사의 칼날 폭격",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Flurry",
+      "skillId": "BladeFlurry",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeFlurry",
+      "variantId": "BladeFlurry",
+      "korean": "질풍의 칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Flurry of Incision",
+      "skillId": "BladeFlurryAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeFlurryAltX",
+      "variantId": "BladeFlurryAltX",
+      "korean": "절개의 질풍의 칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Trap",
+      "skillId": "BladeTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeTrap",
+      "variantId": "BladeTrap",
+      "korean": "칼날 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Trap of Greatswords",
+      "skillId": "BladeTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeTrapAltX",
+      "variantId": "BladeTrapAltX",
+      "korean": "대검의 칼날 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Trap of Laceration",
+      "skillId": "BladeTrapAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeTrapAltY",
+      "variantId": "BladeTrapAltY",
+      "korean": "열상의 칼날 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Vortex",
+      "skillId": "BladeVortex",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeVortex",
+      "variantId": "BladeVortex",
+      "korean": "칼날 소용돌이",
+      "category": "skill"
+    },
+    {
+      "english": "Blade Vortex of the Scythe",
+      "skillId": "BladeVortexAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBladeVortexAltX",
+      "variantId": "BladeVortexAltX",
+      "korean": "낫의 칼날 소용돌이",
+      "category": "skill"
+    },
+    {
+      "english": "Bladefall",
+      "skillId": "Bladefall",
+      "gemId": "Metadata/Items/Gems/SkillGemBladefall",
+      "variantId": "Bladefall",
+      "korean": "칼날비",
+      "category": "skill"
+    },
+    {
+      "english": "Bladefall of Impaling",
+      "skillId": "BladefallAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemBladefallAltY",
+      "variantId": "BladefallAltY",
+      "korean": "꿰뚫기의 칼날비",
+      "category": "skill"
+    },
+    {
+      "english": "Bladefall of Trarthus",
+      "skillId": "BladefallAltZ",
+      "gemId": "Metadata/Items/Gems/SkillGemBladefallAltZ",
+      "variantId": "BladefallAltZ",
+      "korean": "트라투스의 칼날비",
+      "category": "skill"
+    },
+    {
+      "english": "Bladefall of Volleys",
+      "skillId": "BladefallAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBladefallAltX",
+      "variantId": "BladefallAltX",
+      "korean": "사격 공세의 칼날비",
+      "category": "skill"
+    },
+    {
+      "english": "Bladestorm",
+      "skillId": "Bladestorm",
+      "gemId": "Metadata/Items/Gems/SkillGemBladestorm",
+      "variantId": "Bladestorm",
+      "korean": "칼날 폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Bladestorm of Uncertainty",
+      "skillId": "BladestormAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBladestormAltX",
+      "variantId": "BladestormAltX",
+      "korean": "불확실성의 칼날 폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Blasphemy",
+      "skillId": "SupportBlasphemy",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBlasphemy",
+      "variantId": "SupportBlasphemy",
+      "korean": "신성 모독",
+      "category": "skill"
+    },
+    {
+      "english": "Blast Rain",
+      "skillId": "BlastRain",
+      "gemId": "Metadata/Items/Gems/SkillGemBlastRain",
+      "variantId": "BlastRain",
+      "korean": "폭발 화살비",
+      "category": "skill"
+    },
+    {
+      "english": "Blast Rain of Trarthus",
+      "skillId": "BlastRainAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBlastRainAltX",
+      "variantId": "BlastRainAltX",
+      "korean": "트라투스의 폭발 화살비",
+      "category": "skill"
+    },
+    {
+      "english": "Blastchain Mine",
+      "skillId": "SupportBlastchainMine",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBlastchainMine",
+      "variantId": "SupportBlastchainMine",
+      "korean": "연쇄 폭발 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Blazing Salvo",
+      "skillId": "BlazingSalvo",
+      "gemId": "Metadata/Items/Gems/SkillGemBlazingSalvo",
+      "variantId": "BlazingSalvo",
+      "korean": "맹렬한 포격",
+      "category": "skill"
+    },
+    {
+      "english": "Blessed Call",
+      "skillId": "SupportBlessedCall",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBlessedCall",
+      "variantId": "SupportBlessedCall",
+      "korean": "축복받은 부름",
+      "category": "skill"
+    },
+    {
+      "english": "Blight",
+      "skillId": "Blight",
+      "gemId": "Metadata/Items/Gems/SkillGemBlight",
+      "variantId": "Blight",
+      "korean": "황폐",
+      "category": "skill"
+    },
+    {
+      "english": "Blight of Atrophy",
+      "skillId": "BlightAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemBlightAltY",
+      "variantId": "BlightAltY",
+      "korean": "위축의 황폐",
+      "category": "skill"
+    },
+    {
+      "english": "Blight of Contagion",
+      "skillId": "BlightAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBlightAltX",
+      "variantId": "BlightAltX",
+      "korean": "전염의 황폐",
+      "category": "skill"
+    },
+    {
+      "english": "Blind",
+      "skillId": "SupportBlind",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBlind",
+      "variantId": "SupportBlind",
+      "korean": "실명",
+      "category": "skill"
+    },
+    {
+      "english": "Blink Arrow",
+      "skillId": "BlinkArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemBlinkArrow",
+      "variantId": "BlinkArrow",
+      "korean": "점멸 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Blink Arrow of Bombarding Clones",
+      "skillId": "BlinkArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBlinkArrowAltX",
+      "variantId": "BlinkArrowAltX",
+      "korean": "포격 분신의 점멸 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Blink Arrow of Prismatic Clones",
+      "skillId": "BlinkArrowAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemBlinkArrowAltY",
+      "variantId": "BlinkArrowAltY",
+      "korean": "분광 분신의 점멸 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Blood Rage",
+      "skillId": "BloodRage",
+      "gemId": "Metadata/Items/Gems/SkillGemBloodRage",
+      "variantId": "BloodRage",
+      "korean": "피의 격노",
+      "category": "skill"
+    },
+    {
+      "english": "Blood and Sand",
+      "skillId": "BloodAndSand",
+      "gemId": "Metadata/Items/Gems/SkillGemBloodAndSand",
+      "variantId": "BloodAndSand",
+      "korean": "피와 모래",
+      "category": "skill"
+    },
+    {
+      "english": "Bloodlust",
+      "skillId": "SupportBloodlust",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBloodlust",
+      "variantId": "SupportBloodlust",
+      "korean": "유혈 충동",
+      "category": "skill"
+    },
+    {
+      "english": "Bloodthirst",
+      "skillId": "SupportBloodthirst",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBloodthirst",
+      "variantId": "SupportBloodthirst",
+      "korean": "피의 갈증",
+      "category": "skill"
+    },
+    {
+      "english": "Bodyswap",
+      "skillId": "Bodyswap",
+      "gemId": "Metadata/Items/Gems/SkillGemBodyswap",
+      "variantId": "Bodyswap",
+      "korean": "신체 전환",
+      "category": "skill"
+    },
+    {
+      "english": "Bodyswap of Sacrifice",
+      "skillId": "BodyswapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBodyswapAltX",
+      "variantId": "BodyswapAltX",
+      "korean": "희생의 신체 전환",
+      "category": "skill"
+    },
+    {
+      "english": "Bone Offering",
+      "skillId": "BoneOffering",
+      "gemId": "Metadata/Items/Gems/SkillGemBoneOffering",
+      "variantId": "BoneOffering",
+      "korean": "뼈 공물",
+      "category": "skill"
+    },
+    {
+      "english": "Bonechill",
+      "skillId": "SupportBonechill",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBonechill",
+      "variantId": "SupportBonechill",
+      "korean": "사무치는 한기",
+      "category": "skill"
+    },
+    {
+      "english": "Boneshatter",
+      "skillId": "Boneshatter",
+      "gemId": "Metadata/Items/Gems/SkillGemBoneshatter",
+      "variantId": "Boneshatter",
+      "korean": "뼈 박살",
+      "category": "skill"
+    },
+    {
+      "english": "Boneshatter of Carnage",
+      "skillId": "BoneshatterAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemBoneshatterAltY",
+      "variantId": "BoneshatterAltY",
+      "korean": "살육의 뼈 박살",
+      "category": "skill"
+    },
+    {
+      "english": "Boneshatter of Complex Trauma",
+      "skillId": "BoneshatterAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBoneshatterAltX",
+      "variantId": "BoneshatterAltX",
+      "korean": "복합 외상의 뼈 박살",
+      "category": "skill"
+    },
+    {
+      "english": "Brand Recall",
+      "skillId": "BrandRecall",
+      "gemId": "Metadata/Items/Gems/SkillGemBrandRecall",
+      "variantId": "BrandRecall",
+      "korean": "낙인 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Brutality",
+      "skillId": "SupportBrutality",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBrutality",
+      "variantId": "SupportBrutality",
+      "korean": "포악함",
+      "category": "skill"
+    },
+    {
+      "english": "Burning Arrow",
+      "skillId": "BurningArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemBurningArrow",
+      "variantId": "BurningArrow",
+      "korean": "불타는 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Burning Arrow of Vigour",
+      "skillId": "BurningArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemBurningArrowAltX",
+      "variantId": "BurningArrowAltX",
+      "korean": "활력의 불타는 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Burning Damage",
+      "skillId": "SupportBurningDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportBurningDamage",
+      "variantId": "SupportBurningDamage",
+      "korean": "화상 피해",
+      "category": "skill"
+    },
+    {
+      "english": "Cast On Critical Strike",
+      "skillId": "SupportCastOnCriticalStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCastOnCriticalStrike",
+      "variantId": "SupportCastOnCriticalStrike",
+      "korean": "치명타 시 시전",
+      "category": "skill"
+    },
+    {
+      "english": "Cast on Death",
+      "skillId": "SupportCastOnDeath",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCastOnDeath",
+      "variantId": "SupportCastOnDeath",
+      "korean": "사망 시 시전",
+      "category": "skill"
+    },
+    {
+      "english": "Cast on Melee Kill",
+      "skillId": "SupportCastOnMeleeKill",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCastonMeleeKill",
+      "variantId": "SupportCastonMeleeKill",
+      "korean": "근접 처치 시 시전",
+      "category": "skill"
+    },
+    {
+      "english": "Cast when Damage Taken",
+      "skillId": "SupportCastWhenDamageTaken",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCastWhenDamageTaken",
+      "variantId": "SupportCastWhenDamageTaken",
+      "korean": "피격 시 시전",
+      "category": "skill"
+    },
+    {
+      "english": "Cast when Stunned",
+      "skillId": "SupportCastWhenStunned",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCastWhenStunned",
+      "variantId": "SupportCastWhenStunned",
+      "korean": "기절 시 시전",
+      "category": "skill"
+    },
+    {
+      "english": "Cast while Channelling",
+      "skillId": "SupportCastWhileChannelling",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCastWhileChannelling",
+      "variantId": "SupportCastWhileChannelling",
+      "korean": "집중 유지 중 시전",
+      "category": "skill"
+    },
+    {
+      "english": "Caustic Arrow",
+      "skillId": "CausticArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemCausticArrow",
+      "variantId": "CausticArrow",
+      "korean": "부식성 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Caustic Arrow of Poison",
+      "skillId": "CausticArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemCausticArrowAltX",
+      "variantId": "CausticArrowAltX",
+      "korean": "독의 부식성 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Chain",
+      "skillId": "SupportChain",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportChain",
+      "variantId": "SupportChain",
+      "korean": "연쇄",
+      "category": "skill"
+    },
+    {
+      "english": "Chain Hook",
+      "skillId": "ChainHook",
+      "gemId": "Metadata/Items/Gems/SkillGemChainHook",
+      "variantId": "ChainHook",
+      "korean": "사슬 갈고리",
+      "category": "skill"
+    },
+    {
+      "english": "Chain Hook of Trarthus",
+      "skillId": "ChainHookAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemChainHookAltY",
+      "variantId": "ChainHookAltY",
+      "korean": "트라투스의 사슬 갈고리",
+      "category": "skill"
+    },
+    {
+      "english": "Chance to Bleed",
+      "skillId": "SupportChanceToBleed",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportChancetoBleed",
+      "variantId": "SupportChancetoBleed",
+      "korean": "출혈 확률",
+      "category": "skill"
+    },
+    {
+      "english": "Chance to Flee",
+      "skillId": "SupportChanceToFlee",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportChancetoFlee",
+      "variantId": "SupportChancetoFlee",
+      "korean": "도망칠 확률",
+      "category": "skill"
+    },
+    {
+      "english": "Chance to Poison",
+      "skillId": "SupportChanceToPoison",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportChancetoPoison",
+      "variantId": "SupportChancetoPoison",
+      "korean": "중독 확률",
+      "category": "skill"
+    },
+    {
+      "english": "Charged Dash",
+      "skillId": "ChargedDash",
+      "gemId": "Metadata/Items/Gems/SkillGemChargedDash",
+      "variantId": "ChargedDash",
+      "korean": "충전 질주",
+      "category": "skill"
+    },
+    {
+      "english": "Charged Dash of Projection",
+      "skillId": "ChargedDashAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemChargedDashAltX",
+      "variantId": "ChargedDashAltX",
+      "korean": "투영의 충전 질주",
+      "category": "skill"
+    },
+    {
+      "english": "Charged Mines",
+      "skillId": "SupportChargedMines",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportChargedMines",
+      "variantId": "SupportChargedMines",
+      "korean": "충전된 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Charged Traps",
+      "skillId": "SupportChargedTraps",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportChargedTraps",
+      "variantId": "SupportChargedTraps",
+      "korean": "충전된 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Clarity",
+      "skillId": "Clarity",
+      "gemId": "Metadata/Items/Gems/SkillGemClarity",
+      "variantId": "Clarity",
+      "korean": "명상",
+      "category": "skill"
+    },
+    {
+      "english": "Cleave",
+      "skillId": "Cleave",
+      "gemId": "Metadata/Items/Gems/SkillGemCleave",
+      "variantId": "Cleave",
+      "korean": "회전베기",
+      "category": "skill"
+    },
+    {
+      "english": "Cleave of Rage",
+      "skillId": "CleaveAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemCleaveAltX",
+      "variantId": "CleaveAltX",
+      "korean": "격노의 회전베기",
+      "category": "skill"
+    },
+    {
+      "english": "Close Combat",
+      "skillId": "SupportCloseCombat",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCloseCombat",
+      "variantId": "SupportCloseCombat",
+      "korean": "근접 전투",
+      "category": "skill"
+    },
+    {
+      "english": "Cluster Traps",
+      "skillId": "SupportClusterTraps",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportClusterTraps",
+      "variantId": "SupportClusterTraps",
+      "korean": "무리 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Cobra Lash",
+      "skillId": "CobraLash",
+      "gemId": "Metadata/Items/Gems/SkillGemCobraLash",
+      "variantId": "CobraLash",
+      "korean": "코브라 채찍",
+      "category": "skill"
+    },
+    {
+      "english": "Cold Penetration",
+      "skillId": "SupportColdPenetration",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportColdPenetration",
+      "variantId": "SupportColdPenetration",
+      "korean": "냉기 관통",
+      "category": "skill"
+    },
+    {
+      "english": "Cold Snap",
+      "skillId": "ColdSnap",
+      "gemId": "Metadata/Items/Gems/SkillGemColdSnap",
+      "variantId": "ColdSnap",
+      "korean": "한파",
+      "category": "skill"
+    },
+    {
+      "english": "Cold Snap of Power",
+      "skillId": "ColdSnapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemColdSnapAltX",
+      "variantId": "ColdSnapAltX",
+      "korean": "권능의 한파",
+      "category": "skill"
+    },
+    {
+      "english": "Cold to Fire",
+      "skillId": "SupportColdToFire",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportColdtoFire",
+      "variantId": "SupportColdtoFire",
+      "korean": "냉기 화염 전환",
+      "category": "skill"
+    },
+    {
+      "english": "Combustion",
+      "skillId": "SupportCombustion",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCombustion",
+      "variantId": "SupportCombustion",
+      "korean": "연소",
+      "category": "skill"
+    },
+    {
+      "english": "Communion",
+      "skillId": "SupportMinionPact",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMinionPact",
+      "variantId": "SupportMinionPact",
+      "korean": "교감",
+      "category": "skill"
+    },
+    {
+      "english": "Concentrated Effect",
+      "skillId": "SupportConcentratedEffect",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportConcentratedEffect",
+      "variantId": "SupportConcentratedEffect",
+      "korean": "효과 집중",
+      "category": "skill"
+    },
+    {
+      "english": "Conductivity",
+      "skillId": "Conductivity",
+      "gemId": "Metadata/Items/Gems/SkillGemConductivity",
+      "variantId": "Conductivity",
+      "korean": "전도성",
+      "category": "skill"
+    },
+    {
+      "english": "Conflagration",
+      "skillId": "Conflagration",
+      "gemId": "Metadata/Items/Gems/SkillGemConflagration",
+      "variantId": "Conflagration",
+      "korean": "연소 화재",
+      "category": "skill"
+    },
+    {
+      "english": "Consecrated Path",
+      "skillId": "ConsecratedPath",
+      "gemId": "Metadata/Items/Gems/SkillGemConsecratedPath",
+      "variantId": "ConsecratedPath",
+      "korean": "축성의 진격",
+      "category": "skill"
+    },
+    {
+      "english": "Consecrated Path of Endurance",
+      "skillId": "ConsecratedPathAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemConsecratedPathAltX",
+      "variantId": "ConsecratedPathAltX",
+      "korean": "인내의 축성의 진격",
+      "category": "skill"
+    },
+    {
+      "english": "Contagion",
+      "skillId": "Contagion",
+      "gemId": "Metadata/Items/Gems/SkillGemContagion",
+      "variantId": "Contagion",
+      "korean": "전염",
+      "category": "skill"
+    },
+    {
+      "english": "Contagion of Subsiding",
+      "skillId": "ContagionAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemContagionAltX",
+      "variantId": "ContagionAltX",
+      "korean": "침하의 전염",
+      "category": "skill"
+    },
+    {
+      "english": "Contagion of Transference",
+      "skillId": "ContagionAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemContagionAltY",
+      "variantId": "ContagionAltY",
+      "korean": "전이의 전염",
+      "category": "skill"
+    },
+    {
+      "english": "Controlled Blaze",
+      "skillId": "SupportControlledBlaze",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportControlledBlaze",
+      "variantId": "SupportControlledBlaze",
+      "korean": "제어된 불길",
+      "category": "skill"
+    },
+    {
+      "english": "Controlled Destruction",
+      "skillId": "SupportControlledDestruction",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportControlledDestruction",
+      "variantId": "SupportControlledDestruction",
+      "korean": "제어된 파괴",
+      "category": "skill"
+    },
+    {
+      "english": "Conversion Trap",
+      "skillId": "ConversionTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemConversionTrap",
+      "variantId": "ConversionTrap",
+      "korean": "전향 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Convocation",
+      "skillId": "Convocation",
+      "gemId": "Metadata/Items/Gems/SkillGemConvocation",
+      "variantId": "Convocation",
+      "korean": "소집",
+      "category": "skill"
+    },
+    {
+      "english": "Corrupting Cry",
+      "skillId": "SupportCorruptingCry",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCorruptingCry",
+      "variantId": "SupportCorruptingCry",
+      "korean": "타락시키는 비명",
+      "category": "skill"
+    },
+    {
+      "english": "Corrupting Fever",
+      "skillId": "CorruptingFever",
+      "gemId": "Metadata/Items/Gems/SkillGemCorruptingFever",
+      "variantId": "CorruptingFever",
+      "korean": "타락한 열병",
+      "category": "skill"
+    },
+    {
+      "english": "Crackling Lance",
+      "skillId": "CracklingLance",
+      "gemId": "Metadata/Items/Gems/SkillGemCracklingLance",
+      "variantId": "CracklingLance",
+      "korean": "치직대는 창",
+      "category": "skill"
+    },
+    {
+      "english": "Crackling Lance of Branching",
+      "skillId": "CracklingLanceAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemCracklingLanceAltX",
+      "variantId": "CracklingLanceAltX",
+      "korean": "파생의 치직대는 창",
+      "category": "skill"
+    },
+    {
+      "english": "Crackling Lance of Disintegration",
+      "skillId": "CracklingLanceAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemCracklingLanceAltY",
+      "variantId": "CracklingLanceAltY",
+      "korean": "분해의 치직대는 창",
+      "category": "skill"
+    },
+    {
+      "english": "Creeping Frost",
+      "skillId": "CreepingFrost",
+      "gemId": "Metadata/Items/Gems/SkillGemCreepingFrost",
+      "variantId": "CreepingFrost",
+      "korean": "엄습하는 서리",
+      "category": "skill"
+    },
+    {
+      "english": "Creeping Frost of Floes",
+      "skillId": "CreepingFrostAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemCreepingFrostAltX",
+      "variantId": "CreepingFrostAltX",
+      "korean": "부빙의 엄습하는 서리",
+      "category": "skill"
+    },
+    {
+      "english": "Cremation",
+      "skillId": "Cremation",
+      "gemId": "Metadata/Items/Gems/SkillGemCremation",
+      "variantId": "Cremation",
+      "korean": "시체 소각",
+      "category": "skill"
+    },
+    {
+      "english": "Cremation of Exhuming",
+      "skillId": "CremationAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemCremationAltX",
+      "variantId": "CremationAltX",
+      "korean": "발굴의 시체 소각",
+      "category": "skill"
+    },
+    {
+      "english": "Cremation of the Volcano",
+      "skillId": "CremationAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemCremationAltY",
+      "variantId": "CremationAltY",
+      "korean": "화산의 시체 소각",
+      "category": "skill"
+    },
+    {
+      "english": "Critical Strike Affliction",
+      "skillId": "SupportCriticalStrikeAffliction",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCriticalStrikeAffliction",
+      "variantId": "SupportCriticalStrikeAffliction",
+      "korean": "치명타 고통 격화",
+      "category": "skill"
+    },
+    {
+      "english": "Cruelty",
+      "skillId": "SupportCruelty",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCruelty",
+      "variantId": "SupportCruelty",
+      "korean": "잔혹",
+      "category": "skill"
+    },
+    {
+      "english": "Crushing Fist",
+      "skillId": "CrushingFist",
+      "gemId": "Metadata/Items/Gems/SkillGemCrushingFist",
+      "variantId": "CrushingFist",
+      "korean": "타쇄하는 주먹",
+      "category": "skill"
+    },
+    {
+      "english": "Crystalfall",
+      "skillId": "SupportCrystalfall",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCrystalfall",
+      "variantId": "SupportCrystalfall",
+      "korean": "수정 낙하",
+      "category": "skill"
+    },
+    {
+      "english": "Culling Strike",
+      "skillId": "SupportCullingStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCullingStrike",
+      "variantId": "SupportCullingStrike",
+      "korean": "마무리 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Cursed Ground",
+      "skillId": "SupportCursedGround",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportCursedGround",
+      "variantId": "SupportCursedGround",
+      "korean": "저주받은 지대",
+      "category": "skill"
+    },
+    {
+      "english": "Cyclone",
+      "skillId": "Cyclone",
+      "gemId": "Metadata/Items/Gems/SkillGemCyclone",
+      "variantId": "Cyclone",
+      "korean": "회오리바람",
+      "category": "skill"
+    },
+    {
+      "english": "Cyclone of Tumult",
+      "skillId": "CycloneAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemCycloneAltX",
+      "variantId": "CycloneAltX",
+      "korean": "소동의 회오리바람",
+      "category": "skill"
+    },
+    {
+      "english": "Damage on Full Life",
+      "skillId": "SupportDamageOnFullLife",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportDamageOnFullLife",
+      "variantId": "SupportDamageOnFullLife",
+      "korean": "최대 생명력 시 피해",
+      "category": "skill"
+    },
+    {
+      "english": "Dark Bargain",
+      "skillId": "DarkPact",
+      "gemId": "Metadata/Items/Gems/SkillGemDarkPact",
+      "variantId": "DarkPact",
+      "korean": "어둠의 협상",
+      "category": "skill"
+    },
+    {
+      "english": "Dark Bargain of Trarthus",
+      "skillId": "DarkPactAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDarkPactAltX",
+      "variantId": "DarkPactAltX",
+      "korean": "트라투스의 어둠의 협상",
+      "category": "skill"
+    },
+    {
+      "english": "Dash",
+      "skillId": "Dash",
+      "gemId": "Metadata/Items/Gems/SkillGemDash",
+      "variantId": "Dash",
+      "korean": "질주",
+      "category": "skill"
+    },
+    {
+      "english": "Deadly Ailments",
+      "skillId": "SupportDeadlyAilments",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportDeadlyAilments",
+      "variantId": "SupportDeadlyAilments",
+      "korean": "치명적인 상태 이상",
+      "category": "skill"
+    },
+    {
+      "english": "Decay",
+      "skillId": "SupportDecay",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportDecay",
+      "variantId": "SupportDecay",
+      "korean": "부패",
+      "category": "skill"
+    },
+    {
+      "english": "Decoy Totem",
+      "skillId": "DecoyTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemDecoyTotem",
+      "variantId": "DecoyTotem",
+      "korean": "미끼 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Defiance Banner",
+      "skillId": "DefianceBanner",
+      "gemId": "Metadata/Items/Gems/SkillGemDefianceBanner",
+      "variantId": "DefianceBanner",
+      "korean": "저항의 깃발",
+      "category": "skill"
+    },
+    {
+      "english": "Desecrate",
+      "skillId": "Desecrate",
+      "gemId": "Metadata/Items/Gems/SkillGemDesecrate",
+      "variantId": "Desecrate",
+      "korean": "모독",
+      "category": "skill"
+    },
+    {
+      "english": "Despair",
+      "skillId": "Despair",
+      "gemId": "Metadata/Items/Gems/SkillGemDespair",
+      "variantId": "Despair",
+      "korean": "절망",
+      "category": "skill"
+    },
+    {
+      "english": "Destructive Link",
+      "skillId": "DestructiveLink",
+      "gemId": "Metadata/Items/Gems/SkillGemDestructiveLink",
+      "variantId": "DestructiveLink",
+      "korean": "파괴의 연결",
+      "category": "skill"
+    },
+    {
+      "english": "Determination",
+      "skillId": "Determination",
+      "gemId": "Metadata/Items/Gems/SkillGemDetermination",
+      "variantId": "Determination",
+      "korean": "결의",
+      "category": "skill"
+    },
+    {
+      "english": "Detonate Dead",
+      "skillId": "DetonateDead",
+      "gemId": "Metadata/Items/Gems/SkillGemDetonateDead",
+      "variantId": "DetonateDead",
+      "korean": "시체 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Detonate Dead of Chain Reaction",
+      "skillId": "DetonateDeadAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemDetonateDeadAltY",
+      "variantId": "DetonateDeadAltY",
+      "korean": "연쇄 반응의 시체 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Detonate Dead of Scavenging",
+      "skillId": "DetonateDeadAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDetonateDeadAltX",
+      "variantId": "DetonateDeadAltX",
+      "korean": "청소부의 시체 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Detonate Mines",
+      "skillId": "GemDetonateMines",
+      "gemId": "Metadata/Items/Gems/SkillGemGemDetonateMines",
+      "variantId": "GemDetonateMines",
+      "korean": "지뢰 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Devour",
+      "skillId": "SupportDevour",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportDevour",
+      "variantId": "SupportDevour",
+      "korean": "포식",
+      "category": "skill"
+    },
+    {
+      "english": "Devouring Totem",
+      "skillId": "DevouringTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemDevouringTotem",
+      "variantId": "DevouringTotem",
+      "korean": "포식 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Discharge",
+      "skillId": "Discharge",
+      "gemId": "Metadata/Items/Gems/SkillGemDischarge",
+      "variantId": "Discharge",
+      "korean": "방출",
+      "category": "skill"
+    },
+    {
+      "english": "Discharge of Misery",
+      "skillId": "DischargeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDischargeAltX",
+      "variantId": "DischargeAltX",
+      "korean": "비참의 방출",
+      "category": "skill"
+    },
+    {
+      "english": "Discipline",
+      "skillId": "Discipline",
+      "gemId": "Metadata/Items/Gems/SkillGemDiscipline",
+      "variantId": "Discipline",
+      "korean": "단련",
+      "category": "skill"
+    },
+    {
+      "english": "Divine Blast",
+      "skillId": "DivineBlast",
+      "gemId": "Metadata/Items/Gems/SkillGemDivineBlast",
+      "variantId": "DivineBlast",
+      "korean": "신성한 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Divine Blast of Radiance",
+      "skillId": "DivineBlastAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDivineBlastAltX",
+      "variantId": "DivineBlastAltX",
+      "korean": "광휘의 신성한 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Divine Ire",
+      "skillId": "DivineIre",
+      "gemId": "Metadata/Items/Gems/SkillGemDivineIre",
+      "variantId": "DivineIre",
+      "korean": "신성한 진노",
+      "category": "skill"
+    },
+    {
+      "english": "Divine Ire of Disintegration",
+      "skillId": "DivineIreAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemDivineIreAltY",
+      "variantId": "DivineIreAltY",
+      "korean": "분해의 신성한 진노",
+      "category": "skill"
+    },
+    {
+      "english": "Divine Ire of Holy Lightning",
+      "skillId": "DivineIreAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDivineIreAltX",
+      "variantId": "DivineIreAltX",
+      "korean": "상서로운 번개의 신성한 진노",
+      "category": "skill"
+    },
+    {
+      "english": "Divine Retribution",
+      "skillId": "DivineRetribution",
+      "gemId": "Metadata/Items/Gems/SkillGemDivineRetribution",
+      "variantId": "DivineRetribution",
+      "korean": "신성한 응징",
+      "category": "skill"
+    },
+    {
+      "english": "Dominating Blow",
+      "skillId": "DominatingBlow",
+      "gemId": "Metadata/Items/Gems/SkillGemDominatingBlow",
+      "variantId": "DominatingBlow",
+      "korean": "지배의 맹타",
+      "category": "skill"
+    },
+    {
+      "english": "Dominating Blow of Inspiring",
+      "skillId": "DominatingBlowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDominatingBlowAltX",
+      "variantId": "DominatingBlowAltX",
+      "korean": "격려의 지배의 맹타",
+      "category": "skill"
+    },
+    {
+      "english": "Double Strike",
+      "skillId": "DoubleStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemDoubleStrike",
+      "variantId": "DoubleStrike",
+      "korean": "이중 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Double Strike of Impaling",
+      "skillId": "DoubleStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDoubleStrikeAltX",
+      "variantId": "DoubleStrikeAltX",
+      "korean": "꿰뚫기의 이중 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Double Strike of Momentum",
+      "skillId": "DoubleStrikeAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemDoubleStrikeAltY",
+      "variantId": "DoubleStrikeAltY",
+      "korean": "기세의 이중 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Dread Banner",
+      "skillId": "DreadBanner",
+      "gemId": "Metadata/Items/Gems/SkillGemDreadBanner",
+      "variantId": "DreadBanner",
+      "korean": "공포의 깃발",
+      "category": "skill"
+    },
+    {
+      "english": "Dual Strike",
+      "skillId": "DualStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemDualStrike",
+      "variantId": "DualStrike",
+      "korean": "쌍수 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Dual Strike of Ambidexterity",
+      "skillId": "DualStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemDualStrikeAltX",
+      "variantId": "DualStrikeAltX",
+      "korean": "양손잡이의 쌍수 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Earthquake",
+      "skillId": "Earthquake",
+      "gemId": "Metadata/Items/Gems/SkillGemEarthquake",
+      "variantId": "Earthquake",
+      "korean": "지진",
+      "category": "skill"
+    },
+    {
+      "english": "Earthquake of Amplification",
+      "skillId": "EarthquakeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemEarthquakeAltX",
+      "variantId": "EarthquakeAltX",
+      "korean": "증폭의 지진",
+      "category": "skill"
+    },
+    {
+      "english": "Earthshatter",
+      "skillId": "Earthshatter",
+      "gemId": "Metadata/Items/Gems/SkillGemEarthshatter",
+      "variantId": "Earthshatter",
+      "korean": "지면 분쇄",
+      "category": "skill"
+    },
+    {
+      "english": "Earthshatter of Fragility",
+      "skillId": "EarthshatterAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemEarthshatterAltX",
+      "variantId": "EarthshatterAltX",
+      "korean": "허약의 지면 분쇄",
+      "category": "skill"
+    },
+    {
+      "english": "Earthshatter of Prominence",
+      "skillId": "EarthshatterAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemEarthshatterAltY",
+      "variantId": "EarthshatterAltY",
+      "korean": "출중의 지면 분쇄",
+      "category": "skill"
+    },
+    {
+      "english": "Efficacy",
+      "skillId": "SupportEfficacy",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportEfficacy",
+      "variantId": "SupportEfficacy",
+      "korean": "효력",
+      "category": "skill"
+    },
+    {
+      "english": "Elemental Army",
+      "skillId": "SupportElementalArmy",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportElementalArmy",
+      "variantId": "SupportElementalArmy",
+      "korean": "원소의 군단",
+      "category": "skill"
+    },
+    {
+      "english": "Elemental Damage with Attacks",
+      "skillId": "SupportElementalDamageWithAttacks",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportElementalDamageWithAttacks",
+      "variantId": "SupportElementalDamageWithAttacks",
+      "korean": "공격 시 원소 피해",
+      "category": "skill"
+    },
+    {
+      "english": "Elemental Focus",
+      "skillId": "SupportElementalFocus",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportElementalFocus",
+      "variantId": "SupportElementalFocus",
+      "korean": "원소 집중",
+      "category": "skill"
+    },
+    {
+      "english": "Elemental Hit",
+      "skillId": "ElementalHit",
+      "gemId": "Metadata/Items/Gems/SkillGemElementalHit",
+      "variantId": "ElementalHit",
+      "korean": "원소의 일격",
+      "category": "skill"
+    },
+    {
+      "english": "Elemental Hit of the Spectrum",
+      "skillId": "ElementalHitAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemElementalHitAltX",
+      "variantId": "ElementalHitAltX",
+      "korean": "파장의 원소의 일격",
+      "category": "skill"
+    },
+    {
+      "english": "Elemental Proliferation",
+      "skillId": "SupportElementalProliferation",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportElementalProliferation",
+      "variantId": "SupportElementalProliferation",
+      "korean": "원소 확산",
+      "category": "skill"
+    },
+    {
+      "english": "Elemental Weakness",
+      "skillId": "ElementalWeakness",
+      "gemId": "Metadata/Items/Gems/SkillGemElementalWeakness",
+      "variantId": "ElementalWeakness",
+      "korean": "원소 약화",
+      "category": "skill"
+    },
+    {
+      "english": "Endurance Charge on Melee Stun",
+      "skillId": "SupportEnduranceChargeOnMeleeStun",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportEnduranceChargeOnMeleeStun",
+      "variantId": "SupportEnduranceChargeOnMeleeStun",
+      "korean": "기절 시 인내 충전",
+      "category": "skill"
+    },
+    {
+      "english": "Enduring Cry",
+      "skillId": "EnduringCry",
+      "gemId": "Metadata/Items/Gems/SkillGemEnduringCry",
+      "variantId": "EnduringCry",
+      "korean": "인내의 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Energy Blade",
+      "skillId": "EnergyBlade",
+      "gemId": "Metadata/Items/Gems/SkillGemEnergyBlade",
+      "variantId": "EnergyBlade",
+      "korean": "에너지 칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Energy Leech",
+      "skillId": "SupportEnergyLeech",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportEnergyLeech",
+      "variantId": "SupportEnergyLeech",
+      "korean": "에너지 흡수",
+      "category": "skill"
+    },
+    {
+      "english": "Enfeeble",
+      "skillId": "Enfeeble",
+      "gemId": "Metadata/Items/Gems/SkillGemEnfeeble",
+      "variantId": "Enfeeble",
+      "korean": "쇠약화",
+      "category": "skill"
+    },
+    {
+      "english": "Ensnaring Arrow",
+      "skillId": "EnsnaringArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemEnsnaringArrow",
+      "variantId": "EnsnaringArrow",
+      "korean": "올가미 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Essence Drain",
+      "skillId": "EssenceDrain",
+      "gemId": "Metadata/Items/Gems/SkillGemEssenceDrain",
+      "variantId": "EssenceDrain",
+      "korean": "정수 흡수",
+      "category": "skill"
+    },
+    {
+      "english": "Essence Drain of Desperation",
+      "skillId": "EssenceDrainAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemEssenceDrainAltX",
+      "variantId": "EssenceDrainAltX",
+      "korean": "필사의 정수 흡수",
+      "category": "skill"
+    },
+    {
+      "english": "Essence Drain of Wickedness",
+      "skillId": "EssenceDrainAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemEssenceDrainAltY",
+      "variantId": "EssenceDrainAltY",
+      "korean": "사악함의 정수 흡수",
+      "category": "skill"
+    },
+    {
+      "english": "Eternal Blessing",
+      "skillId": "SupportEternalBlessing",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportEternalBlessing",
+      "variantId": "SupportEternalBlessing",
+      "korean": "영원한 축복",
+      "category": "skill"
+    },
+    {
+      "english": "Ethereal Knives",
+      "skillId": "EtherealKnives",
+      "gemId": "Metadata/Items/Gems/SkillGemEtherealKnives",
+      "variantId": "EtherealKnives",
+      "korean": "천상의 단도",
+      "category": "skill"
+    },
+    {
+      "english": "Ethereal Knives of Lingering Blades",
+      "skillId": "EtherealKnivesAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemEtherealKnivesAltX",
+      "variantId": "EtherealKnivesAltX",
+      "korean": "지속되는 칼날의 천상의 단도",
+      "category": "skill"
+    },
+    {
+      "english": "Ethereal Knives of the Massacre",
+      "skillId": "EtherealKnivesAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemEtherealKnivesAltY",
+      "variantId": "EtherealKnivesAltY",
+      "korean": "도륙의 천상의 단도",
+      "category": "skill"
+    },
+    {
+      "english": "Eviscerate",
+      "skillId": "Eviscerate",
+      "gemId": "Metadata/Items/Gems/SkillGemEviscerate",
+      "variantId": "Eviscerate",
+      "korean": "내장 적출",
+      "category": "skill"
+    },
+    {
+      "english": "Excommunicate",
+      "skillId": "SupportExcommunicate",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportExcommunicate",
+      "variantId": "SupportExcommunicate",
+      "korean": "제명",
+      "category": "skill"
+    },
+    {
+      "english": "Exemplar",
+      "skillId": "SupportExemplar",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportExemplar",
+      "variantId": "SupportExemplar",
+      "korean": "귀감",
+      "category": "skill"
+    },
+    {
+      "english": "Expert Retaliation",
+      "skillId": "SupportExpertRetaliation",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportExpertRetaliation",
+      "variantId": "SupportExpertRetaliation",
+      "korean": "노련한 보복",
+      "category": "skill"
+    },
+    {
+      "english": "Explosive Arrow",
+      "skillId": "ExplosiveArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemExplosiveArrow",
+      "variantId": "ExplosiveArrow",
+      "korean": "폭발 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Explosive Concoction",
+      "skillId": "ExplosiveConcoction",
+      "gemId": "Metadata/Items/Gems/SkillGemExplosiveConcoction",
+      "variantId": "ExplosiveConcoction",
+      "korean": "폭발성 혼합물",
+      "category": "skill"
+    },
+    {
+      "english": "Explosive Concoction of Destruction",
+      "skillId": "ExplosiveConcoctionAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemExplosiveConcoctionAltX",
+      "variantId": "ExplosiveConcoctionAltX",
+      "korean": "파괴의 폭발성 혼합물",
+      "category": "skill"
+    },
+    {
+      "english": "Explosive Trap",
+      "skillId": "ExplosiveTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemExplosiveTrap",
+      "variantId": "ExplosiveTrap",
+      "korean": "폭발 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Explosive Trap of Magnitude",
+      "skillId": "ExplosiveTrapAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemExplosiveTrapAltY",
+      "variantId": "ExplosiveTrapAltY",
+      "korean": "규모의 폭발 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Explosive Trap of Shrapnel",
+      "skillId": "ExplosiveTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemExplosiveTrapAltX",
+      "variantId": "ExplosiveTrapAltX",
+      "korean": "파편의 폭발 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Exsanguinate",
+      "skillId": "Exsanguinate",
+      "gemId": "Metadata/Items/Gems/SkillGemExsanguinate",
+      "variantId": "Exsanguinate",
+      "korean": "방혈",
+      "category": "skill"
+    },
+    {
+      "english": "Exsanguinate of Transmission",
+      "skillId": "ExsanguinateAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemExsanguinateAltX",
+      "variantId": "ExsanguinateAltX",
+      "korean": "전송의 방혈",
+      "category": "skill"
+    },
+    {
+      "english": "Eye of Winter",
+      "skillId": "EyeOfWinter",
+      "gemId": "Metadata/Items/Gems/SkillGemEyeOfWinter",
+      "variantId": "EyeOfWinter",
+      "korean": "겨울의 눈",
+      "category": "skill"
+    },
+    {
+      "english": "Eye of Winter of Finality",
+      "skillId": "EyeOfWinterAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemEyeOfWinterAltX",
+      "variantId": "EyeOfWinterAltX",
+      "korean": "종극의 겨울의 눈",
+      "category": "skill"
+    },
+    {
+      "english": "Eye of Winter of Transience",
+      "skillId": "EyeOfWinterAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemEyeOfWinterAltY",
+      "variantId": "EyeOfWinterAltY",
+      "korean": "덧없음의 겨울의 눈",
+      "category": "skill"
+    },
+    {
+      "english": "Faster Attacks",
+      "skillId": "SupportFasterAttacks",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFasterAttacks",
+      "variantId": "SupportFasterAttacks",
+      "korean": "공격 속도 증가",
+      "category": "skill"
+    },
+    {
+      "english": "Faster Casting",
+      "skillId": "SupportFasterCasting",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFasterCasting",
+      "variantId": "SupportFasterCasting",
+      "korean": "시전 속도 증가",
+      "category": "skill"
+    },
+    {
+      "english": "Faster Projectiles",
+      "skillId": "SupportFasterProjectiles",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFasterProjectiles",
+      "variantId": "SupportFasterProjectiles",
+      "korean": "투사체 속도 증가",
+      "category": "skill"
+    },
+    {
+      "english": "Feeding Frenzy",
+      "skillId": "SupportFeedingFrenzy",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFeedingFrenzy",
+      "variantId": "SupportFeedingFrenzy",
+      "korean": "격분 주입",
+      "category": "skill"
+    },
+    {
+      "english": "Fire Penetration",
+      "skillId": "SupportFirePenetration",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFirePenetration",
+      "variantId": "SupportFirePenetration",
+      "korean": "화염 관통",
+      "category": "skill"
+    },
+    {
+      "english": "Fire Trap",
+      "skillId": "FireTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemFireTrap",
+      "variantId": "FireTrap",
+      "korean": "화염 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Fire Trap of Blasting",
+      "skillId": "FireTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFireTrapAltX",
+      "variantId": "FireTrapAltX",
+      "korean": "폭발의 화염 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Fireball",
+      "skillId": "Fireball",
+      "gemId": "Metadata/Items/Gems/SkillGemFireball",
+      "variantId": "Fireball",
+      "korean": "화염구",
+      "category": "skill"
+    },
+    {
+      "english": "Firestorm",
+      "skillId": "Firestorm",
+      "gemId": "Metadata/Items/Gems/SkillGemFirestorm",
+      "variantId": "Firestorm",
+      "korean": "화염 폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Firestorm of Meteors",
+      "skillId": "FirestormAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFirestormAltX",
+      "variantId": "FirestormAltX",
+      "korean": "유성의 화염 폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Firestorm of Pelting",
+      "skillId": "FirestormAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemFirestormAltY",
+      "variantId": "FirestormAltY",
+      "korean": "퍼부음의 화염 폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Fissure",
+      "skillId": "SupportFissure",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFissure",
+      "variantId": "SupportFissure",
+      "korean": "균열",
+      "category": "skill"
+    },
+    {
+      "english": "Fist of War",
+      "skillId": "SupportFistofWar",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFistofWar",
+      "variantId": "SupportFistofWar",
+      "korean": "전쟁의 주먹",
+      "category": "skill"
+    },
+    {
+      "english": "Flame Dash",
+      "skillId": "FlameDash",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameDash",
+      "variantId": "FlameDash",
+      "korean": "화염 질주",
+      "category": "skill"
+    },
+    {
+      "english": "Flame Dash of Return",
+      "skillId": "FlameDashAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameDashAltY",
+      "variantId": "FlameDashAltY",
+      "korean": "귀환의 화염 질주",
+      "category": "skill"
+    },
+    {
+      "english": "Flame Link",
+      "skillId": "FlameLink",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameLink",
+      "variantId": "FlameLink",
+      "korean": "화염의 연결",
+      "category": "skill"
+    },
+    {
+      "english": "Flame Surge",
+      "skillId": "FlameSurge",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameSurge",
+      "variantId": "FlameSurge",
+      "korean": "화염 쇄도",
+      "category": "skill"
+    },
+    {
+      "english": "Flame Surge of Combusting",
+      "skillId": "FlameSurgeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameSurgeAltX",
+      "variantId": "FlameSurgeAltX",
+      "korean": "발화의 화염 쇄도",
+      "category": "skill"
+    },
+    {
+      "english": "Flame Wall",
+      "skillId": "FlameWall",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameWall",
+      "variantId": "FlameWall",
+      "korean": "화염 벽",
+      "category": "skill"
+    },
+    {
+      "english": "Flameblast",
+      "skillId": "Flameblast",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameblast",
+      "variantId": "Flameblast",
+      "korean": "화염파",
+      "category": "skill"
+    },
+    {
+      "english": "Flameblast of Celerity",
+      "skillId": "FlameblastAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameblastAltX",
+      "variantId": "FlameblastAltX",
+      "korean": "민첩함의 화염파",
+      "category": "skill"
+    },
+    {
+      "english": "Flameblast of Contraction",
+      "skillId": "FlameblastAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemFlameblastAltY",
+      "variantId": "FlameblastAltY",
+      "korean": "수축의 화염파",
+      "category": "skill"
+    },
+    {
+      "english": "Flamethrower Trap",
+      "skillId": "FlamethrowerTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemFlamethrowerTrap",
+      "variantId": "FlamethrowerTrap",
+      "korean": "화염방사기 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Flamethrower Trap of Stability",
+      "skillId": "FlamethrowerTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFlamethrowerTrapAltX",
+      "variantId": "FlamethrowerTrapAltX",
+      "korean": "안정성의 화염방사기 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Flamewood",
+      "skillId": "SupportFlamewood",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFlamewood",
+      "variantId": "SupportFlamewood",
+      "korean": "화염나무",
+      "category": "skill"
+    },
+    {
+      "english": "Flammability",
+      "skillId": "Flammability",
+      "gemId": "Metadata/Items/Gems/SkillGemFlammability",
+      "variantId": "Flammability",
+      "korean": "인화성",
+      "category": "skill"
+    },
+    {
+      "english": "Flesh Offering",
+      "skillId": "FleshOffering",
+      "gemId": "Metadata/Items/Gems/SkillGemFleshOffering",
+      "variantId": "FleshOffering",
+      "korean": "살점 공물",
+      "category": "skill"
+    },
+    {
+      "english": "Flesh and Stone",
+      "skillId": "FleshAndStone",
+      "gemId": "Metadata/Items/Gems/SkillGemFleshAndStone",
+      "variantId": "FleshAndStone",
+      "korean": "육체와 돌",
+      "category": "skill"
+    },
+    {
+      "english": "Flicker Strike",
+      "skillId": "FlickerStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemFlickerStrike",
+      "variantId": "FlickerStrike",
+      "korean": "점멸 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Flicker Strike of Power",
+      "skillId": "FlickerStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFlickerStrikeAltX",
+      "variantId": "FlickerStrikeAltX",
+      "korean": "권능의 점멸 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Focused Ballista",
+      "skillId": "SupportFocusedBallista",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFocusedBallista",
+      "variantId": "SupportFocusedBallista",
+      "korean": "쇠뇌 집중 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Focused Channelling",
+      "skillId": "SupportFocusedChannelling",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFocusedChannelling",
+      "variantId": "SupportFocusedChannelling",
+      "korean": "집약된 집중 유지",
+      "category": "skill"
+    },
+    {
+      "english": "Forbidden Rite",
+      "skillId": "ForbiddenRite",
+      "gemId": "Metadata/Items/Gems/SkillGemForbiddenRite",
+      "variantId": "ForbiddenRite",
+      "korean": "금단의 의식",
+      "category": "skill"
+    },
+    {
+      "english": "Forbidden Rite of Soul Sacrifice",
+      "skillId": "ForbiddenRiteAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemForbiddenRiteAltX",
+      "variantId": "ForbiddenRiteAltX",
+      "korean": "영혼 희생의 금단의 의식",
+      "category": "skill"
+    },
+    {
+      "english": "Fork",
+      "skillId": "SupportFork",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFork",
+      "variantId": "SupportFork",
+      "korean": "갈래",
+      "category": "skill"
+    },
+    {
+      "english": "Fortify",
+      "skillId": "SupportFortify",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFortify",
+      "variantId": "SupportFortify",
+      "korean": "방어 상승",
+      "category": "skill"
+    },
+    {
+      "english": "Foulgrasp",
+      "skillId": "SupportFoulgrasp",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFoulgrasp",
+      "variantId": "SupportFoulgrasp",
+      "korean": "부정한 손아귀",
+      "category": "skill"
+    },
+    {
+      "english": "Freezing Pulse",
+      "skillId": "FreezingPulse",
+      "gemId": "Metadata/Items/Gems/SkillGemFreezingPulse",
+      "variantId": "FreezingPulse",
+      "korean": "동결 파동",
+      "category": "skill"
+    },
+    {
+      "english": "Frenzy",
+      "skillId": "Frenzy",
+      "gemId": "Metadata/Items/Gems/SkillGemFrenzy",
+      "variantId": "Frenzy",
+      "korean": "격분",
+      "category": "skill"
+    },
+    {
+      "english": "Frenzy of Onslaught",
+      "skillId": "FrenzyAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFrenzyAltX",
+      "variantId": "FrenzyAltX",
+      "korean": "맹공의 격분",
+      "category": "skill"
+    },
+    {
+      "english": "Fresh Meat",
+      "skillId": "SupportFreshMeat",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFreshMeat",
+      "variantId": "SupportFreshMeat",
+      "korean": "신선한 고기",
+      "category": "skill"
+    },
+    {
+      "english": "Frigid Bond",
+      "skillId": "SupportFrigidBond",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportFrigidBond",
+      "variantId": "SupportFrigidBond",
+      "korean": "차디찬 유대",
+      "category": "skill"
+    },
+    {
+      "english": "Frost Blades",
+      "skillId": "FrostBlades",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostBlades",
+      "variantId": "FrostBlades",
+      "korean": "서리 칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Frost Blades of Katabasis",
+      "skillId": "FrostBladesAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostBladesAltX",
+      "variantId": "FrostBladesAltX",
+      "korean": "퇴각의 서리 칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Frost Bomb",
+      "skillId": "FrostBomb",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostBomb",
+      "variantId": "FrostBomb",
+      "korean": "서리 폭탄",
+      "category": "skill"
+    },
+    {
+      "english": "Frost Bomb of Forthcoming",
+      "skillId": "FrostBombAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostBombAltY",
+      "variantId": "FrostBombAltY",
+      "korean": "임박의 서리 폭탄",
+      "category": "skill"
+    },
+    {
+      "english": "Frost Bomb of Instability",
+      "skillId": "FrostBombAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostBombAltX",
+      "variantId": "FrostBombAltX",
+      "korean": "불안정의 서리 폭탄",
+      "category": "skill"
+    },
+    {
+      "english": "Frost Shield",
+      "skillId": "FrostShield",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostShield",
+      "variantId": "FrostShield",
+      "korean": "서리 방패",
+      "category": "skill"
+    },
+    {
+      "english": "Frost Wall",
+      "skillId": "FrostWall",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostWall",
+      "variantId": "FrostWall",
+      "korean": "서리 방벽",
+      "category": "skill"
+    },
+    {
+      "english": "Frostbite",
+      "skillId": "Frostbite",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostbite",
+      "variantId": "Frostbite",
+      "korean": "동상",
+      "category": "skill"
+    },
+    {
+      "english": "Frostblink",
+      "skillId": "Frostblink",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostblink",
+      "variantId": "Frostblink",
+      "korean": "서리점멸",
+      "category": "skill"
+    },
+    {
+      "english": "Frostblink of Wintry Blast",
+      "skillId": "FrostblinkAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostblinkAltX",
+      "variantId": "FrostblinkAltX",
+      "korean": "차가운 폭발의 서리점멸",
+      "category": "skill"
+    },
+    {
+      "english": "Frostbolt",
+      "skillId": "FrostBolt",
+      "gemId": "Metadata/Items/Gems/SkillGemFrostBolt",
+      "variantId": "FrostBolt",
+      "korean": "서리 구체",
+      "category": "skill"
+    },
+    {
+      "english": "Frozen Legion",
+      "skillId": "FrozenLegion",
+      "gemId": "Metadata/Items/Gems/SkillGemFrozenLegion",
+      "variantId": "FrozenLegion",
+      "korean": "얼어붙은 군단",
+      "category": "skill"
+    },
+    {
+      "english": "Frozen Legion of Rallying",
+      "skillId": "FrozenLegionAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemFrozenLegionAltX",
+      "variantId": "FrozenLegionAltX",
+      "korean": "재집결의 얼어붙은 군단",
+      "category": "skill"
+    },
+    {
+      "english": "Galvanic Arrow",
+      "skillId": "GalvanicArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemGalvanicArrow",
+      "variantId": "GalvanicArrow",
+      "korean": "충격 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Galvanic Arrow of Energy",
+      "skillId": "GalvanicArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemGalvanicArrowAltX",
+      "variantId": "GalvanicArrowAltX",
+      "korean": "에너지의 충격 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Galvanic Arrow of Surging",
+      "skillId": "GalvanicArrowAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemGalvanicArrowAltY",
+      "variantId": "GalvanicArrowAltY",
+      "korean": "쇄도의 충격 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Galvanic Field",
+      "skillId": "GalvanicField",
+      "gemId": "Metadata/Items/Gems/SkillGemGalvanicField",
+      "variantId": "GalvanicField",
+      "korean": "충격장",
+      "category": "skill"
+    },
+    {
+      "english": "Galvanic Field of Intensity",
+      "skillId": "GalvanicFieldAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemGalvanicFieldAltX",
+      "variantId": "GalvanicFieldAltX",
+      "korean": "격렬함의 충격장",
+      "category": "skill"
+    },
+    {
+      "english": "General's Cry",
+      "skillId": "GeneralsCry",
+      "gemId": "Metadata/Items/Gems/SkillGemGeneralsCry",
+      "variantId": "GeneralsCry",
+      "korean": "장군의 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Generosity",
+      "skillId": "SupportGenerosity",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportGenerosity",
+      "variantId": "SupportGenerosity",
+      "korean": "관대함",
+      "category": "skill"
+    },
+    {
+      "english": "Glacial Cascade",
+      "skillId": "GlacialCascade",
+      "gemId": "Metadata/Items/Gems/SkillGemGlacialCascade",
+      "variantId": "GlacialCascade",
+      "korean": "빙하 폭포",
+      "category": "skill"
+    },
+    {
+      "english": "Glacial Cascade of the Fissure",
+      "skillId": "GlacialCascadeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemGlacialCascadeAltX",
+      "variantId": "GlacialCascadeAltX",
+      "korean": "균열의 빙하 폭포",
+      "category": "skill"
+    },
+    {
+      "english": "Glacial Hammer",
+      "skillId": "GlacialHammer",
+      "gemId": "Metadata/Items/Gems/SkillGemGlacialHammer",
+      "variantId": "GlacialHammer",
+      "korean": "빙하 망치",
+      "category": "skill"
+    },
+    {
+      "english": "Glacial Hammer of Shattering",
+      "skillId": "GlacialHammerAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemGlacialHammerAltX",
+      "variantId": "GlacialHammerAltX",
+      "korean": "산산조각의 빙하 망치",
+      "category": "skill"
+    },
+    {
+      "english": "Glacial Shield Swipe",
+      "skillId": "GlacialShieldSwipe",
+      "gemId": "Metadata/Items/Gems/SkillGemGlacialShieldSwipe",
+      "variantId": "GlacialShieldSwipe",
+      "korean": "빙하 방패 후려치기",
+      "category": "skill"
+    },
+    {
+      "english": "Gluttony",
+      "skillId": "SupportGluttony",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportGluttony",
+      "variantId": "SupportGluttony",
+      "korean": "폭식",
+      "category": "skill"
+    },
+    {
+      "english": "Grace",
+      "skillId": "Grace",
+      "gemId": "Metadata/Items/Gems/SkillGemGrace",
+      "variantId": "Grace",
+      "korean": "은총",
+      "category": "skill"
+    },
+    {
+      "english": "Greater Multiple Projectiles",
+      "skillId": "SupportGreaterMultipleProjectiles",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportGreaterMultipleProjectiles",
+      "variantId": "SupportGreaterMultipleProjectiles",
+      "korean": "상위 다중 투사체",
+      "category": "skill"
+    },
+    {
+      "english": "Greater Volley",
+      "skillId": "SupportGreaterVolley",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportGreaterVolley",
+      "variantId": "SupportGreaterVolley",
+      "korean": "상위 사격 공세",
+      "category": "skill"
+    },
+    {
+      "english": "Ground Slam",
+      "skillId": "GroundSlam",
+      "gemId": "Metadata/Items/Gems/SkillGemGroundSlam",
+      "variantId": "GroundSlam",
+      "korean": "대지 강타",
+      "category": "skill"
+    },
+    {
+      "english": "Ground Slam of Earthshaking",
+      "skillId": "GroundSlamAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemGroundSlamAltX",
+      "variantId": "GroundSlamAltX",
+      "korean": "지동의 대지 강타",
+      "category": "skill"
+    },
+    {
+      "english": "Guardian's Blessing",
+      "skillId": "SupportGuardiansBlessing",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportGuardiansBlessing",
+      "variantId": "SupportGuardiansBlessing",
+      "korean": "수호자의 축복",
+      "category": "skill"
+    },
+    {
+      "english": "Hallow",
+      "skillId": "SupportHallow",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportHallow",
+      "variantId": "SupportHallow",
+      "korean": "거룩함",
+      "category": "skill"
+    },
+    {
+      "english": "Haste",
+      "skillId": "Haste",
+      "gemId": "Metadata/Items/Gems/SkillGemHaste",
+      "variantId": "Haste",
+      "korean": "가속",
+      "category": "skill"
+    },
+    {
+      "english": "Hatred",
+      "skillId": "Hatred",
+      "gemId": "Metadata/Items/Gems/SkillGemHatred",
+      "variantId": "Hatred",
+      "korean": "증오",
+      "category": "skill"
+    },
+    {
+      "english": "Heavy Strike",
+      "skillId": "HeavyStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemHeavyStrike",
+      "variantId": "HeavyStrike",
+      "korean": "묵직한 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Heavy Strike of Trarthus",
+      "skillId": "HeavyStrikeAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemHeavyStrikeAltY",
+      "variantId": "HeavyStrikeAltY",
+      "korean": "트라투스의 묵직한 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Herald of Agony",
+      "skillId": "HeraldOfAgony",
+      "gemId": "Metadata/Items/Gems/SkillGemHeraldOfAgony",
+      "variantId": "HeraldOfAgony",
+      "korean": "고통의 전령",
+      "category": "skill"
+    },
+    {
+      "english": "Herald of Ash",
+      "skillId": "HeraldOfAsh",
+      "gemId": "Metadata/Items/Gems/SkillGemHeraldOfAsh",
+      "variantId": "HeraldOfAsh",
+      "korean": "재의 전령",
+      "category": "skill"
+    },
+    {
+      "english": "Herald of Ice",
+      "skillId": "HeraldOfIce",
+      "gemId": "Metadata/Items/Gems/SkillGemHeraldOfIce",
+      "variantId": "HeraldOfIce",
+      "korean": "얼음의 전령",
+      "category": "skill"
+    },
+    {
+      "english": "Herald of Purity",
+      "skillId": "HeraldOfPurity",
+      "gemId": "Metadata/Items/Gems/SkillGemHeraldOfPurity",
+      "variantId": "HeraldOfPurity",
+      "korean": "순수의 전령",
+      "category": "skill"
+    },
+    {
+      "english": "Herald of Thunder",
+      "skillId": "HeraldOfThunder",
+      "gemId": "Metadata/Items/Gems/SkillGemHeraldOfThunder",
+      "variantId": "HeraldOfThunder",
+      "korean": "천둥의 전령",
+      "category": "skill"
+    },
+    {
+      "english": "Hex Bloom",
+      "skillId": "SupportHexBloom",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportHexBloom",
+      "variantId": "SupportHexBloom",
+      "korean": "사술의 꽃",
+      "category": "skill"
+    },
+    {
+      "english": "Hexblast",
+      "skillId": "Hexblast",
+      "gemId": "Metadata/Items/Gems/SkillGemHexblast",
+      "variantId": "Hexblast",
+      "korean": "사술 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Hexblast of Contradiction",
+      "skillId": "HexblastAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemHexblastAltX",
+      "variantId": "HexblastAltX",
+      "korean": "상반의 사술폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Hexblast of Havoc",
+      "skillId": "HexblastAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemHexblastAltY",
+      "variantId": "HexblastAltY",
+      "korean": "혼란의 사술폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Hextouch",
+      "skillId": "SupportHextouch",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportHextouch",
+      "variantId": "SupportHextouch",
+      "korean": "사술 손길",
+      "category": "skill"
+    },
+    {
+      "english": "High-Impact Mine",
+      "skillId": "SupportHighImpactMine",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportHighImpactMine",
+      "variantId": "SupportHighImpactMine",
+      "korean": "고충격 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Holy Flame Totem",
+      "skillId": "HolyFlameTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemHolyFlameTotem",
+      "variantId": "HolyFlameTotem",
+      "korean": "신성한 화염 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Holy Flame Totem of Ire",
+      "skillId": "HolyFlameTotemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemHolyFlameTotemAltX",
+      "variantId": "HolyFlameTotemAltX",
+      "korean": "노여움의 신성한 화염 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Holy Hammers",
+      "skillId": "HolyHammers",
+      "gemId": "Metadata/Items/Gems/SkillGemHolyHammers",
+      "variantId": "HolyHammers",
+      "korean": "신성한 망치",
+      "category": "skill"
+    },
+    {
+      "english": "Holy Hammers of Spirals",
+      "skillId": "HolyHammersAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemHolyHammersAltX",
+      "variantId": "HolyHammersAltX",
+      "korean": "나선의 신성한 망치",
+      "category": "skill"
+    },
+    {
+      "english": "Holy Strike",
+      "skillId": "HolyStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemHolyStrike",
+      "variantId": "HolyStrike",
+      "korean": "신성한 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Holy Sweep",
+      "skillId": "Sweep",
+      "gemId": "Metadata/Items/Gems/SkillGemSweep",
+      "variantId": "Sweep",
+      "korean": "신성한 휩쓸기",
+      "category": "skill"
+    },
+    {
+      "english": "Holy Sweep of Hammerfalls",
+      "skillId": "SweepAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSweepAltX",
+      "variantId": "SweepAltX",
+      "korean": "망치 낙하의 신성한 휩쓸기",
+      "category": "skill"
+    },
+    {
+      "english": "Hydrosphere",
+      "skillId": "Hydrosphere",
+      "gemId": "Metadata/Items/Gems/SkillGemHydrosphere",
+      "variantId": "Hydrosphere",
+      "korean": "물의 구체",
+      "category": "skill"
+    },
+    {
+      "english": "Hypothermia",
+      "skillId": "SupportHypothermia",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportHypothermia",
+      "variantId": "SupportHypothermia",
+      "korean": "체온저하",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Bite",
+      "skillId": "SupportIceBite",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIceBite",
+      "variantId": "SupportIceBite",
+      "korean": "얼음 쐐기",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Crash",
+      "skillId": "IceCrash",
+      "gemId": "Metadata/Items/Gems/SkillGemIceCrash",
+      "variantId": "IceCrash",
+      "korean": "얼음 충격",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Crash of Cadence",
+      "skillId": "IceCrashAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemIceCrashAltX",
+      "variantId": "IceCrashAltX",
+      "korean": "운율의 얼음 충격",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Nova",
+      "skillId": "IceNova",
+      "gemId": "Metadata/Items/Gems/SkillGemIceNova",
+      "variantId": "IceNova",
+      "korean": "얼음 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Nova of Deep Freeze",
+      "skillId": "IceNovaAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemIceNovaAltY",
+      "variantId": "IceNovaAltY",
+      "korean": "결빙의 얼음 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Nova of Frostbolts",
+      "skillId": "IceNovaAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemIceNovaAltX",
+      "variantId": "IceNovaAltX",
+      "korean": "서리 구체의 얼음 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Shot",
+      "skillId": "IceShot",
+      "gemId": "Metadata/Items/Gems/SkillGemIceShot",
+      "variantId": "IceShot",
+      "korean": "얼음 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Shot of Penetration",
+      "skillId": "IceShotAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemIceShotAltX",
+      "variantId": "IceShotAltX",
+      "korean": "관통의 얼음 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Spear",
+      "skillId": "IceSpear",
+      "gemId": "Metadata/Items/Gems/SkillGemIceSpear",
+      "variantId": "IceSpear",
+      "korean": "얼음 창",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Spear of Splitting",
+      "skillId": "IceSpearAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemIceSpearAltX",
+      "variantId": "IceSpearAltX",
+      "korean": "분할의 얼음 창",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Trap",
+      "skillId": "IceTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemIceTrap",
+      "variantId": "IceTrap",
+      "korean": "얼음 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Ice Trap of Hollowness",
+      "skillId": "IceTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemIceTrapAltX",
+      "variantId": "IceTrapAltX",
+      "korean": "무상의 얼음 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Icicle Mine",
+      "skillId": "IcicleMine",
+      "gemId": "Metadata/Items/Gems/SkillGemIcicleMine",
+      "variantId": "IcicleMine",
+      "korean": "고드름 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Icicle Mine of Fanning",
+      "skillId": "IcicleMineAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemIcicleMineAltX",
+      "variantId": "IcicleMineAltX",
+      "korean": "퍼짐의 고드름 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Icicle Mine of Sabotage",
+      "skillId": "IcicleMineAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemIcicleMineAltY",
+      "variantId": "IcicleMineAltY",
+      "korean": "방해 공작의 고드름 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Ignite Proliferation",
+      "skillId": "SupportIgniteProliferation",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIgniteProliferation",
+      "variantId": "SupportIgniteProliferation",
+      "korean": "점화 확산",
+      "category": "skill"
+    },
+    {
+      "english": "Immolate",
+      "skillId": "SupportImmolate",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportImmolate",
+      "variantId": "SupportImmolate",
+      "korean": "번제",
+      "category": "skill"
+    },
+    {
+      "english": "Immortal Call",
+      "skillId": "ImmortalCall",
+      "gemId": "Metadata/Items/Gems/SkillGemImmortalCall",
+      "variantId": "ImmortalCall",
+      "korean": "불멸의 외침",
+      "category": "skill"
+    },
+    {
+      "english": "Impale",
+      "skillId": "SupportImpale",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportImpale",
+      "variantId": "SupportImpale",
+      "korean": "꿰뚫기",
+      "category": "skill"
+    },
+    {
+      "english": "Impending Doom",
+      "skillId": "SupportImpendingDoom",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportImpendingDoom",
+      "variantId": "SupportImpendingDoom",
+      "korean": "임박한 멸망",
+      "category": "skill"
+    },
+    {
+      "english": "Incinerate",
+      "skillId": "Incinerate",
+      "gemId": "Metadata/Items/Gems/SkillGemIncinerate",
+      "variantId": "Incinerate",
+      "korean": "소각",
+      "category": "skill"
+    },
+    {
+      "english": "Incinerate of Expanse",
+      "skillId": "IncinerateAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemIncinerateAltX",
+      "variantId": "IncinerateAltX",
+      "korean": "광야의 소각",
+      "category": "skill"
+    },
+    {
+      "english": "Incinerate of Venting",
+      "skillId": "IncinerateAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemIncinerateAltY",
+      "variantId": "IncinerateAltY",
+      "korean": "환기의 소각",
+      "category": "skill"
+    },
+    {
+      "english": "Increased Area of Effect",
+      "skillId": "SupportIncreasedAreaOfEffect",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIncreasedAreaofEffect",
+      "variantId": "SupportIncreasedAreaofEffect",
+      "korean": "효과 범위 증가",
+      "category": "skill"
+    },
+    {
+      "english": "Increased Critical Damage",
+      "skillId": "SupportIncreasedCriticalDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIncreasedCriticalDamage",
+      "variantId": "SupportIncreasedCriticalDamage",
+      "korean": "치명타 피해 증가",
+      "category": "skill"
+    },
+    {
+      "english": "Increased Critical Strikes",
+      "skillId": "SupportIncreasedCriticalStrikes",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIncreasedCriticalStrikes",
+      "variantId": "SupportIncreasedCriticalStrikes",
+      "korean": "치명타 증가",
+      "category": "skill"
+    },
+    {
+      "english": "Infernal Blow",
+      "skillId": "InfernalBlow",
+      "gemId": "Metadata/Items/Gems/SkillGemInfernalBlow",
+      "variantId": "InfernalBlow",
+      "korean": "지옥불 맹타",
+      "category": "skill"
+    },
+    {
+      "english": "Infernal Blow of Immolation",
+      "skillId": "InfernalBlowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemInfernalBlowAltX",
+      "variantId": "InfernalBlowAltX",
+      "korean": "제물의 지옥불 맹타",
+      "category": "skill"
+    },
+    {
+      "english": "Infernal Cry",
+      "skillId": "InfernalCry",
+      "gemId": "Metadata/Items/Gems/SkillGemInfernalCry",
+      "variantId": "InfernalCry",
+      "korean": "지옥불 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Infernal Legion",
+      "skillId": "SupportInfernalLegion",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportInfernalLegion",
+      "variantId": "SupportInfernalLegion",
+      "korean": "지옥불 군단",
+      "category": "skill"
+    },
+    {
+      "english": "Infused Channelling",
+      "skillId": "SupportInfusedChannelling",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportInfusedChannelling",
+      "variantId": "SupportInfusedChannelling",
+      "korean": "깊어지는 집중 유지",
+      "category": "skill"
+    },
+    {
+      "english": "Innervate",
+      "skillId": "SupportInnervate",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportInnervate",
+      "variantId": "SupportInnervate",
+      "korean": "자극",
+      "category": "skill"
+    },
+    {
+      "english": "Inspiration",
+      "skillId": "SupportInspiration",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportInspiration",
+      "variantId": "SupportInspiration",
+      "korean": "영감",
+      "category": "skill"
+    },
+    {
+      "english": "Intensify",
+      "skillId": "SupportIntensify",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIntensify",
+      "variantId": "SupportIntensify",
+      "korean": "격화",
+      "category": "skill"
+    },
+    {
+      "english": "Intimidating Cry",
+      "skillId": "IntimidatingCry",
+      "gemId": "Metadata/Items/Gems/SkillGemIntimidatingCry",
+      "variantId": "IntimidatingCry",
+      "korean": "위협의 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Intuitive Link",
+      "skillId": "IntuitiveLink",
+      "gemId": "Metadata/Items/Gems/SkillGemIntuitiveLink",
+      "variantId": "IntuitiveLink",
+      "korean": "직관의 연결",
+      "category": "skill"
+    },
+    {
+      "english": "Iron Grip",
+      "skillId": "SupportIronGrip",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIronGrip",
+      "variantId": "SupportIronGrip",
+      "korean": "강철 손아귀",
+      "category": "skill"
+    },
+    {
+      "english": "Iron Will",
+      "skillId": "SupportIronWill",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportIronWill",
+      "variantId": "SupportIronWill",
+      "korean": "강철의 의지",
+      "category": "skill"
+    },
+    {
+      "english": "Item Quantity",
+      "skillId": "SupportItemQuantity",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportItemQuantity",
+      "variantId": "SupportItemQuantity",
+      "korean": "아이템 수량",
+      "category": "skill"
+    },
+    {
+      "english": "Item Rarity",
+      "skillId": "SupportItemRarity",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportItemRarity",
+      "variantId": "SupportItemRarity",
+      "korean": "아이템 희귀도",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Blast",
+      "skillId": "KineticBlast",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticBlast",
+      "variantId": "KineticBlast",
+      "korean": "역학 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Blast of Clustering",
+      "skillId": "KineticBlastAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticBlastAltX",
+      "variantId": "KineticBlastAltX",
+      "korean": "군집의 역학 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Bolt",
+      "skillId": "KineticBolt",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticBolt",
+      "variantId": "KineticBolt",
+      "korean": "역학 투사체",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Bolt of Fragmentation",
+      "skillId": "KineticBoltAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticBoltAltX",
+      "variantId": "KineticBoltAltX",
+      "korean": "파쇄의 역학 투사체",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Fusillade",
+      "skillId": "KineticFusillade",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticFusillade",
+      "variantId": "KineticFusillade",
+      "korean": "역학 일제 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Fusillade of Detonation",
+      "skillId": "KineticFusilladeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticFusilladeAltX",
+      "variantId": "KineticFusilladeAltX",
+      "korean": "기폭의 역학 일제 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Instability",
+      "skillId": "SupportKineticInstability",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportKineticInstability",
+      "variantId": "SupportKineticInstability",
+      "korean": "역학 불안정성",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Rain",
+      "skillId": "KineticRain",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticRain",
+      "variantId": "KineticRain",
+      "korean": "역학 비",
+      "category": "skill"
+    },
+    {
+      "english": "Kinetic Rain of Impact",
+      "skillId": "KineticRainAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemKineticRainAltX",
+      "variantId": "KineticRainAltX",
+      "korean": "충격의 역학 비",
+      "category": "skill"
+    },
+    {
+      "english": "Knockback",
+      "skillId": "SupportKnockback",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportKnockback",
+      "variantId": "SupportKnockback",
+      "korean": "밀어내기",
+      "category": "skill"
+    },
+    {
+      "english": "Lacerate",
+      "skillId": "Lacerate",
+      "gemId": "Metadata/Items/Gems/SkillGemLacerate",
+      "variantId": "Lacerate",
+      "korean": "피부 찢기",
+      "category": "skill"
+    },
+    {
+      "english": "Lacerate of Butchering",
+      "skillId": "LacerateAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLacerateAltX",
+      "variantId": "LacerateAltX",
+      "korean": "도살의 피부 찢기",
+      "category": "skill"
+    },
+    {
+      "english": "Lacerate of Haemorrhage",
+      "skillId": "LacerateAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemLacerateAltY",
+      "variantId": "LacerateAltY",
+      "korean": "실혈의 피부 찢기",
+      "category": "skill"
+    },
+    {
+      "english": "Lancing Steel",
+      "skillId": "LancingSteel",
+      "gemId": "Metadata/Items/Gems/SkillGemLancingSteel",
+      "variantId": "LancingSteel",
+      "korean": "강철 관통",
+      "category": "skill"
+    },
+    {
+      "english": "Lancing Steel of Spraying",
+      "skillId": "LancingSteelAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLancingSteelAltX",
+      "variantId": "LancingSteelAltX",
+      "korean": "분사의 강철 관통",
+      "category": "skill"
+    },
+    {
+      "english": "Leap Slam",
+      "skillId": "LeapSlam",
+      "gemId": "Metadata/Items/Gems/SkillGemLeapSlam",
+      "variantId": "LeapSlam",
+      "korean": "도약 강타",
+      "category": "skill"
+    },
+    {
+      "english": "Leap Slam of Groundbreaking",
+      "skillId": "LeapSlamAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLeapSlamAltX",
+      "variantId": "LeapSlamAltX",
+      "korean": "땅 분쇄의 도약 강타",
+      "category": "skill"
+    },
+    {
+      "english": "Less Duration",
+      "skillId": "SupportLessDuration",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLessDuration",
+      "variantId": "SupportLessDuration",
+      "korean": "지속시간 감소",
+      "category": "skill"
+    },
+    {
+      "english": "Life Gain on Hit",
+      "skillId": "SupportLifeGainOnHit",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLifeGainOnHit",
+      "variantId": "SupportLifeGainOnHit",
+      "korean": "명중 시 생명력 획득",
+      "category": "skill"
+    },
+    {
+      "english": "Life Leech",
+      "skillId": "SupportLifeLeech",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLifeLeech",
+      "variantId": "SupportLifeLeech",
+      "korean": "생명력 흡수",
+      "category": "skill"
+    },
+    {
+      "english": "Lifetap",
+      "skillId": "SupportLifetap",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLifetap",
+      "variantId": "SupportLifetap",
+      "korean": "생명력 전환",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Arrow",
+      "skillId": "LightningArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningArrow",
+      "variantId": "LightningArrow",
+      "korean": "번개 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Arrow of Electrocution",
+      "skillId": "LightningArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningArrowAltX",
+      "variantId": "LightningArrowAltX",
+      "korean": "전기 처형의 번개 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Conduit",
+      "skillId": "LightningConduit",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningConduit",
+      "variantId": "LightningConduit",
+      "korean": "번개 도관",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Conduit of the Heavens",
+      "skillId": "LightningConduitAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningConduitAltX",
+      "variantId": "LightningConduitAltX",
+      "korean": "천국의 번개 도관",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Penetration",
+      "skillId": "SupportLightningPenetration",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLightningPenetration",
+      "variantId": "SupportLightningPenetration",
+      "korean": "번개 관통",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Spire Trap",
+      "skillId": "LightningSpireTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningSpireTrap",
+      "variantId": "LightningSpireTrap",
+      "korean": "번개 첨탑 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Spire Trap of Overloading",
+      "skillId": "LightningSpireTrapAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningSpireTrapAltY",
+      "variantId": "LightningSpireTrapAltY",
+      "korean": "과부하의 번개 첨탑 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Spire Trap of Zapping",
+      "skillId": "LightningSpireTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningSpireTrapAltX",
+      "variantId": "LightningSpireTrapAltX",
+      "korean": "전류의 번개 첨탑 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Strike",
+      "skillId": "LightningStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningStrike",
+      "variantId": "LightningStrike",
+      "korean": "번개 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Strike of Arcing",
+      "skillId": "LightningStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningStrikeAltX",
+      "variantId": "LightningStrikeAltX",
+      "korean": "전호의 번개 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Tendrils",
+      "skillId": "LightningTendrils",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningTendrils",
+      "variantId": "LightningTendrils",
+      "korean": "덩굴 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Tendrils of Eccentricity",
+      "skillId": "LightningTendrilsAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningTendrilsAltX",
+      "variantId": "LightningTendrilsAltX",
+      "korean": "기행의 덩굴 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Tendrils of Escalation",
+      "skillId": "LightningTendrilsAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningTendrilsAltY",
+      "variantId": "LightningTendrilsAltY",
+      "korean": "격화의 덩굴 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Trap",
+      "skillId": "LightningTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningTrap",
+      "variantId": "LightningTrap",
+      "korean": "번개 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Trap of Sparking",
+      "skillId": "LightningTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningTrapAltX",
+      "variantId": "LightningTrapAltX",
+      "korean": "전기불꽃의 번개 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Lightning Warp",
+      "skillId": "LightningWarp",
+      "gemId": "Metadata/Items/Gems/SkillGemLightningWarp",
+      "variantId": "LightningWarp",
+      "korean": "번개 차원 이동",
+      "category": "skill"
+    },
+    {
+      "english": "Living Lightning",
+      "skillId": "SupportLivingLightning",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLivingLightning",
+      "variantId": "SupportLivingLightning",
+      "korean": "살아 있는 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Locus Mine",
+      "skillId": "SupportLocusMine",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLocusMine",
+      "variantId": "SupportLocusMine",
+      "korean": "궤적 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Maim",
+      "skillId": "SupportMaim",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMaim",
+      "variantId": "SupportMaim",
+      "korean": "힘줄 절단",
+      "category": "skill"
+    },
+    {
+      "english": "Malevolence",
+      "skillId": "Malevolence",
+      "gemId": "Metadata/Items/Gems/SkillGemMalevolence",
+      "variantId": "Malevolence",
+      "korean": "악의",
+      "category": "skill"
+    },
+    {
+      "english": "Mana Leech",
+      "skillId": "SupportManaLeech",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportManaLeech",
+      "variantId": "SupportManaLeech",
+      "korean": "마나 흡수",
+      "category": "skill"
+    },
+    {
+      "english": "Mana-Infused Staff",
+      "skillId": "ManaInfusedStaff",
+      "gemId": "Metadata/Items/Gems/SkillGemManaInfusedStaff",
+      "variantId": "ManaInfusedStaff",
+      "korean": "마나 주입 지팡이",
+      "category": "skill"
+    },
+    {
+      "english": "Manabond",
+      "skillId": "Manabond",
+      "gemId": "Metadata/Items/Gems/SkillGemManabond",
+      "variantId": "Manabond",
+      "korean": "마나 결속",
+      "category": "skill"
+    },
+    {
+      "english": "Manaforged Arrows",
+      "skillId": "SupportManaforgedArrows",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportManaforgedArrows",
+      "variantId": "SupportManaforgedArrows",
+      "korean": "마나벼림 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Mark On Hit",
+      "skillId": "SupportMarkOnHit",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMarkOnHit",
+      "variantId": "SupportMarkOnHit",
+      "korean": "명중 시 징표",
+      "category": "skill"
+    },
+    {
+      "english": "Meat Shield",
+      "skillId": "SupportMeatShield",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMeatShield",
+      "variantId": "SupportMeatShield",
+      "korean": "육탄 방어",
+      "category": "skill"
+    },
+    {
+      "english": "Melee Physical Damage",
+      "skillId": "SupportMeleePhysicalDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMeleePhysicalDamage",
+      "variantId": "SupportMeleePhysicalDamage",
+      "korean": "근접 물리 피해",
+      "category": "skill"
+    },
+    {
+      "english": "Melee Splash",
+      "skillId": "SupportMeleeSplash",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMeleeSplash",
+      "variantId": "SupportMeleeSplash",
+      "korean": "근접 범위 피해",
+      "category": "skill"
+    },
+    {
+      "english": "Minefield",
+      "skillId": "SupportMinefield",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMinefield",
+      "variantId": "SupportMinefield",
+      "korean": "지뢰밭",
+      "category": "skill"
+    },
+    {
+      "english": "Minion Damage",
+      "skillId": "SupportMinionDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMinionDamage",
+      "variantId": "SupportMinionDamage",
+      "korean": "소환수 피해",
+      "category": "skill"
+    },
+    {
+      "english": "Minion Life",
+      "skillId": "SupportMinionLife",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMinionLife",
+      "variantId": "SupportMinionLife",
+      "korean": "소환수 생명력",
+      "category": "skill"
+    },
+    {
+      "english": "Minion Speed",
+      "skillId": "SupportMinionSpeed",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMinionSpeed",
+      "variantId": "SupportMinionSpeed",
+      "korean": "소환수 속도",
+      "category": "skill"
+    },
+    {
+      "english": "Mirage Archer",
+      "skillId": "SupportMirageArcher",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMirageArcher",
+      "variantId": "SupportMirageArcher",
+      "korean": "신기루 궁수",
+      "category": "skill"
+    },
+    {
+      "english": "Mirror Arrow",
+      "skillId": "MirrorArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemMirrorArrow",
+      "variantId": "MirrorArrow",
+      "korean": "거울 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Mirror Arrow of Bombarding Clones",
+      "skillId": "MirrorArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemMirrorArrowAltX",
+      "variantId": "MirrorArrowAltX",
+      "korean": "포격 분신의 거울 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Mirror Arrow of Prismatic Clones",
+      "skillId": "MirrorArrowAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemMirrorArrowAltY",
+      "variantId": "MirrorArrowAltY",
+      "korean": "분광 분신의 거울 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Molten Shell",
+      "skillId": "MoltenShell",
+      "gemId": "Metadata/Items/Gems/SkillGemMoltenShell",
+      "variantId": "MoltenShell",
+      "korean": "용암 방패",
+      "category": "skill"
+    },
+    {
+      "english": "Molten Strike",
+      "skillId": "MoltenStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemMoltenStrike",
+      "variantId": "MoltenStrike",
+      "korean": "용암 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Molten Strike of the Zenith",
+      "skillId": "MoltenStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemMoltenStrikeAltX",
+      "variantId": "MoltenStrikeAltX",
+      "korean": "북극성의 용암 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Momentum",
+      "skillId": "SupportMomentum",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMomentum",
+      "variantId": "SupportMomentum",
+      "korean": "기세",
+      "category": "skill"
+    },
+    {
+      "english": "More Duration",
+      "skillId": "SupportMoreDuration",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMoreDuration",
+      "variantId": "SupportMoreDuration",
+      "korean": "지속시간 증폭",
+      "category": "skill"
+    },
+    {
+      "english": "Multiple Projectiles",
+      "skillId": "SupportLesserMultipleProjectiles",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportLesserMultipleProjectiles",
+      "variantId": "SupportLesserMultipleProjectiles",
+      "korean": "다중 투사체",
+      "category": "skill"
+    },
+    {
+      "english": "Multiple Totems",
+      "skillId": "SupportMultipleTotems",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMultipleTotems",
+      "variantId": "SupportMultipleTotems",
+      "korean": "다중 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Multiple Traps",
+      "skillId": "SupportMultipleTraps",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMultipleTraps",
+      "variantId": "SupportMultipleTraps",
+      "korean": "다중 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Multistrike",
+      "skillId": "SupportMultistrike",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportMultistrike",
+      "variantId": "SupportMultistrike",
+      "korean": "연속타격",
+      "category": "skill"
+    },
+    {
+      "english": "Nightblade",
+      "skillId": "SupportNightblade",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportNightblade",
+      "variantId": "SupportNightblade",
+      "korean": "밤의 칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Orb of Storms",
+      "skillId": "OrbOfStorms",
+      "gemId": "Metadata/Items/Gems/SkillGemOrbOfStorms",
+      "variantId": "OrbOfStorms",
+      "korean": "폭풍 보주",
+      "category": "skill"
+    },
+    {
+      "english": "Orb of Storms of Squalls",
+      "skillId": "OrbOfStormsAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemOrbOfStormsAltX",
+      "variantId": "OrbOfStormsAltX",
+      "korean": "돌풍의 폭풍 보주",
+      "category": "skill"
+    },
+    {
+      "english": "Overcharge",
+      "skillId": "SupportOvercharge",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportOvercharge",
+      "variantId": "SupportOvercharge",
+      "korean": "과충전",
+      "category": "skill"
+    },
+    {
+      "english": "Overexertion",
+      "skillId": "SupportOverexertion",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportOverexertion",
+      "variantId": "SupportOverexertion",
+      "korean": "전심전력",
+      "category": "skill"
+    },
+    {
+      "english": "Overloaded Intensity",
+      "skillId": "SupportOverloadedIntensity",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportOverloadedIntensity",
+      "variantId": "SupportOverloadedIntensity",
+      "korean": "과부하된 격렬함",
+      "category": "skill"
+    },
+    {
+      "english": "Pacifism",
+      "skillId": "SupportPacifism",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPacifism",
+      "variantId": "SupportPacifism",
+      "korean": "평화주의",
+      "category": "skill"
+    },
+    {
+      "english": "Pact of Beidat",
+      "skillId": "PactOfBeidat",
+      "gemId": "Metadata/Items/Gems/SkillGemPactOfBeidat",
+      "variantId": "PactOfBeidat",
+      "korean": "베이다트의 맹약",
+      "category": "skill"
+    },
+    {
+      "english": "Pact of Ghorr",
+      "skillId": "PactOfGhorr",
+      "gemId": "Metadata/Items/Gems/SkillGemPactOfGhorr",
+      "variantId": "PactOfGhorr",
+      "korean": "고르의 맹약",
+      "category": "skill"
+    },
+    {
+      "english": "Pact of K'Tash",
+      "skillId": "PactOfKtash",
+      "gemId": "Metadata/Items/Gems/SkillGemPactOfKtash",
+      "variantId": "PactOfKtash",
+      "korean": "크타쉬의 맹약",
+      "category": "skill"
+    },
+    {
+      "english": "Pact of Lycia",
+      "skillId": "PactOfLycia",
+      "gemId": "Metadata/Items/Gems/SkillGemPactOfLycia",
+      "variantId": "PactOfLycia",
+      "korean": "리키아의 맹약",
+      "category": "skill"
+    },
+    {
+      "english": "Penance Brand",
+      "skillId": "PenanceBrand",
+      "gemId": "Metadata/Items/Gems/SkillGemPenanceBrand",
+      "variantId": "PenanceBrand",
+      "korean": "속죄의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Penance Brand of Conduction",
+      "skillId": "PenanceBrandAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemPenanceBrandAltY",
+      "variantId": "PenanceBrandAltY",
+      "korean": "전도의 속죄의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Penance Brand of Dissipation",
+      "skillId": "PenanceBrandAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemPenanceBrandAltX",
+      "variantId": "PenanceBrandAltX",
+      "korean": "소실의 속죄의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Perforate",
+      "skillId": "Perforate",
+      "gemId": "Metadata/Items/Gems/SkillGemPerforate",
+      "variantId": "Perforate",
+      "korean": "천공",
+      "category": "skill"
+    },
+    {
+      "english": "Perforate of Bloodshed",
+      "skillId": "PerforateAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemPerforateAltY",
+      "variantId": "PerforateAltY",
+      "korean": "유혈의 천공",
+      "category": "skill"
+    },
+    {
+      "english": "Perforate of Duality",
+      "skillId": "PerforateAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemPerforateAltX",
+      "variantId": "PerforateAltX",
+      "korean": "이중성의 천공",
+      "category": "skill"
+    },
+    {
+      "english": "Pestilent Strike",
+      "skillId": "PestilentStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemPestilentStrike",
+      "variantId": "PestilentStrike",
+      "korean": "전염성 일격",
+      "category": "skill"
+    },
+    {
+      "english": "Petrified Blood",
+      "skillId": "PetrifiedBlood",
+      "gemId": "Metadata/Items/Gems/SkillGemPetrifiedBlood",
+      "variantId": "PetrifiedBlood",
+      "korean": "피 석화",
+      "category": "skill"
+    },
+    {
+      "english": "Phase Run",
+      "skillId": "PhaseRun",
+      "gemId": "Metadata/Items/Gems/SkillGemPhaseRun",
+      "variantId": "PhaseRun",
+      "korean": "위상 질주",
+      "category": "skill"
+    },
+    {
+      "english": "Physical to Lightning",
+      "skillId": "SupportPhysicalToLightning",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPhysicalToLightning",
+      "variantId": "SupportPhysicalToLightning",
+      "korean": "물리 번개 전환",
+      "category": "skill"
+    },
+    {
+      "english": "Pierce",
+      "skillId": "SupportPierce",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPierce",
+      "variantId": "SupportPierce",
+      "korean": "관통",
+      "category": "skill"
+    },
+    {
+      "english": "Pinpoint",
+      "skillId": "SupportPinpoint",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPinpoint",
+      "variantId": "SupportPinpoint",
+      "korean": "핵심 조준",
+      "category": "skill"
+    },
+    {
+      "english": "Plague Bearer",
+      "skillId": "PlagueBearer",
+      "gemId": "Metadata/Items/Gems/SkillGemPlagueBearer",
+      "variantId": "PlagueBearer",
+      "korean": "독성 운반자",
+      "category": "skill"
+    },
+    {
+      "english": "Poacher's Mark",
+      "skillId": "PoachersMark",
+      "gemId": "Metadata/Items/Gems/SkillGemPoachersMark",
+      "variantId": "PoachersMark",
+      "korean": "밀렵꾼의 징표",
+      "category": "skill"
+    },
+    {
+      "english": "Point Blank",
+      "skillId": "SupportPointBlank",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPointBlank",
+      "variantId": "SupportPointBlank",
+      "korean": "근접 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Poisonous Concoction",
+      "skillId": "PoisonousConcoction",
+      "gemId": "Metadata/Items/Gems/SkillGemPoisonousConcoction",
+      "variantId": "PoisonousConcoction",
+      "korean": "독성 혼합물",
+      "category": "skill"
+    },
+    {
+      "english": "Poisonous Concoction of Bouncing",
+      "skillId": "PoisonousConcoctionAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemPoisonousConcoctionAltX",
+      "variantId": "PoisonousConcoctionAltX",
+      "korean": "반동의 독성 혼합물",
+      "category": "skill"
+    },
+    {
+      "english": "Portal",
+      "skillId": "Portal",
+      "gemId": "Metadata/Items/Gems/SkillGemPortal",
+      "variantId": "Portal",
+      "korean": "포탈",
+      "category": "skill"
+    },
+    {
+      "english": "Power Charge On Critical",
+      "skillId": "SupportPowerChargeOnCritical",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPowerChargeOnCritical",
+      "variantId": "SupportPowerChargeOnCritical",
+      "korean": "치명타 시 권능 충전",
+      "category": "skill"
+    },
+    {
+      "english": "Power Siphon",
+      "skillId": "PowerSiphon",
+      "gemId": "Metadata/Items/Gems/SkillGemPowerSiphon",
+      "variantId": "PowerSiphon",
+      "korean": "권능 착취",
+      "category": "skill"
+    },
+    {
+      "english": "Power Siphon of the Archmage",
+      "skillId": "PowerSiphonAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemPowerSiphonAltX",
+      "variantId": "PowerSiphonAltX",
+      "korean": "대마법사의 권능 착취",
+      "category": "skill"
+    },
+    {
+      "english": "Precision",
+      "skillId": "Precision",
+      "gemId": "Metadata/Items/Gems/SkillGemPrecision",
+      "variantId": "Precision",
+      "korean": "정밀함",
+      "category": "skill"
+    },
+    {
+      "english": "Predator",
+      "skillId": "SupportPredator",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPredator",
+      "variantId": "SupportPredator",
+      "korean": "포식자",
+      "category": "skill"
+    },
+    {
+      "english": "Pride",
+      "skillId": "Pride",
+      "gemId": "Metadata/Items/Gems/SkillGemPride",
+      "variantId": "Pride",
+      "korean": "자부심",
+      "category": "skill"
+    },
+    {
+      "english": "Prismatic Burst",
+      "skillId": "SupportPrismaticBurst",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPrismaticBurst",
+      "variantId": "SupportPrismaticBurst",
+      "korean": "분광 격발",
+      "category": "skill"
+    },
+    {
+      "english": "Protective Link",
+      "skillId": "ProtectiveLink",
+      "gemId": "Metadata/Items/Gems/SkillGemProtectiveLink",
+      "variantId": "ProtectiveLink",
+      "korean": "보호의 연결",
+      "category": "skill"
+    },
+    {
+      "english": "Pulverise",
+      "skillId": "SupportPulverise",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPulverise",
+      "variantId": "SupportPulverise",
+      "korean": "분쇄",
+      "category": "skill"
+    },
+    {
+      "english": "Puncture",
+      "skillId": "Puncture",
+      "gemId": "Metadata/Items/Gems/SkillGemPuncture",
+      "variantId": "Puncture",
+      "korean": "관통상",
+      "category": "skill"
+    },
+    {
+      "english": "Puncture of Shanking",
+      "skillId": "PunctureAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemPunctureAltX",
+      "variantId": "PunctureAltX",
+      "korean": "들이꽂는 관통상",
+      "category": "skill"
+    },
+    {
+      "english": "Punishment",
+      "skillId": "Punishment",
+      "gemId": "Metadata/Items/Gems/SkillGemPunishment",
+      "variantId": "Punishment",
+      "korean": "응징",
+      "category": "skill"
+    },
+    {
+      "english": "Purifying Flame",
+      "skillId": "PurifyingFlame",
+      "gemId": "Metadata/Items/Gems/SkillGemPurifyingFlame",
+      "variantId": "PurifyingFlame",
+      "korean": "정화의 불길",
+      "category": "skill"
+    },
+    {
+      "english": "Purifying Flame of Revelations",
+      "skillId": "PurifyingFlameAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemPurifyingFlameAltX",
+      "variantId": "PurifyingFlameAltX",
+      "korean": "계시의 정화의 불길",
+      "category": "skill"
+    },
+    {
+      "english": "Purity of Elements",
+      "skillId": "PurityOfElements",
+      "gemId": "Metadata/Items/Gems/SkillGemPurityOfElements",
+      "variantId": "PurityOfElements",
+      "korean": "원소의 순수함",
+      "category": "skill"
+    },
+    {
+      "english": "Purity of Fire",
+      "skillId": "PurityOfFire",
+      "gemId": "Metadata/Items/Gems/SkillGemPurityOfFire",
+      "variantId": "PurityOfFire",
+      "korean": "불의 순수함",
+      "category": "skill"
+    },
+    {
+      "english": "Purity of Ice",
+      "skillId": "PurityOfIce",
+      "gemId": "Metadata/Items/Gems/SkillGemPurityOfIce",
+      "variantId": "PurityOfIce",
+      "korean": "얼음의 순수함",
+      "category": "skill"
+    },
+    {
+      "english": "Purity of Lightning",
+      "skillId": "PurityOfLightning",
+      "gemId": "Metadata/Items/Gems/SkillGemPurityOfLightning",
+      "variantId": "PurityOfLightning",
+      "korean": "번개의 순수함",
+      "category": "skill"
+    },
+    {
+      "english": "Pyre",
+      "skillId": "SupportPyre",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportPyre",
+      "variantId": "SupportPyre",
+      "korean": "장작",
+      "category": "skill"
+    },
+    {
+      "english": "Pyroclast Mine",
+      "skillId": "PyroclastMine",
+      "gemId": "Metadata/Items/Gems/SkillGemPyroclastMine",
+      "variantId": "PyroclastMine",
+      "korean": "화산탄 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Pyroclast Mine of Sabotage",
+      "skillId": "PyroclastMineAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemPyroclastMineAltX",
+      "variantId": "PyroclastMineAltX",
+      "korean": "방해 공작의 화산탄 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Quickstep",
+      "skillId": "QuickstepHardMode",
+      "gemId": "Metadata/Items/Gems/SkillGemQuickstepHardMode",
+      "variantId": "QuickstepHardMode",
+      "korean": "빠른 걸음",
+      "category": "skill"
+    },
+    {
+      "english": "Rage",
+      "skillId": "SupportRage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportRage",
+      "variantId": "SupportRage",
+      "korean": "격노",
+      "category": "skill"
+    },
+    {
+      "english": "Rage Vortex",
+      "skillId": "RageVortex",
+      "gemId": "Metadata/Items/Gems/SkillGemRageVortex",
+      "variantId": "RageVortex",
+      "korean": "격노 소용돌이",
+      "category": "skill"
+    },
+    {
+      "english": "Rage Vortex of Berserking",
+      "skillId": "RageVortexAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemRageVortexAltX",
+      "variantId": "RageVortexAltX",
+      "korean": "광폭화의 격노 소용돌이",
+      "category": "skill"
+    },
+    {
+      "english": "Rain of Arrows",
+      "skillId": "RainOfArrows",
+      "gemId": "Metadata/Items/Gems/SkillGemRainOfArrows",
+      "variantId": "RainOfArrows",
+      "korean": "화살비",
+      "category": "skill"
+    },
+    {
+      "english": "Rain of Arrows of Artillery",
+      "skillId": "RainOfArrowsAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemRainOfArrowsAltX",
+      "variantId": "RainOfArrowsAltX",
+      "korean": "포대의 화살비",
+      "category": "skill"
+    },
+    {
+      "english": "Rain of Arrows of Saturation",
+      "skillId": "RainOfArrowsAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemRainOfArrowsAltY",
+      "variantId": "RainOfArrowsAltY",
+      "korean": "포화의 화살비",
+      "category": "skill"
+    },
+    {
+      "english": "Raise Spectre",
+      "skillId": "RaiseSpectre",
+      "gemId": "Metadata/Items/Gems/SkillGemRaiseSpectre",
+      "variantId": "RaiseSpectre",
+      "korean": "망령 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Raise Spectre of Transience",
+      "skillId": "RaiseSpectreAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemRaiseSpectreAltX",
+      "variantId": "RaiseSpectreAltX",
+      "korean": "덧없음의 망령 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Raise Zombie",
+      "skillId": "RaiseZombie",
+      "gemId": "Metadata/Items/Gems/SkillGemRaiseZombie",
+      "variantId": "RaiseZombie",
+      "korean": "좀비 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Raise Zombie of Falling",
+      "skillId": "RaiseZombieAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemRaiseZombieAltY",
+      "variantId": "RaiseZombieAltY",
+      "korean": "추락의 좀비 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Raise Zombie of Slamming",
+      "skillId": "RaiseZombieAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemRaiseZombieAltX",
+      "variantId": "RaiseZombieAltX",
+      "korean": "강타의 좀비 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Rallying Cry",
+      "skillId": "RallyingCry",
+      "gemId": "Metadata/Items/Gems/SkillGemRallyingCry",
+      "variantId": "RallyingCry",
+      "korean": "집결의 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Reap",
+      "skillId": "Reap",
+      "gemId": "Metadata/Items/Gems/SkillGemReap",
+      "variantId": "Reap",
+      "korean": "낫질",
+      "category": "skill"
+    },
+    {
+      "english": "Reap of Butchery",
+      "skillId": "ReapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemReapAltX",
+      "variantId": "ReapAltX",
+      "korean": "도살의 낫질",
+      "category": "skill"
+    },
+    {
+      "english": "Reave",
+      "skillId": "Reave",
+      "gemId": "Metadata/Items/Gems/SkillGemReave",
+      "variantId": "Reave",
+      "korean": "약탈",
+      "category": "skill"
+    },
+    {
+      "english": "Reave of Refraction",
+      "skillId": "ReaveAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemReaveAltX",
+      "variantId": "ReaveAltX",
+      "korean": "굴절의 약탈",
+      "category": "skill"
+    },
+    {
+      "english": "Rejuvenation Totem",
+      "skillId": "RejuvenationTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemRejuvenationTotem",
+      "variantId": "RejuvenationTotem",
+      "korean": "회복 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Returning Projectiles",
+      "skillId": "SupportReturningProjectiles",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportReturningProjectiles",
+      "variantId": "SupportReturningProjectiles",
+      "korean": "돌아오는 투사체",
+      "category": "skill"
+    },
+    {
+      "english": "Righteous Fire",
+      "skillId": "RighteousFire",
+      "gemId": "Metadata/Items/Gems/SkillGemRighteousFire",
+      "variantId": "RighteousFire",
+      "korean": "정의의 화염",
+      "category": "skill"
+    },
+    {
+      "english": "Righteous Fire of Arcane Devotion",
+      "skillId": "RighteousFireAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemRighteousFireAltX",
+      "variantId": "RighteousFireAltX",
+      "korean": "비전 헌신의 정의의 화염",
+      "category": "skill"
+    },
+    {
+      "english": "Rolling Magma",
+      "skillId": "RollingMagma",
+      "gemId": "Metadata/Items/Gems/SkillGemRollingMagma",
+      "variantId": "RollingMagma",
+      "korean": "몰려오는 마그마",
+      "category": "skill"
+    },
+    {
+      "english": "Rupture",
+      "skillId": "SupportRupture",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportRupture",
+      "variantId": "SupportRupture",
+      "korean": "파열",
+      "category": "skill"
+    },
+    {
+      "english": "Ruthless",
+      "skillId": "SupportRuthless",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportRuthless",
+      "variantId": "SupportRuthless",
+      "korean": "무자비",
+      "category": "skill"
+    },
+    {
+      "english": "Sacred Wisps",
+      "skillId": "SupportSacredWisps",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSacredWisps",
+      "variantId": "SupportSacredWisps",
+      "korean": "신성한 도깨비불",
+      "category": "skill"
+    },
+    {
+      "english": "Sacrifice",
+      "skillId": "SupportSacrifice",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSacrifice",
+      "variantId": "SupportSacrifice",
+      "korean": "희생",
+      "category": "skill"
+    },
+    {
+      "english": "Sadism",
+      "skillId": "SupportSadism",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSadism",
+      "variantId": "SupportSadism",
+      "korean": "가학증",
+      "category": "skill"
+    },
+    {
+      "english": "Scorching Ray",
+      "skillId": "ScorchingRay",
+      "gemId": "Metadata/Items/Gems/SkillGemScorchingRay",
+      "variantId": "ScorchingRay",
+      "korean": "작열 광선",
+      "category": "skill"
+    },
+    {
+      "english": "Scorching Ray of Immolation",
+      "skillId": "ScorchingRayAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemScorchingRayAltX",
+      "variantId": "ScorchingRayAltX",
+      "korean": "제물의 작열 광선",
+      "category": "skill"
+    },
+    {
+      "english": "Scourge Arrow",
+      "skillId": "ScourgeArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemScourgeArrow",
+      "variantId": "ScourgeArrow",
+      "korean": "재앙의 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Scourge Arrow of Menace",
+      "skillId": "ScourgeArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemScourgeArrowAltX",
+      "variantId": "ScourgeArrowAltX",
+      "korean": "위험의 재앙의 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Searing Bond",
+      "skillId": "SearingBond",
+      "gemId": "Metadata/Items/Gems/SkillGemSearingBond",
+      "variantId": "SearingBond",
+      "korean": "불타는 굴레",
+      "category": "skill"
+    },
+    {
+      "english": "Searing Bond of Detonation",
+      "skillId": "SearingBondAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSearingBondAltX",
+      "variantId": "SearingBondAltX",
+      "korean": "기폭의 불타는 굴레",
+      "category": "skill"
+    },
+    {
+      "english": "Second Wind",
+      "skillId": "SupportSecondWind",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSecondWind",
+      "variantId": "SupportSecondWind",
+      "korean": "새로운 활력",
+      "category": "skill"
+    },
+    {
+      "english": "Seismic Cry",
+      "skillId": "SeismicCry",
+      "gemId": "Metadata/Items/Gems/SkillGemSeismicCry",
+      "variantId": "SeismicCry",
+      "korean": "지진 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Seismic Trap",
+      "skillId": "SeismicTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemSeismicTrap",
+      "variantId": "SeismicTrap",
+      "korean": "지진 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Seismic Trap of Swells",
+      "skillId": "SeismicTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSeismicTrapAltX",
+      "variantId": "SeismicTrapAltX",
+      "korean": "팽창의 지진 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Shattering Steel",
+      "skillId": "ShatteringSteel",
+      "gemId": "Metadata/Items/Gems/SkillGemShatteringSteel",
+      "variantId": "ShatteringSteel",
+      "korean": "강철 파편",
+      "category": "skill"
+    },
+    {
+      "english": "Shattering Steel of Ammunition",
+      "skillId": "ShatteringSteelAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemShatteringSteelAltX",
+      "variantId": "ShatteringSteelAltX",
+      "korean": "탄약의 강철 파편",
+      "category": "skill"
+    },
+    {
+      "english": "Shield Charge",
+      "skillId": "ShieldCharge",
+      "gemId": "Metadata/Items/Gems/SkillGemShieldCharge",
+      "variantId": "ShieldCharge",
+      "korean": "방패 돌진",
+      "category": "skill"
+    },
+    {
+      "english": "Shield Crush",
+      "skillId": "ShieldCrush",
+      "gemId": "Metadata/Items/Gems/SkillGemShieldCrush",
+      "variantId": "ShieldCrush",
+      "korean": "방패 타쇄",
+      "category": "skill"
+    },
+    {
+      "english": "Shield Crush of the Chieftain",
+      "skillId": "ShieldCrushAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemShieldCrushAltX",
+      "variantId": "ShieldCrushAltX",
+      "korean": "부족장의 방패 타쇄",
+      "category": "skill"
+    },
+    {
+      "english": "Shield of Light",
+      "skillId": "ShieldOfLight",
+      "gemId": "Metadata/Items/Gems/SkillGemShieldOfLight",
+      "variantId": "ShieldOfLight",
+      "korean": "빛의 방패",
+      "category": "skill"
+    },
+    {
+      "english": "Shock Nova",
+      "skillId": "ShockNova",
+      "gemId": "Metadata/Items/Gems/SkillGemShockNova",
+      "variantId": "ShockNova",
+      "korean": "충격 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Shock Nova of Procession",
+      "skillId": "ShockNovaAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemShockNovaAltX",
+      "variantId": "ShockNovaAltX",
+      "korean": "행진의 충격 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Shockwave",
+      "skillId": "SupportShockwave",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportShockwave",
+      "variantId": "SupportShockwave",
+      "korean": "충격파",
+      "category": "skill"
+    },
+    {
+      "english": "Shockwave Totem",
+      "skillId": "ShockwaveTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemShockwaveTotem",
+      "variantId": "ShockwaveTotem",
+      "korean": "충격파 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Shockwave Totem of Authority",
+      "skillId": "ShockwaveTotemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemShockwaveTotemAltX",
+      "variantId": "ShockwaveTotemAltX",
+      "korean": "권위의 충격파 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Shrapnel Ballista",
+      "skillId": "ShrapnelBallista",
+      "gemId": "Metadata/Items/Gems/SkillGemShrapnelBallista",
+      "variantId": "ShrapnelBallista",
+      "korean": "파편 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Shrapnel Ballista of Steel",
+      "skillId": "ShrapnelBallistaAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemShrapnelBallistaAltX",
+      "variantId": "ShrapnelBallistaAltX",
+      "korean": "강철의 파편 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Siege Ballista",
+      "skillId": "SiegeBallista",
+      "gemId": "Metadata/Items/Gems/SkillGemSiegeBallista",
+      "variantId": "SiegeBallista",
+      "korean": "공성 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Siege Ballista of Splintering",
+      "skillId": "SiegeBallistaAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSiegeBallistaAltX",
+      "variantId": "SiegeBallistaAltX",
+      "korean": "파편의 공성 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Siege Ballista of Trarthus",
+      "skillId": "SiegeBallistaAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSiegeBallistaAltY",
+      "variantId": "SiegeBallistaAltY",
+      "korean": "트라투스의 공성 쇠뇌",
+      "category": "skill"
+    },
+    {
+      "english": "Sigil of Power",
+      "skillId": "SigilOfPower",
+      "gemId": "Metadata/Items/Gems/SkillGemSigilOfPower",
+      "variantId": "SigilOfPower",
+      "korean": "힘의 부적",
+      "category": "skill"
+    },
+    {
+      "english": "Siphoning Trap",
+      "skillId": "SiphoningTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemSiphoningTrap",
+      "variantId": "SiphoningTrap",
+      "korean": "착취 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Siphoning Trap of Pain",
+      "skillId": "SiphoningTrapAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSiphoningTrapAltX",
+      "variantId": "SiphoningTrapAltX",
+      "korean": "고통의 착취 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Slower Projectiles",
+      "skillId": "SupportSlowerProjectiles",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSlowerProjectiles",
+      "variantId": "SupportSlowerProjectiles",
+      "korean": "투사체 감속",
+      "category": "skill"
+    },
+    {
+      "english": "Smite",
+      "skillId": "Smite",
+      "gemId": "Metadata/Items/Gems/SkillGemSmite",
+      "variantId": "Smite",
+      "korean": "징벌",
+      "category": "skill"
+    },
+    {
+      "english": "Smite of Divine Judgement",
+      "skillId": "SmiteAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSmiteAltX",
+      "variantId": "SmiteAltX",
+      "korean": "신성한 심판의 징벌",
+      "category": "skill"
+    },
+    {
+      "english": "Smoke Mine",
+      "skillId": "SmokeMine",
+      "gemId": "Metadata/Items/Gems/SkillGemSmokeMine",
+      "variantId": "SmokeMine",
+      "korean": "연막 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Snipe",
+      "skillId": "Snipe",
+      "gemId": "Metadata/Items/Gems/SkillGemSnipe",
+      "variantId": "Snipe",
+      "korean": "저격",
+      "category": "skill"
+    },
+    {
+      "english": "Sniper's Mark",
+      "skillId": "SnipersMark",
+      "gemId": "Metadata/Items/Gems/SkillGemSnipersMark",
+      "variantId": "SnipersMark",
+      "korean": "저격수의 징표",
+      "category": "skill"
+    },
+    {
+      "english": "Somatic Shell",
+      "skillId": "SomaticShell",
+      "gemId": "Metadata/Items/Gems/SkillGemSomaticShell",
+      "variantId": "SomaticShell",
+      "korean": "신체의 껍질",
+      "category": "skill"
+    },
+    {
+      "english": "Soul Link",
+      "skillId": "SoulLink",
+      "gemId": "Metadata/Items/Gems/SkillGemSoulLink",
+      "variantId": "SoulLink",
+      "korean": "영혼의 연결",
+      "category": "skill"
+    },
+    {
+      "english": "Soulrend",
+      "skillId": "Soulrend",
+      "gemId": "Metadata/Items/Gems/SkillGemSoulrend",
+      "variantId": "Soulrend",
+      "korean": "영혼 분리",
+      "category": "skill"
+    },
+    {
+      "english": "Soulrend of Reaping",
+      "skillId": "SoulrendAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSoulrendAltX",
+      "variantId": "SoulrendAltX",
+      "korean": "낫질의 영혼 분리",
+      "category": "skill"
+    },
+    {
+      "english": "Soulrend of the Spiral",
+      "skillId": "SoulrendAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSoulrendAltY",
+      "variantId": "SoulrendAltY",
+      "korean": "나선의 영혼 분리",
+      "category": "skill"
+    },
+    {
+      "english": "Spark",
+      "skillId": "Spark",
+      "gemId": "Metadata/Items/Gems/SkillGemSpark",
+      "variantId": "Spark",
+      "korean": "전기불꽃",
+      "category": "skill"
+    },
+    {
+      "english": "Spark of Unpredictability",
+      "skillId": "SparkAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSparkAltY",
+      "variantId": "SparkAltY",
+      "korean": "예측 불허의 전기불꽃",
+      "category": "skill"
+    },
+    {
+      "english": "Spark of the Nova",
+      "skillId": "SparkAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSparkAltX",
+      "variantId": "SparkAltX",
+      "korean": "폭발의 전기불꽃",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Helix",
+      "skillId": "SpectralHelix",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralHelix",
+      "variantId": "SpectralHelix",
+      "korean": "영체 나선",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Helix of Trarthus",
+      "skillId": "SpectralHelixAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralHelixAltY",
+      "variantId": "SpectralHelixAltY",
+      "korean": "트라투스의 영체 나선",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Shield Throw",
+      "skillId": "SpectralShieldThrow",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralShieldThrow",
+      "variantId": "SpectralShieldThrow",
+      "korean": "환영 방패 투척",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Shield Throw of Shattering",
+      "skillId": "SpectralShieldThrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralShieldThrowAltX",
+      "variantId": "SpectralShieldThrowAltX",
+      "korean": "산산조각의 환영 방패 투척",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Shield Throw of Trarthus",
+      "skillId": "SpectralShieldThrowAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralShieldThrowAltY",
+      "variantId": "SpectralShieldThrowAltY",
+      "korean": "트라투스의 환영 방패 투척",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Throw",
+      "skillId": "SpectralThrow",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralThrow",
+      "variantId": "SpectralThrow",
+      "korean": "환영 무기 투척",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Throw of Materialising",
+      "skillId": "SpectralThrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralThrowAltX",
+      "variantId": "SpectralThrowAltX",
+      "korean": "구체화의 환영 무기 투척",
+      "category": "skill"
+    },
+    {
+      "english": "Spectral Throw of Trarthus",
+      "skillId": "SpectralThrowAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSpectralThrowAltY",
+      "variantId": "SpectralThrowAltY",
+      "korean": "트라투스의 환영 무기 투척",
+      "category": "skill"
+    },
+    {
+      "english": "Spell Cascade",
+      "skillId": "SupportSpellCascade",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSpellCascade",
+      "variantId": "SupportSpellCascade",
+      "korean": "연속 주문",
+      "category": "skill"
+    },
+    {
+      "english": "Spell Echo",
+      "skillId": "SupportSpellEcho",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSpellEcho",
+      "variantId": "SupportSpellEcho",
+      "korean": "주문 메아리",
+      "category": "skill"
+    },
+    {
+      "english": "Spell Totem",
+      "skillId": "SupportSpellTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSpellTotem",
+      "variantId": "SupportSpellTotem",
+      "korean": "주문 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Spellblade",
+      "skillId": "SupportSpellblade",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSpellblade",
+      "variantId": "SupportSpellblade",
+      "korean": "주문칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Spellslinger",
+      "skillId": "Spellslinger",
+      "gemId": "Metadata/Items/Gems/SkillGemSpellslinger",
+      "variantId": "Spellslinger",
+      "korean": "주문투척",
+      "category": "skill"
+    },
+    {
+      "english": "Spirit Offering",
+      "skillId": "SpiritOffering",
+      "gemId": "Metadata/Items/Gems/SkillGemSpiritOffering",
+      "variantId": "SpiritOffering",
+      "korean": "영혼 공물",
+      "category": "skill"
+    },
+    {
+      "english": "Split Arrow",
+      "skillId": "SplitArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemSplitArrow",
+      "variantId": "SplitArrow",
+      "korean": "분할 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Split Arrow of Splitting",
+      "skillId": "SplitArrowAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSplitArrowAltX",
+      "variantId": "SplitArrowAltX",
+      "korean": "분할의 분할 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Splitting Steel",
+      "skillId": "SplittingSteel",
+      "gemId": "Metadata/Items/Gems/SkillGemSplittingSteel",
+      "variantId": "SplittingSteel",
+      "korean": "강철 분할",
+      "category": "skill"
+    },
+    {
+      "english": "Splitting Steel of Ammunition",
+      "skillId": "SplittingSteelAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSplittingSteelAltX",
+      "variantId": "SplittingSteelAltX",
+      "korean": "탄약의 강철 분할",
+      "category": "skill"
+    },
+    {
+      "english": "Static Strike",
+      "skillId": "StaticStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemStaticStrike",
+      "variantId": "StaticStrike",
+      "korean": "정전기 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Static Strike of Gathering Lightning",
+      "skillId": "StaticStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemStaticStrikeAltX",
+      "variantId": "StaticStrikeAltX",
+      "korean": "모여드는 번개의 정전기 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Steelskin",
+      "skillId": "QuickGuard",
+      "gemId": "Metadata/Items/Gems/SkillGemQuickGuard",
+      "variantId": "QuickGuard",
+      "korean": "강철피부",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Brand",
+      "skillId": "StormBrand",
+      "gemId": "Metadata/Items/Gems/SkillGemStormBrand",
+      "variantId": "StormBrand",
+      "korean": "폭풍의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Brand of Indecision",
+      "skillId": "StormBrandAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemStormBrandAltX",
+      "variantId": "StormBrandAltX",
+      "korean": "우유부단의 폭풍의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Burst",
+      "skillId": "StormBurst",
+      "gemId": "Metadata/Items/Gems/SkillGemStormBurst",
+      "variantId": "StormBurst",
+      "korean": "폭풍 점사",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Burst of Repulsion",
+      "skillId": "StormBurstAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemStormBurstAltX",
+      "variantId": "StormBurstAltX",
+      "korean": "반발의 폭풍 점사",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Call",
+      "skillId": "StormCall",
+      "gemId": "Metadata/Items/Gems/SkillGemStormCall",
+      "variantId": "StormCall",
+      "korean": "폭풍 부름",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Call of Trarthus",
+      "skillId": "StormCallAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemStormCallAltX",
+      "variantId": "StormCallAltX",
+      "korean": "트라투스의 폭풍 부름",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Rain",
+      "skillId": "StormRain",
+      "gemId": "Metadata/Items/Gems/SkillGemStormRain",
+      "variantId": "StormRain",
+      "korean": "폭풍우",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Rain of the Conduit",
+      "skillId": "StormRainAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemStormRainAltX",
+      "variantId": "StormRainAltX",
+      "korean": "도관의 폭풍우",
+      "category": "skill"
+    },
+    {
+      "english": "Storm Rain of the Fence",
+      "skillId": "StormRainAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemStormRainAltY",
+      "variantId": "StormRainAltY",
+      "korean": "울타리의 폭풍우",
+      "category": "skill"
+    },
+    {
+      "english": "Stormbind",
+      "skillId": "Stormbind",
+      "gemId": "Metadata/Items/Gems/SkillGemStormBind",
+      "variantId": "StormBind",
+      "korean": "폭풍 연대",
+      "category": "skill"
+    },
+    {
+      "english": "Stormbind of Teleportation",
+      "skillId": "StormbindAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemStormBindAltX",
+      "variantId": "StormBindAltX",
+      "korean": "순간이동의 폭풍 연대",
+      "category": "skill"
+    },
+    {
+      "english": "Stormblast Mine",
+      "skillId": "StormblastMine",
+      "gemId": "Metadata/Items/Gems/SkillGemStormblastMine",
+      "variantId": "StormblastMine",
+      "korean": "태풍 파열 지뢰",
+      "category": "skill"
+    },
+    {
+      "english": "Stun",
+      "skillId": "SupportStun",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportStun",
+      "variantId": "SupportStun",
+      "korean": "기절",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Carrion Golem",
+      "skillId": "SummonCarrionGolem",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonCarrionGolem",
+      "variantId": "SummonCarrionGolem",
+      "korean": "부패 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Carrion Golem of Hordes",
+      "skillId": "SummonCarrionGolemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonCarrionGolemAltX",
+      "variantId": "SummonCarrionGolemAltX",
+      "korean": "군단의 부패 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Carrion Golem of Scavenging",
+      "skillId": "SummonCarrionGolemAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonCarrionGolemAltY",
+      "variantId": "SummonCarrionGolemAltY",
+      "korean": "청소부의 부패 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Chaos Golem",
+      "skillId": "SummonChaosGolem",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonChaosGolem",
+      "variantId": "SummonChaosGolem",
+      "korean": "카오스 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Chaos Golem of Hordes",
+      "skillId": "SummonChaosGolemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonChaosGolemAltX",
+      "variantId": "SummonChaosGolemAltX",
+      "korean": "군단의 카오스 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Chaos Golem of the Maelström",
+      "skillId": "SummonChaosGolemAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonChaosGolemAltY",
+      "variantId": "SummonChaosGolemAltY",
+      "korean": "마엘스트롬의 카오스 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Flame Golem",
+      "skillId": "SummonFlameGolem",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonFlameGolem",
+      "variantId": "SummonFlameGolem",
+      "korean": "화염 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Flame Golem of Hordes",
+      "skillId": "SummonFlameGolemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonFlameGolemAltX",
+      "variantId": "SummonFlameGolemAltX",
+      "korean": "군단의 화염 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Flame Golem of the Meteor",
+      "skillId": "SummonFlameGolemAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonFlameGolemAltY",
+      "variantId": "SummonFlameGolemAltY",
+      "korean": "유성의 화염 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Holy Relic",
+      "skillId": "SummonHolyRelic",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonHolyRelic",
+      "variantId": "SummonHolyRelic",
+      "korean": "신성한 유물 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Holy Relic of Conviction",
+      "skillId": "SummonHolyRelicAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonHolyRelicAltX",
+      "variantId": "SummonHolyRelicAltX",
+      "korean": "신념의 신성한 유물 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Ice Golem",
+      "skillId": "SummonIceGolem",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonIceGolem",
+      "variantId": "SummonIceGolem",
+      "korean": "얼음 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Ice Golem of Hordes",
+      "skillId": "SummonIceGolemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonIceGolemAltX",
+      "variantId": "SummonIceGolemAltX",
+      "korean": "군단의 얼음 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Ice Golem of Shattering",
+      "skillId": "SummonIceGolemAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonIceGolemAltY",
+      "variantId": "SummonIceGolemAltY",
+      "korean": "산산조각의 얼음 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Lightning Golem",
+      "skillId": "SummonLightningGolem",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonLightningGolem",
+      "variantId": "SummonLightningGolem",
+      "korean": "번개 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Lightning Golem of Hordes",
+      "skillId": "SummonLightningGolemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonLightningGolemAltX",
+      "variantId": "SummonLightningGolemAltX",
+      "korean": "군단의 번개 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Phantasm",
+      "skillId": "SupportSummonPhantasm",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSummonPhantasm",
+      "variantId": "SupportSummonPhantasm",
+      "korean": "환영 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Raging Spirit",
+      "skillId": "SummonRagingSpirit",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonRagingSpirit",
+      "variantId": "SummonRagingSpirit",
+      "korean": "격노의 유령 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Raging Spirit of Enormity",
+      "skillId": "SummonRagingSpiritAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonRagingSpiritAltX",
+      "variantId": "SummonRagingSpiritAltX",
+      "korean": "극악무도의 격노의 유령 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Reaper",
+      "skillId": "SummonReaper",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonReaper",
+      "variantId": "SummonReaper",
+      "korean": "수확자 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Reaper of Eviscerating",
+      "skillId": "SummonReaperAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonReaperAltY",
+      "variantId": "SummonReaperAltY",
+      "korean": "적출의 수확자 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Reaper of Revenants",
+      "skillId": "SummonReaperAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonReaperAltX",
+      "variantId": "SummonReaperAltX",
+      "korean": "원령의 수확자 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Skeletons",
+      "skillId": "SummonSkeletons",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonSkeletons",
+      "variantId": "SummonSkeletons",
+      "korean": "해골 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Skeletons of Archers",
+      "skillId": "SummonSkeletonsAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonSkeletonsAltX",
+      "variantId": "SummonSkeletonsAltX",
+      "korean": "궁수의 해골 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Skeletons of Mages",
+      "skillId": "SummonSkeletonsAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonSkeletonsAltY",
+      "variantId": "SummonSkeletonsAltY",
+      "korean": "마법사의 해골 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Skitterbots",
+      "skillId": "SummonSkitterbots",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonSkitterbots",
+      "variantId": "SummonSkitterbots",
+      "korean": "원격 기폭 장치 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Stone Golem",
+      "skillId": "SummonStoneGolem",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonStoneGolem",
+      "variantId": "SummonStoneGolem",
+      "korean": "돌 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Stone Golem of Hordes",
+      "skillId": "SummonStoneGolemAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonStoneGolemAltX",
+      "variantId": "SummonStoneGolemAltX",
+      "korean": "군단의 돌 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Summon Stone Golem of Safeguarding",
+      "skillId": "SummonStoneGolemAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSummonStoneGolemAltY",
+      "variantId": "SummonStoneGolemAltY",
+      "korean": "방비의 돌 골렘 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Sunder",
+      "skillId": "Sunder",
+      "gemId": "Metadata/Items/Gems/SkillGemSunder",
+      "variantId": "Sunder",
+      "korean": "산산조각",
+      "category": "skill"
+    },
+    {
+      "english": "Sunder of Earthbreaking",
+      "skillId": "SunderAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemSunderAltX",
+      "variantId": "SunderAltX",
+      "korean": "대지 분쇄의 산산조각",
+      "category": "skill"
+    },
+    {
+      "english": "Sunder of Trarthus",
+      "skillId": "SunderAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemSunderAltY",
+      "variantId": "SunderAltY",
+      "korean": "트라투스의 산산조각",
+      "category": "skill"
+    },
+    {
+      "english": "Swift Affliction",
+      "skillId": "SupportSwiftAffliction",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSwiftAffliction",
+      "variantId": "SupportSwiftAffliction",
+      "korean": "고통 격화",
+      "category": "skill"
+    },
+    {
+      "english": "Swift Assembly",
+      "skillId": "SupportSwiftAssembly",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSwiftAssembly",
+      "variantId": "SupportSwiftAssembly",
+      "korean": "재빠른 조립",
+      "category": "skill"
+    },
+    {
+      "english": "Swiftbrand",
+      "skillId": "SupportSwiftbrand",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportSwiftbrand",
+      "variantId": "SupportSwiftbrand",
+      "korean": "재빠른 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Swordstorm",
+      "skillId": "Swordstorm",
+      "gemId": "Metadata/Items/Gems/SkillGemSwordstorm",
+      "variantId": "Swordstorm",
+      "korean": "검의 폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Tectonic Slam",
+      "skillId": "TectonicSlam",
+      "gemId": "Metadata/Items/Gems/SkillGemTectonicSlam",
+      "variantId": "TectonicSlam",
+      "korean": "지층 강타",
+      "category": "skill"
+    },
+    {
+      "english": "Tectonic Slam of Cataclysm",
+      "skillId": "TectonicSlamAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemTectonicSlamAltX",
+      "variantId": "TectonicSlamAltX",
+      "korean": "대재앙의 지층 강타",
+      "category": "skill"
+    },
+    {
+      "english": "Tempest Shield",
+      "skillId": "TempestShield",
+      "gemId": "Metadata/Items/Gems/SkillGemTempestShield",
+      "variantId": "TempestShield",
+      "korean": "폭풍의 방패",
+      "category": "skill"
+    },
+    {
+      "english": "Temporal Chains",
+      "skillId": "TemporalChains",
+      "gemId": "Metadata/Items/Gems/SkillGemTemporalChains",
+      "variantId": "TemporalChains",
+      "korean": "시간의 사슬",
+      "category": "skill"
+    },
+    {
+      "english": "Temporal Rift",
+      "skillId": "TemporalRift",
+      "gemId": "Metadata/Items/Gems/SkillGemTemporalRift",
+      "variantId": "TemporalRift",
+      "korean": "시간의 균열",
+      "category": "skill"
+    },
+    {
+      "english": "Thunderstorm",
+      "skillId": "Thunderstorm",
+      "gemId": "Metadata/Items/Gems/SkillGemThunderstorm",
+      "variantId": "Thunderstorm",
+      "korean": "뇌우",
+      "category": "skill"
+    },
+    {
+      "english": "Tornado",
+      "skillId": "Tornado",
+      "gemId": "Metadata/Items/Gems/SkillGemTornado",
+      "variantId": "Tornado",
+      "korean": "회오리",
+      "category": "skill"
+    },
+    {
+      "english": "Tornado Shot",
+      "skillId": "TornadoShot",
+      "gemId": "Metadata/Items/Gems/SkillGemTornadoShot",
+      "variantId": "TornadoShot",
+      "korean": "회오리 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Tornado Shot of Cloudburst",
+      "skillId": "TornadoShotAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemTornadoShotAltX",
+      "variantId": "TornadoShotAltX",
+      "korean": "구름폭발의 회오리 사격",
+      "category": "skill"
+    },
+    {
+      "english": "Tornado of Elemental Turbulence",
+      "skillId": "TornadoAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemTornadoAltY",
+      "variantId": "TornadoAltY",
+      "korean": "격동하는 원소의 회오리",
+      "category": "skill"
+    },
+    {
+      "english": "Toxic Rain",
+      "skillId": "ToxicRain",
+      "gemId": "Metadata/Items/Gems/SkillGemToxicRain",
+      "variantId": "ToxicRain",
+      "korean": "맹독성 비",
+      "category": "skill"
+    },
+    {
+      "english": "Toxic Rain of Sporeburst",
+      "skillId": "ToxicRainAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemToxicRainAltX",
+      "variantId": "ToxicRainAltX",
+      "korean": "포자 폭발의 맹독성 비",
+      "category": "skill"
+    },
+    {
+      "english": "Toxic Rain of Withering",
+      "skillId": "ToxicRainAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemToxicRainAltY",
+      "variantId": "ToxicRainAltY",
+      "korean": "고사의 맹독성 비",
+      "category": "skill"
+    },
+    {
+      "english": "Trap and Mine Damage",
+      "skillId": "SupportTrapAndMineDamage",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportTrapAndMineDamage",
+      "variantId": "SupportTrapAndMineDamage",
+      "korean": "덫 및 지뢰 피해",
+      "category": "skill"
+    },
+    {
+      "english": "Trauma",
+      "skillId": "SupportTrauma",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportTrauma",
+      "variantId": "SupportTrauma",
+      "korean": "외상",
+      "category": "skill"
+    },
+    {
+      "english": "Trinity",
+      "skillId": "SupportTrinity",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportTrinity",
+      "variantId": "SupportTrinity",
+      "korean": "삼위일체",
+      "category": "skill"
+    },
+    {
+      "english": "Unbound Ailments",
+      "skillId": "SupportUnboundAilments",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportUnboundAilments",
+      "variantId": "SupportUnboundAilments",
+      "korean": "벌어지는 상처",
+      "category": "skill"
+    },
+    {
+      "english": "Unearth",
+      "skillId": "Unearth",
+      "gemId": "Metadata/Items/Gems/SkillGemUnearth",
+      "variantId": "Unearth",
+      "korean": "발굴",
+      "category": "skill"
+    },
+    {
+      "english": "Unleash",
+      "skillId": "SupportUnleash",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportUnleash",
+      "variantId": "SupportUnleash",
+      "korean": "촉발",
+      "category": "skill"
+    },
+    {
+      "english": "Urgent Orders",
+      "skillId": "SupportUrgentOrders",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportUrgentOrders",
+      "variantId": "SupportUrgentOrders",
+      "korean": "긴급 명령",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Absolution",
+      "skillId": "VaalAbsolution",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalAbsolution",
+      "variantId": "VaalAbsolution",
+      "korean": "바알 면죄",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Animate Weapon",
+      "skillId": "VaalAnimateWeapon",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalAnimateWeapon",
+      "variantId": "VaalAnimateWeapon",
+      "korean": "바알 무기 기동",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Arc",
+      "skillId": "VaalArc",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalArc",
+      "variantId": "VaalArc",
+      "korean": "바알 연쇄 번개",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Arctic Armour",
+      "skillId": "VaalArcticArmour",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalArcticArmour",
+      "variantId": "VaalArcticArmour",
+      "korean": "바알 한기의 방어구",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Blade Flurry",
+      "skillId": "VaalBladeFlurry",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalBladeFlurry",
+      "variantId": "VaalBladeFlurry",
+      "korean": "바알 질풍의 칼날",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Blade Vortex",
+      "skillId": "VaalBladeVortex",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalBladeVortex",
+      "variantId": "VaalBladeVortex",
+      "korean": "바알 칼날 소용돌이",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Blight",
+      "skillId": "VaalBlight",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalBlight",
+      "variantId": "VaalBlight",
+      "korean": "바알 황폐",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Breach",
+      "skillId": "VaalBreach",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalPortal",
+      "variantId": "VaalPortal",
+      "korean": "바알 균열",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Burning Arrow",
+      "skillId": "VaalBurningArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalBurningArrow",
+      "variantId": "VaalBurningArrow",
+      "korean": "바알 불타는 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Caustic Arrow",
+      "skillId": "VaalCausticArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalCausticArrow",
+      "variantId": "VaalCausticArrow",
+      "korean": "바알 부식성 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Clarity",
+      "skillId": "VaalClarity",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalClarity",
+      "variantId": "VaalClarity",
+      "korean": "바알 명상",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Cleave",
+      "skillId": "VaalCleave",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalCleave",
+      "variantId": "VaalCleave",
+      "korean": "바알 회전베기",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Cold Snap",
+      "skillId": "VaalColdSnap",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalColdSnap",
+      "variantId": "VaalColdSnap",
+      "korean": "바알 한파",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Cyclone",
+      "skillId": "VaalCyclone",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalCyclone",
+      "variantId": "VaalCyclone",
+      "korean": "바알 회오리바람",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Detonate Dead",
+      "skillId": "VaalDetonateDead",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalDetonateDead",
+      "variantId": "VaalDetonateDead",
+      "korean": "바알 시체 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Discipline",
+      "skillId": "VaalDiscipline",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalDiscipline",
+      "variantId": "VaalDiscipline",
+      "korean": "바알 단련",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Domination",
+      "skillId": "VaalDomination",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalDomination",
+      "variantId": "VaalDomination",
+      "korean": "바알 지배",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Double Strike",
+      "skillId": "VaalDoubleStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalDoubleStrike",
+      "variantId": "VaalDoubleStrike",
+      "korean": "바알 이중 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Earthquake",
+      "skillId": "VaalEarthquake",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalEarthquake",
+      "variantId": "VaalEarthquake",
+      "korean": "바알 지진",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Fireball",
+      "skillId": "VaalFireball",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalFireball",
+      "variantId": "VaalFireball",
+      "korean": "바알 화염구",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Firestorm",
+      "skillId": "VaalFirestorm",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalFirestorm",
+      "variantId": "VaalFirestorm",
+      "korean": "바알 화염 폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Flameblast",
+      "skillId": "VaalFlameblast",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalFlameblast",
+      "variantId": "VaalFlameblast",
+      "korean": "바알 화염파",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Flicker Strike",
+      "skillId": "VaalFlickerStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalFlickerStrike",
+      "variantId": "VaalFlickerStrike",
+      "korean": "바알 점멸 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Glacial Hammer",
+      "skillId": "VaalGlacialHammer",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalGlacialHammer",
+      "variantId": "VaalGlacialHammer",
+      "korean": "바알 빙하 망치",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Grace",
+      "skillId": "VaalGrace",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalGrace",
+      "variantId": "VaalGrace",
+      "korean": "바알 은총",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Ground Slam",
+      "skillId": "VaalGroundSlam",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalGroundSlam",
+      "variantId": "VaalGroundSlam",
+      "korean": "바알 대지 강타",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Haste",
+      "skillId": "VaalHaste",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalHaste",
+      "variantId": "VaalHaste",
+      "korean": "바알 가속",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Ice Nova",
+      "skillId": "VaalIceNova",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalIceNova",
+      "variantId": "VaalIceNova",
+      "korean": "바알 얼음 폭발",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Ice Shot",
+      "skillId": "VaalIceShot",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalIceShot",
+      "variantId": "VaalIceShot",
+      "korean": "바알 얼음 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Immortal Call",
+      "skillId": "VaalImmortalCall",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalImmortalCall",
+      "variantId": "VaalImmortalCall",
+      "korean": "바알 불멸의 외침",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Impurity of Fire",
+      "skillId": "VaalImpurityOfFire",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalImpurityOfFire",
+      "variantId": "VaalImpurityOfFire",
+      "korean": "바알 불의 부정함",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Impurity of Ice",
+      "skillId": "VaalImpurityOfIce",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalImpurityOfIce",
+      "variantId": "VaalImpurityOfIce",
+      "korean": "바알 얼음의 부정함",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Impurity of Lightning",
+      "skillId": "VaalImpurityOfLightning",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalImpurityOfLightning",
+      "variantId": "VaalImpurityOfLightning",
+      "korean": "바알 번개의 부정함",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Lightning Arrow",
+      "skillId": "VaalLightningArrow",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalLightningArrow",
+      "variantId": "VaalLightningArrow",
+      "korean": "바알 번개 화살",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Lightning Strike",
+      "skillId": "VaalLightningStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalLightningStrike",
+      "variantId": "VaalLightningStrike",
+      "korean": "바알 번개 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Lightning Trap",
+      "skillId": "VaalLightningTrap",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalLightningTrap",
+      "variantId": "VaalLightningTrap",
+      "korean": "바알 번개 덫",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Lightning Warp",
+      "skillId": "VaalLightningWarpInstant",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalLightningWarp",
+      "variantId": "VaalLightningWarp",
+      "korean": "바알 번개 차원 이동",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Molten Shell",
+      "skillId": "VaalMoltenShell",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalMoltenShell",
+      "variantId": "VaalMoltenShell",
+      "korean": "바알 용암 방패",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Molten Strike",
+      "skillId": "VaalMoltenStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalMoltenStrike",
+      "variantId": "VaalMoltenStrike",
+      "korean": "바알 용암 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Power Siphon",
+      "skillId": "VaalPowerSiphon",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalPowerSiphon",
+      "variantId": "VaalPowerSiphon",
+      "korean": "바알 권능 착취",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Rain of Arrows",
+      "skillId": "VaalRainOfArrows",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalRainOfArrows",
+      "variantId": "VaalRainOfArrows",
+      "korean": "바알 화살비",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Reap",
+      "skillId": "VaalReap",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalReap",
+      "variantId": "VaalReap",
+      "korean": "바알 낫질",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Reave",
+      "skillId": "VaalReave",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalReave",
+      "variantId": "VaalReave",
+      "korean": "바알 약탈",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Rejuvenation Totem",
+      "skillId": "VaalRejuvenationTotem",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalRejuvenationTotem",
+      "variantId": "VaalRejuvenationTotem",
+      "korean": "바알 회복 토템",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Righteous Fire",
+      "skillId": "VaalRighteousFire",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalRighteousFire",
+      "variantId": "VaalRighteousFire",
+      "korean": "바알 정의의 화염",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Smite",
+      "skillId": "VaalSmite",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalSmite",
+      "variantId": "VaalSmite",
+      "korean": "바알 징벌",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Spark",
+      "skillId": "VaalSpark",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalSpark",
+      "variantId": "VaalSpark",
+      "korean": "바알 전기불꽃",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Spectral Throw",
+      "skillId": "VaalSpectralThrow",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalSpectralThrow",
+      "variantId": "VaalSpectralThrow",
+      "korean": "바알 환영 무기 투척",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Storm Call",
+      "skillId": "VaalStormCall",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalStormCall",
+      "variantId": "VaalStormCall",
+      "korean": "바알 폭풍 부름",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Summon Skeletons",
+      "skillId": "VaalSummonSkeletons",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalSummonSkeletons",
+      "variantId": "VaalSummonSkeletons",
+      "korean": "바알 해골 소환",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Temptation",
+      "skillId": "SupportVaalTemptation",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportVaalTemptation",
+      "variantId": "SupportVaalTemptation",
+      "korean": "바알 유혹",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Venom Gyre",
+      "skillId": "VaalVenomGyre",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalVenomGyre",
+      "variantId": "VaalVenomGyre",
+      "korean": "바알 독액 선회",
+      "category": "skill"
+    },
+    {
+      "english": "Vaal Volcanic Fissure",
+      "skillId": "VaalVolcanicFissure",
+      "gemId": "Metadata/Items/Gems/SkillGemVaalVolcanicFissure",
+      "variantId": "VaalVolcanicFissure",
+      "korean": "바알 화산 균열",
+      "category": "skill"
+    },
+    {
+      "english": "Vampiric Link",
+      "skillId": "VampiricLink",
+      "gemId": "Metadata/Items/Gems/SkillGemVampiricLink",
+      "variantId": "VampiricLink",
+      "korean": "흡혈의 연결",
+      "category": "skill"
+    },
+    {
+      "english": "Vengeful Cry",
+      "skillId": "VengefulCry",
+      "gemId": "Metadata/Items/Gems/SkillGemVengefulCry",
+      "variantId": "VengefulCry",
+      "korean": "복수의 함성",
+      "category": "skill"
+    },
+    {
+      "english": "Venom Gyre",
+      "skillId": "VenomGyre",
+      "gemId": "Metadata/Items/Gems/SkillGemVenomGyre",
+      "variantId": "VenomGyre",
+      "korean": "독액 선회",
+      "category": "skill"
+    },
+    {
+      "english": "Vicious Projectiles",
+      "skillId": "SupportViciousProjectiles",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportViciousProjectiles",
+      "variantId": "SupportViciousProjectiles",
+      "korean": "포악한 투사체",
+      "category": "skill"
+    },
+    {
+      "english": "Vigilant Strike",
+      "skillId": "VigilantStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemVigilantStrike",
+      "variantId": "VigilantStrike",
+      "korean": "경계 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Vile Toxins",
+      "skillId": "SupportVileToxins",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportVileToxins",
+      "variantId": "SupportVileToxins",
+      "korean": "끔찍한 독소",
+      "category": "skill"
+    },
+    {
+      "english": "Viper Strike",
+      "skillId": "ViperStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemViperStrike",
+      "variantId": "ViperStrike",
+      "korean": "맹독 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Viper Strike of the Mamba",
+      "skillId": "ViperStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemViperStrikeAltX",
+      "variantId": "ViperStrikeAltX",
+      "korean": "큰독사의 맹독 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Vitality",
+      "skillId": "Vitality",
+      "gemId": "Metadata/Items/Gems/SkillGemVitality",
+      "variantId": "Vitality",
+      "korean": "활력",
+      "category": "skill"
+    },
+    {
+      "english": "Void Manipulation",
+      "skillId": "SupportVoidManipulation",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportVoidManipulation",
+      "variantId": "SupportVoidManipulation",
+      "korean": "공허 조작",
+      "category": "skill"
+    },
+    {
+      "english": "Void Shockwave",
+      "skillId": "SupportVoidShockwave",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportVoidShockwave",
+      "variantId": "SupportVoidShockwave",
+      "korean": "공허 충격파",
+      "category": "skill"
+    },
+    {
+      "english": "Void Sphere",
+      "skillId": "VoidSphere",
+      "gemId": "Metadata/Items/Gems/SkillGemVoidSphere",
+      "variantId": "VoidSphere",
+      "korean": "공허 구체",
+      "category": "skill"
+    },
+    {
+      "english": "Void Sphere of Rending",
+      "skillId": "VoidSphereAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemVoidSphereAltX",
+      "variantId": "VoidSphereAltX",
+      "korean": "분리의 공허 구체",
+      "category": "skill"
+    },
+    {
+      "english": "Voidstorm",
+      "skillId": "SupportVoidstorm",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportVoidstorm",
+      "variantId": "SupportVoidstorm",
+      "korean": "공허폭풍",
+      "category": "skill"
+    },
+    {
+      "english": "Volatile Dead",
+      "skillId": "VolatileDead",
+      "gemId": "Metadata/Items/Gems/SkillGemVolatileDead",
+      "variantId": "VolatileDead",
+      "korean": "시체 불덩이",
+      "category": "skill"
+    },
+    {
+      "english": "Volatile Dead of Confinement",
+      "skillId": "VolatileDeadAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemVolatileDeadAltX",
+      "variantId": "VolatileDeadAltX",
+      "korean": "감금의 시체 불덩이",
+      "category": "skill"
+    },
+    {
+      "english": "Volatile Dead of Seething",
+      "skillId": "VolatileDeadAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemVolatileDeadAltY",
+      "variantId": "VolatileDeadAltY",
+      "korean": "끓어오름의 시체 불덩이",
+      "category": "skill"
+    },
+    {
+      "english": "Volatility",
+      "skillId": "SupportVolatility",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportVolatility",
+      "variantId": "SupportVolatility",
+      "korean": "일촉즉발",
+      "category": "skill"
+    },
+    {
+      "english": "Volcanic Fissure",
+      "skillId": "VolcanicFissure",
+      "gemId": "Metadata/Items/Gems/SkillGemVolcanicFissure",
+      "variantId": "VolcanicFissure",
+      "korean": "화산 균열",
+      "category": "skill"
+    },
+    {
+      "english": "Volcanic Fissure of Snaking",
+      "skillId": "VolcanicFissureAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemVolcanicFissureAltX",
+      "variantId": "VolcanicFissureAltX",
+      "korean": "구불거림의 화산 균열",
+      "category": "skill"
+    },
+    {
+      "english": "Volley",
+      "skillId": "SupportVolley",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportVolley",
+      "variantId": "SupportVolley",
+      "korean": "사격 공세",
+      "category": "skill"
+    },
+    {
+      "english": "Voltaxic Burst",
+      "skillId": "VoltaxicBurst",
+      "gemId": "Metadata/Items/Gems/SkillGemVoltaxicBurst",
+      "variantId": "VoltaxicBurst",
+      "korean": "전도성 격발",
+      "category": "skill"
+    },
+    {
+      "english": "Vortex",
+      "skillId": "Vortex",
+      "gemId": "Metadata/Items/Gems/SkillGemVortex",
+      "variantId": "Vortex",
+      "korean": "소용돌이",
+      "category": "skill"
+    },
+    {
+      "english": "Vortex of Projection",
+      "skillId": "VortexAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemVortexAltX",
+      "variantId": "VortexAltX",
+      "korean": "투영의 소용돌이",
+      "category": "skill"
+    },
+    {
+      "english": "Vulnerability",
+      "skillId": "Vulnerability",
+      "gemId": "Metadata/Items/Gems/SkillGemVulnerability",
+      "variantId": "Vulnerability",
+      "korean": "취약성",
+      "category": "skill"
+    },
+    {
+      "english": "Wall of Force",
+      "skillId": "WallOfForce",
+      "gemId": "Metadata/Items/Gems/SkillGemWallOfForce",
+      "variantId": "WallOfForce",
+      "korean": "힘의 벽",
+      "category": "skill"
+    },
+    {
+      "english": "War Banner",
+      "skillId": "WarBanner",
+      "gemId": "Metadata/Items/Gems/SkillGemWarBanner",
+      "variantId": "WarBanner",
+      "korean": "전쟁 깃발",
+      "category": "skill"
+    },
+    {
+      "english": "Warlord's Mark",
+      "skillId": "WarlordsMark",
+      "gemId": "Metadata/Items/Gems/SkillGemWarlordsMark",
+      "variantId": "WarlordsMark",
+      "korean": "전쟁군주의 징표",
+      "category": "skill"
+    },
+    {
+      "english": "Wave of Conviction",
+      "skillId": "WaveOfConviction",
+      "gemId": "Metadata/Items/Gems/SkillGemWaveOfConviction",
+      "variantId": "WaveOfConviction",
+      "korean": "신념의 파도",
+      "category": "skill"
+    },
+    {
+      "english": "Wave of Conviction of Trarthus",
+      "skillId": "WaveOfConvictionAltY",
+      "gemId": "Metadata/Items/Gems/SkillGemWaveOfConvictionAltY",
+      "variantId": "WaveOfConvictionAltY",
+      "korean": "트라투스의 신념의 파도",
+      "category": "skill"
+    },
+    {
+      "english": "Whirling Blades",
+      "skillId": "WhirlingBlades",
+      "gemId": "Metadata/Items/Gems/SkillGemWhirlingBlades",
+      "variantId": "WhirlingBlades",
+      "korean": "칼날 선회",
+      "category": "skill"
+    },
+    {
+      "english": "Wild Strike",
+      "skillId": "WildStrike",
+      "gemId": "Metadata/Items/Gems/SkillGemWildStrike",
+      "variantId": "WildStrike",
+      "korean": "사나운 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Wild Strike of Extremes",
+      "skillId": "WildStrikeAltX",
+      "gemId": "Metadata/Items/Gems/SkillGemWildStrikeAltX",
+      "variantId": "WildStrikeAltX",
+      "korean": "극단의 사나운 타격",
+      "category": "skill"
+    },
+    {
+      "english": "Windburst",
+      "skillId": "SupportWindburst",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportWindburst",
+      "variantId": "SupportWindburst",
+      "korean": "바람 격발",
+      "category": "skill"
+    },
+    {
+      "english": "Winter Orb",
+      "skillId": "WinterOrb",
+      "gemId": "Metadata/Items/Gems/SkillGemWinterOrb",
+      "variantId": "WinterOrb",
+      "korean": "겨울 보주",
+      "category": "skill"
+    },
+    {
+      "english": "Wintertide Brand",
+      "skillId": "WintertideBrand",
+      "gemId": "Metadata/Items/Gems/SkillGemWintertideBrand",
+      "variantId": "WintertideBrand",
+      "korean": "겨울의 낙인",
+      "category": "skill"
+    },
+    {
+      "english": "Wither",
+      "skillId": "Wither",
+      "gemId": "Metadata/Items/Gems/SkillGemWither",
+      "variantId": "Wither",
+      "korean": "위축",
+      "category": "skill"
+    },
+    {
+      "english": "Withering Step",
+      "skillId": "WitheringStep",
+      "gemId": "Metadata/Items/Gems/SkillGemWitheringStep",
+      "variantId": "WitheringStep",
+      "korean": "고사시키는 걸음",
+      "category": "skill"
+    },
+    {
+      "english": "Withering Touch",
+      "skillId": "SupportWitheringTouch",
+      "gemId": "Metadata/Items/Gems/SkillGemSupportWitheringTouch",
+      "variantId": "SupportWitheringTouch",
+      "korean": "위축의 손길",
+      "category": "skill"
+    },
+    {
+      "english": "Wrath",
+      "skillId": "Wrath",
+      "gemId": "Metadata/Items/Gems/SkillGemWrath",
+      "variantId": "Wrath",
+      "korean": "진노",
+      "category": "skill"
+    },
+    {
+      "english": "Zealotry",
+      "skillId": "Zealotry",
+      "gemId": "Metadata/Items/Gems/SkillGemZealotry",
+      "variantId": "Zealotry",
+      "korean": "열광",
+      "category": "skill"
+    }
+  ]
+}

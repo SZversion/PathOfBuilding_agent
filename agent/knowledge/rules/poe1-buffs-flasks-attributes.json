@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "attribute.strength.bonuses",
+      "category": "attribute",
+      "statement": "PoB applies Strength as Life and melee Physical Damage bonuses unless attribute bonuses are disabled.",
+      "facts": {"lifePerStrength": "implementation_constant", "meleePhysicalDamage": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:494-506"}],
+      "verification": "verified"
+    },
+    {
+      "id": "attribute.dexterity.bonuses",
+      "category": "attribute",
+      "statement": "PoB applies Dexterity as Accuracy and Evasion bonuses unless attribute bonuses are disabled.",
+      "facts": {"accuracy": true, "evasion": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:507-513"}],
+      "verification": "verified"
+    },
+    {
+      "id": "attribute.intelligence.bonuses",
+      "category": "attribute",
+      "statement": "PoB applies Intelligence as Mana and Energy Shield bonuses unless attribute bonuses are disabled.",
+      "facts": {"mana": true, "energyShield": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:514-518"}],
+      "verification": "verified"
+    },
+    {
+      "id": "buff.fortify.stacks",
+      "category": "buff",
+      "statement": "PoB models Fortify with a configurable maximum stack count and duration, including increased duration modifiers.",
+      "facts": {"hasStacks": true, "hasDuration": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:627-645"}],
+      "verification": "verified"
+    },
+    {
+      "id": "buff.onslaught.scope",
+      "category": "buff",
+      "statement": "PoB applies Onslaught effects separately to attack speed, cast speed, and movement speed, with flask-derived effect handling.",
+      "facts": {"scopes": ["attack", "cast", "movement"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:656-684"}],
+      "verification": "verified"
+    },
+    {
+      "id": "buff.tailwind.action_speed",
+      "category": "buff",
+      "statement": "PoB converts Tailwind effect into Action Speed and separately handles Totem Action Speed when applicable.",
+      "facts": {"playerStat": "ActionSpeed", "totemStat": "TotemActionSpeed"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:733-738"}],
+      "verification": "verified"
+    },
+    {
+      "id": "buff.elusive.dynamic_effect",
+      "category": "buff",
+      "statement": "PoB can calculate Elusive as a dynamic effect over time and derives hit avoidance and movement speed from the resulting effect.",
+      "facts": {"outputs": ["AvoidAllDamageFromHitsChance", "MovementSpeed"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:779-810"}],
+      "verification": "verified"
+    },
+    {
+      "id": "flask.effect_and_charges",
+      "category": "flask",
+      "statement": "PoB models flask effect, duration, recovery rate, charge generation, and separate life/mana/utility charge outputs.",
+      "facts": {"outputs": ["FlaskEffect", "FlaskChargeGen", "LifeFlaskChargeGen", "ManaFlaskChargeGen", "UtilityFlaskChargeGen"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:1567-1599"}],
+      "verification": "verified"
+    },
+    {
+      "id": "flask.recovery_layers",
+      "category": "flask",
+      "statement": "Life and Mana flask recovery can include instant recovery portions, increased recovery, more recovery, and recovery rate modifiers.",
+      "facts": {"supportsInstantPortion": true, "supportsIncAndMore": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:1603-1649"}],
+      "verification": "verified"
+    },
+    {
+      "id": "character.level.base_resources",
+      "category": "character.progression",
+      "statement": "PoB uses character level as a multiplier for level-based base Life, Mana, and Accuracy contributions.",
+      "facts": {"clampedLevelRange": [1, 100], "stats": ["Life", "Mana", "Accuracy"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:493-500"}],
+      "verification": "verified"
+    },
+    {
+      "id": "monster.level.scaling",
+      "category": "monster",
+      "statement": "PoB selects an enemy level from build configuration and applies level-based monster scaling when constructing minion and enemy contexts.",
+      "facts": {"enemyLevelConfigured": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:409-419"}, {"type": "pob", "ref": "src/Modules/CalcPerform.lua:1124-1135"}],
+      "verification": "verified"
+    },
+    {
+      "id": "guard.skill_state",
+      "category": "guard",
+      "statement": "PoB tracks whether a character is affected by a Guard Skill and exposes that state to later calculations.",
+      "facts": {"conditions": ["AffectedByGuardSkill", "AffectedByNonVaalGuardSkill"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcPerform.lua:3274-3281"}],
+      "verification": "verified"
+    }
+  ]
+}

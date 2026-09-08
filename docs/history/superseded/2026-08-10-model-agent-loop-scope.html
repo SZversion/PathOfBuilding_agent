@@ -1,0 +1,12 @@
+<!-- Status: Superseded
+Authority: Not authoritative
+Superseded by: AGENT.md, PRD_SDD.md, CUSTOMER.md, agent/knowledge/RULE_AUTHORING.md, agent/knowledge/RULE_SCHEMA.md, agent/knowledge/VALIDATION_WORKFLOW.md -->
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Model Agent Loop Scope</title></head><body>
+<h1>Model Agent Loop Scope</h1>
+<h2>Goal</h2><p>Connect a chat model to the existing orchestration runtime using a two-call tool loop.</p>
+<h2>In scope</h2><ol><li>Ask the model for a JSON-only Tool plan.</li><li>Validate the plan against a small allowlist and execute it through the existing runtime.</li><li>Send the original question, validated plan, and Tool results back to the model for the final answer.</li><li>Provide an OpenAI-compatible HTTP client usable with local llama.cpp servers or online endpoints.</li></ol>
+<h2>Out of scope</h2><ul><li>Downloading or embedding model weights.</li><li>UI, streaming, multi-turn memory, retries, or autonomous loops.</li><li>Allowing model-generated tools outside the registered handler map.</li></ul>
+<h2>Safety contract</h2><p>Allowed Tools are <code>search_knowledge</code>, <code>get_projectile_count</code>, <code>get_curse_limit</code>, <code>get_elemental_penetration</code>, <code>get_socket_order</code>, <code>get_skill_chain</code>, <code>compare_support_effect</code>, and <code>explain_damage_change</code>. A plan has at most 8 steps; every step has a string Tool and object arguments; unknown or duplicate Tools are rejected. Invalid plans return <code>{"status":"plan_error","error":string}</code> and execute no Tool.</p>
+<h2>Model contract</h2><p><code>model.chat(messages) -&gt; string</code>. The first response is a JSON object containing <code>steps</code>; the second response is the final answer text. The OpenAI-compatible client posts to <code>{endpoint}/chat/completions</code> with <code>Authorization: Bearer {api_key}</code> when configured, a timeout, and reads <code>choices[0].message.content</code>. The final prompt requires the model not to invent missing values.</p>
+</body></html>
+

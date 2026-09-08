@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "domain": "jewellery",
+  "game": "poe1",
+  "status": "planned",
+  "rules": [
+    {
+      "id": "jewellery.modifiers",
+      "category": "jewellery",
+      "scope": "item",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "Ring, amulet, and belt comparisons preserve slot, base identity, explicit modifiers, implicit/enchant state, and equipped state; resulting stats come from PoB output.",
+      "facts": {
+        "slots": [
+          "ring",
+          "amulet",
+          "belt"
+        ],
+        "fields": [
+          "baseName",
+          "explicitModifiers",
+          "implicit",
+          "enchant",
+          "equipped"
+        ]
+      },
+      "conditions": [
+        "jewellery is equipped in authoritative state"
+      ],
+      "gamePatch": null,
+      "pobVersion": null,
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "wiki-jewellery.modifiers",
+          "type": "wiki",
+          "title": "jewellery reference",
+          "url": "https://www.poewiki.net/wiki/Jewellery",
+          "repository": null,
+          "ref": null,
+          "commit": null,
+          "license": "CC BY-SA 3.0 where applicable",
+          "attribution": "PoE Wiki contributors",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": null,
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "PoB raw",
+          "ui": "item display",
+          "tool": "before/after facts and source edges",
+          "final": "presentation only",
+          "floatingPoint": "preserve raw",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "jewellery.modifiers",
+          "to": "modifier.runtime.base_inc_more",
+          "condition": "modifier is active on actor"
+        }
+      ],
+      "relatedRuleIds": [
+        "modifier.runtime.base_inc_more",
+        "attribute.base-derived",
+        "unique.override-granted"
+      ],
+      "interactions": [
+        {
+          "ruleId": "attribute.base-derived",
+          "relation": "may_change_attribute"
+        },
+        {
+          "ruleId": "unique.override-granted",
+          "relation": "may_override_or_grant"
+        }
+      ],
+      "sourceEdges": [],
+      "verification": {
+        "state": "planned",
+        "fixtureRefs": [],
+        "next": "ring/amulet/belt comparison fixtures",
+        "sourceEdgeStatus": "pending: no jewellery comparison output"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No jewellery fixture",
+          "Wiki page was not parsed; source metadata is provisional"
+        ],
+        "missingEvidence": [
+          "two comparison outputs",
+          "wikiOldid/wikiLastModified and parsed claim"
+        ],
+        "temporaryEvidence": false
+      }
+    }
+  ]
+}
+

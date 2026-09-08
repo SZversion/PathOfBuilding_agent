@@ -1,0 +1,18 @@
+{
+  "language": "en",
+  "game": "poe1",
+  "cases": [
+    {
+      "id": "act10-no-modifiers",
+      "question": "After completing Act 10, what are the elemental resistances with no equipment or passives?",
+      "expected": {"fire": -60, "cold": -60, "lightning": -60},
+      "requiredRules": ["character.base_resistance.elemental", "campaign.resistance_penalty.act10"]
+    },
+    {
+      "id": "default-curse-limit",
+      "question": "Without modifiers, how many curses can be applied to one target?",
+      "expected": {"curseLimit": 1},
+      "requiredRules": ["curse.default_limit"]
+    }
+  ]
+}

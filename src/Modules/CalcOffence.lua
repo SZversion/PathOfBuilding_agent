@@ -325,6 +325,7 @@ function calcs.offence(env, actor, activeSkill)
 	local enemyDB = actor.enemy.modDB
 	local output = actor.output
 	local breakdown = actor.breakdown
+	output.ElementalPenetration = { }
 
 	local skillModList = activeSkill.skillModList
 	local skillData = activeSkill.skillData
@@ -3474,6 +3475,10 @@ function calcs.offence(env, actor, activeSkill)
 							elseif damageType == "Chaos" then
 								pen = skillModList:Sum("BASE", cfg, "ChaosPenetration")
 							end
+						end
+						if isElemental[damageType] then
+							output.ElementalPenetration = output.ElementalPenetration or { }
+							output.ElementalPenetration[damageType] = pen
 						end
 						local invertChanceEle = m_max(m_min(skillModList:Sum("CHANCE", cfg, "HitsInvertEleResChance"), 1), 0)
 						local invertChanceChaos = m_max(m_min(skillModList:Sum("CHANCE", cfg, "HitsInvertChaosResChance"), 1), 0)

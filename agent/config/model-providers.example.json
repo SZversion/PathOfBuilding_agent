@@ -1,0 +1,12 @@
+{
+  "defaultMode": "online",
+  "online": {
+    "provider": "user-configured",
+    "credentialTarget": "PoB-Agent/online-provider"
+  },
+  "local": {
+    "modelId": "qwen3-8b-q4",
+    "runtime": "llama.cpp",
+    "modelDirectory": "local-models"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "projectile.default_count",
+      "category": "projectile",
+      "statement": "PoB initializes the projectile count to 1 before skill and modifier-specific additions are applied.",
+      "facts": {"baseProjectileCount": 1},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:532"}],
+      "verification": "verified"
+    },
+    {
+      "id": "projectile.skill_flag_scope",
+      "category": "projectile",
+      "statement": "Projectile-specific calculations are gated by the active skill's projectile flag.",
+      "facts": {"flag": "skillFlags.projectile"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua:3536-3545"}],
+      "verification": "verified"
+    },
+    {
+      "id": "projectile.count_modifiers",
+      "category": "projectile",
+      "statement": "Projectile count is a calculated skill output and can be changed by skill data and applicable modifiers.",
+      "facts": {"output": "ProjectileCount"},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcSetup.lua:532"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1054-1062"}],
+      "verification": "verified"
+    },
+    {
+      "id": "projectile.chain_fork_pierce_split",
+      "category": "projectile",
+      "statement": "Chain, Fork, Pierce, and Split are separate projectile behaviors and require skill- and modifier-specific evaluation.",
+      "facts": {"behaviors": ["chain", "fork", "pierce", "split"]},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua:1033-1044"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1069-1085"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1087-1116"}],
+      "verification": "verified"
+    },
+    {
+      "id": "projectile.single_target_overlap",
+      "category": "projectile",
+      "statement": "Whether multiple projectiles can overlap one target is skill-specific and cannot be inferred from projectile count alone.",
+      "facts": {"requiresSkillFixture": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua"}, {"type": "test", "ref": "tests/agent"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "proxy.trap_mine_throwing",
+      "category": "skill.proxy",
+      "statement": "PoB calculates trap and mine throwing time separately from the active skill's hit or damage calculation.",
+      "facts": {"separateThrowingCalculations": true},
+      "sources": [{"type": "pob", "ref": "src/Modules/CalcOffence.lua:1224-1237"}, {"type": "pob", "ref": "src/Modules/CalcOffence.lua:1313-1353"}],
+      "verification": "verified"
+    }
+  ]
+}

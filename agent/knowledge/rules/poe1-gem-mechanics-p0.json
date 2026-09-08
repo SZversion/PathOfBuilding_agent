@@ -1,0 +1,1113 @@
+{
+  "schemaVersion": 1,
+  "language": "en",
+  "game": "poe1",
+  "status": "partial",
+  "sourceManifest": "agent/knowledge/sources/poe1-gem-wiki-manifest.json",
+  "rules": [
+    {
+      "id": "gem.identity.variant",
+      "category": "gem_identity",
+      "scope": "skill",
+      "domain": "mechanism",
+      "status": "pob_checked",
+      "statement": "A PoB gem instance keeps a base gem identity separate from its selected granted effect and variant identity.",
+      "facts": {
+        "identityFields": [
+          "gemId",
+          "grantedEffectId",
+          "variantId",
+          "baseName",
+          "displayName",
+          "skillId",
+          "qualityId"
+        ]
+      },
+      "conditions": [
+        "Resolve the loaded gem instance, not display text alone"
+      ],
+      "gamePatch": "3.29",
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-gems",
+          "type": "pob",
+          "title": "PoB gem data and instance loading",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": "3.29",
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": "src/Data/Gems.lua",
+        "line": "9-10, 29-31, 72-74",
+        "function": null,
+        "stat": "gem identity",
+        "modKey": "variantId/grantedEffectId",
+        "observedValue": "Gems.lua declares distinct variantId and grantedEffectId records; arc.xml observes VaalArcAltY and VaalArc.",
+        "observationContext": "arc.xml, Skill Set 1, Vaal Arc of Oscillating"
+      },
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "identifier exact",
+          "ui": "display name",
+          "tool": "all identity fields",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [],
+      "interactions": [
+        "gem display name may differ from skillId"
+      ],
+      "sourceEdges": [
+        {
+          "from": "gem.instance.variantId",
+          "to": "gem.instance.grantedEffectId",
+          "relation": "selects_effect",
+          "evidence": [
+            "pob-gems"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "pob_checked",
+        "fixtureRefs": [
+          "arc-of-oscillating-3.29"
+        ],
+        "next": "source_checked and second variant fixture"
+      },
+      "uncertainty": {
+        "level": "medium",
+        "reasons": [
+          "Wiki page fetch failed; game-rule semantics not independently verified"
+        ],
+        "missingEvidence": [
+          "parsed PoE Wiki gem identity page"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "gem.level.quality",
+      "category": "gem_progression",
+      "scope": "skill",
+      "domain": "mechanism",
+      "status": "pob_checked",
+      "statement": "PoB carries gem level and quality on each gem instance and resolves level-dependent and quality-dependent skill modifiers from that instance.",
+      "facts": {
+        "fields": [
+          "level",
+          "quality",
+          "qualityId",
+          "naturalMaxLevel"
+        ]
+      },
+      "conditions": [
+        "The gem instance is enabled and its level is valid for the selected granted effect"
+      ],
+      "gamePatch": "3.29",
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-level-quality",
+          "type": "pob",
+          "title": "PoB gem level and quality resolution",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": "3.29",
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": "src/Modules/CalcTools.lua",
+        "line": "41-57, 170-191",
+        "function": "calcLib.validateGemLevel; getGemStatRequirement; buildSkillInstanceStats",
+        "stat": "gem level/quality",
+        "modKey": "level/quality",
+        "observedValue": "Level is clamped to available granted-effect levels; quality and level modifiers are merged into the skill instance.",
+        "observationContext": "Any loaded active/support gem instance; Arc fixture observes level 21 quality 20 and Static Strike variant observes level 20 quality 20"
+      },
+      "calculation": {
+        "stages": [
+          {
+            "id": "level",
+            "stage": 1,
+            "order": [
+              "validate_level",
+              "merge_level_mods"
+            ],
+            "operation": "LOOKUP_GRANTED_EFFECT_LEVEL",
+            "inputs": [
+              "level",
+              "grantedEffectId"
+            ],
+            "output": "skill.level_effect"
+          },
+          {
+            "id": "quality",
+            "stage": 2,
+            "order": [
+              "merge_quality_mods"
+            ],
+            "operation": "MERGE_QUALITY",
+            "inputs": [
+              "quality",
+              "qualityId"
+            ],
+            "output": "skill.quality_effect"
+          }
+        ],
+        "precision": {
+          "internal": "PoB raw modifier values",
+          "ui": "PoB display precision",
+          "tool": "raw level and quality plus trace",
+          "final": "presentation only",
+          "floatingPoint": "preserve raw",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "gem.level",
+          "to": "skill.level_effect",
+          "condition": "selected granted effect has level data"
+        },
+        {
+          "from": "gem.quality",
+          "to": "skill.quality_effect",
+          "condition": "qualityId and quality are present"
+        }
+      ],
+      "interactions": [],
+      "sourceEdges": [
+        {
+          "from": "gem.instance.level",
+          "to": "calculation.level",
+          "relation": "input",
+          "evidence": [
+            "pob-level-quality"
+          ]
+        },
+        {
+          "from": "gem.instance.quality",
+          "to": "calculation.quality",
+          "relation": "input",
+          "evidence": [
+            "pob-level-quality"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "pob_checked",
+        "fixtureRefs": [
+          "arc-of-oscillating-3.29",
+          "static-strike-gathering-lightning-3.29"
+        ],
+        "next": "second independent level/quality fixture"
+      },
+      "uncertainty": {
+        "level": "medium",
+        "reasons": [
+          "Game rule text and exact quality variants are not source-checked"
+        ],
+        "missingEvidence": [
+          "alternate quality fixture"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "gem.tags.skill_flags",
+      "category": "gem_tags",
+      "scope": "skill",
+      "domain": "mechanism",
+      "status": "pob_checked",
+      "statement": "Gem tags and derived skill-type flags are separate inputs; tags do not by themselves prove every skill interaction.",
+      "facts": {
+        "tagSource": "gem data",
+        "derivedFlags": "active skill types and skill flags"
+      },
+      "conditions": [
+        "Use the active granted effect and its resolved skillTypes"
+      ],
+      "gamePatch": "3.29",
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-tags",
+          "type": "pob",
+          "title": "PoB gem tags and skill flags",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": "3.29",
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": "src/Modules/CalcActiveSkill.lua",
+        "line": "96-115",
+        "function": "buildActiveSkill",
+        "stat": "skillTypes/skillFlags",
+        "modKey": "SkillType",
+        "observedValue": "Active skill types are copied from the granted effect; support effects can add skill types after compatibility checks.",
+        "observationContext": "Loaded active skill with linked supports"
+      },
+      "calculation": {
+        "stages": [
+          {
+            "id": "base-flags",
+            "stage": 1,
+            "order": [
+              "copy_granted_effect_types",
+              "derive_flags"
+            ],
+            "operation": "RESOLVE_SKILL_TYPES",
+            "inputs": [
+              "grantedEffect.skillTypes"
+            ],
+            "output": "activeSkill.skillTypes"
+          },
+          {
+            "id": "support-flags",
+            "stage": 2,
+            "order": [
+              "support_compatibility",
+              "add_skill_types"
+            ],
+            "operation": "APPLY_SUPPORT_TYPES",
+            "inputs": [
+              "support.grantedEffect.addSkillTypes"
+            ],
+            "output": "activeSkill.skillTypes"
+          }
+        ],
+        "precision": {
+          "internal": "boolean flags",
+          "ui": "localized labels",
+          "tool": "raw flags",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "gem.grantedEffect.skillTypes",
+          "to": "skill.skillTypes",
+          "condition": "active skill resolved"
+        }
+      ],
+      "interactions": [
+        "support compatibility can add types after base types are copied"
+      ],
+      "sourceEdges": [
+        {
+          "from": "grantedEffect.skillTypes",
+          "to": "activeSkill.skillTypes",
+          "relation": "copied_to",
+          "evidence": [
+            "pob-tags"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "pob_checked",
+        "fixtureRefs": [
+          "arc-of-oscillating-3.29"
+        ],
+        "next": "fixture with a support-added flag"
+      },
+      "uncertainty": {
+        "level": "medium",
+        "reasons": [
+          "Wiki tag taxonomy not parsed"
+        ],
+        "missingEvidence": [
+          "parsed Gem_tag page"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "support.compatibility",
+      "category": "support_interaction",
+      "scope": "support",
+      "domain": "mechanism",
+      "status": "pob_checked",
+      "statement": "A support is applied only when its granted effect's type expression matches the active skill context; linked socket membership and item-granted exceptions are part of the context.",
+      "facts": {
+        "compatibilityFunction": "canGrantedEffectSupportActiveSkill",
+        "contextInputs": [
+          "skillTypes",
+          "minionTypes",
+          "fromItem",
+          "socketGroup"
+        ]
+      },
+      "conditions": [
+        "support is enabled and in the same compatible group"
+      ],
+      "gamePatch": "3.29",
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-support-compat",
+          "type": "pob",
+          "title": "PoB support compatibility",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": "3.29",
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": "src/Modules/CalcTools.lua",
+        "line": "61-168",
+        "function": "doesTypeExpressionMatch; canGrantedEffectSupportActiveSkill",
+        "stat": "support compatibility",
+        "modKey": "support",
+        "observedValue": "Type expressions, minion types, item-granted source, and support-added types gate support application.",
+        "observationContext": "Active/support gem group resolution"
+      },
+      "calculation": {
+        "stages": [
+          {
+            "id": "support-check",
+            "stage": 1,
+            "order": [
+              "resolve_types",
+              "match_expression",
+              "apply_exception"
+            ],
+            "operation": "SUPPORT_COMPATIBILITY",
+            "inputs": [
+              "activeSkill",
+              "supportEffect",
+              "socketGroup"
+            ],
+            "output": "support.enabled_for_skill"
+          }
+        ],
+        "precision": {
+          "internal": "boolean",
+          "ui": "enabled/disabled",
+          "tool": "boolean plus reasons",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "support.grantedEffect.typeExpression",
+          "to": "support.compatible",
+          "condition": "expression matches active skill types"
+        }
+      ],
+      "interactions": [
+        "item-granted support handling can differ when the active effect is also from an item",
+        "minion scope is evaluated separately"
+      ],
+      "sourceEdges": [
+        {
+          "from": "support.compatibility.inputs",
+          "to": "support.enabled_for_skill",
+          "relation": "gates",
+          "evidence": [
+            "pob-support-compat"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "pob_checked",
+        "fixtureRefs": [],
+        "next": "two fixture-verified incompatible/compatible links"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No paired fixture currently proves both branches"
+        ],
+        "missingEvidence": [
+          "support compatibility fixture pair"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "gem.item_granted.source",
+      "category": "gem_source",
+      "scope": "item",
+      "domain": "mechanism",
+      "status": "unverified",
+      "statement": "An item-granted skill is represented as an active effect whose source is an item and must remain distinct from a socketed gem source.",
+      "facts": {
+        "sourceMarkers": [
+          "grantedEffect.fromItem",
+          "srcInstance.fromItem",
+          "modSource"
+        ]
+      },
+      "conditions": [
+        "item-granted effect is loaded by PoB"
+      ],
+      "gamePatch": null,
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-item-source",
+          "type": "pob",
+          "title": "PoB item-granted skill source checks",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": [
+          "src/Modules/CalcTools.lua",
+          "src/Modules/CalcSetup.lua"
+        ],
+        "line": [
+          "94-96",
+          "1392-1438"
+        ],
+        "function": "canGrantedEffectSupportActiveSkill; active skill instance creation",
+        "stat": "item-granted source",
+        "modKey": "fromItem/triggered",
+        "observedValue": "PoB tests fromItem and source instance markers when deciding support handling and constructs active skill instances from item-granted data.",
+        "observationContext": "Implementation observation only; no verified item fixture"
+      },
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "source marker exact",
+          "ui": "item-provided label",
+          "tool": "source marker plus trace",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "item.granted_effect",
+          "to": "skill.source",
+          "condition": "effect is provided by an item"
+        }
+      ],
+      "interactions": [
+        "item-granted skills may receive supports through special compatibility handling",
+        "synthetic socket group source must be preserved"
+      ],
+      "sourceEdges": [
+        {
+          "from": "grantedEffect.fromItem",
+          "to": "skill.source",
+          "relation": "identifies",
+          "evidence": [
+            "pob-item-source"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "unverified",
+        "fixtureRefs": [],
+        "next": "Impending Doom or item-granted fixture"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "Source code indicates branches but no fixture proves a complete user-visible result"
+        ],
+        "missingEvidence": [
+          "item-granted skill fixture",
+          "synthetic socket group observation"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "gem.synthetic_socket_group",
+      "category": "gem_source",
+      "scope": "skill",
+      "domain": "mechanism",
+      "status": "unverified",
+      "statement": "Synthetic socket groups are the authoritative PoB grouping for item-provided skills and their linked supports; XML socket text alone is insufficient to infer the final active effect.",
+      "facts": {
+        "authoritativeSource": "PoB in-memory socketGroup after load",
+        "xmlRole": "input only"
+      },
+      "conditions": [
+        "PoB bridge has loaded the saved build"
+      ],
+      "gamePatch": null,
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-synthetic-group",
+          "type": "pob",
+          "title": "PoB socket group and skill setup",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": "src/Modules/CalcSetup.lua",
+        "line": "1351-1438, 1527-1535",
+        "function": "getNormalizedSkillLevel; active skill instance setup",
+        "stat": "socketGroup",
+        "modKey": "fromItem/triggered",
+        "observedValue": "Skill setup builds normalized skill instances and includes item-derived support flags; complete synthetic-group behavior requires runtime fixture inspection.",
+        "observationContext": "Implementation observation only"
+      },
+      "calculation": {
+        "stages": [
+          {
+            "id": "group-load",
+            "stage": 1,
+            "order": [
+              "load_xml",
+              "construct_socket_group",
+              "construct_skill_instances"
+            ],
+            "operation": "BUILD_SYNTHETIC_GROUP",
+            "inputs": [
+              "build.xml",
+              "item effects"
+            ],
+            "output": "socketGroup.skills"
+          }
+        ],
+        "precision": {
+          "internal": "object identity/order",
+          "ui": "socket group display",
+          "tool": "group id, source, skills, supports",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "item.granted_effect",
+          "to": "socketGroup.skills",
+          "condition": "PoB creates an item source skill instance"
+        }
+      ],
+      "interactions": [
+        "support compatibility must use the constructed group"
+      ],
+      "sourceEdges": [
+        {
+          "from": "CalcSetup.skill_instances",
+          "to": "resolver.synthetic_socket_group",
+          "relation": "authoritative_input",
+          "evidence": [
+            "pob-synthetic-group"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "unverified",
+        "fixtureRefs": [],
+        "next": "item-granted and Impending Doom fixture"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No runtime dump of synthetic group is currently available"
+        ],
+        "missingEvidence": [
+          "bridge capture of socketGroup and activeEffect source"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "gem.trigger.compatibility",
+      "category": "trigger_interaction",
+      "scope": "skill",
+      "domain": "mechanism",
+      "status": "pob_checked",
+      "statement": "PoB identifies a triggered skill from explicit trigger metadata or trigger skill types; trigger source, active skill grouping, and restrictions are separate facts.",
+      "facts": {
+        "triggerMarkers": [
+          "skillData.triggered",
+          "SkillType.Triggered",
+          "grantedEffect.triggered",
+          "srcInstance.triggered"
+        ]
+      },
+      "conditions": [
+        "skill is resolved in a loaded build"
+      ],
+      "gamePatch": null,
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-trigger",
+          "type": "pob",
+          "title": "PoB trigger detection and setup",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": "src/Modules/CalcTriggers.lua",
+        "line": "33-40",
+        "function": "isTriggered",
+        "stat": "triggered",
+        "modKey": "SkillType.Triggered",
+        "observedValue": "Trigger status is true when trigger metadata or source markers are present; item source and socket group affect matching.",
+        "observationContext": "PoB trigger setup"
+      },
+      "calculation": {
+        "stages": [
+          {
+            "id": "trigger-detect",
+            "stage": 1,
+            "order": [
+              "resolve_source",
+              "read_trigger_flags",
+              "match_group"
+            ],
+            "operation": "TRIGGER_COMPATIBILITY",
+            "inputs": [
+              "skill",
+              "mainSkill",
+              "socketGroup"
+            ],
+            "output": "triggered"
+          }
+        ],
+        "precision": {
+          "internal": "boolean",
+          "ui": "trigger label",
+          "tool": "boolean plus markers",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "skill.trigger_markers",
+          "to": "skill.triggered",
+          "condition": "any supported marker is present"
+        }
+      ],
+      "interactions": [
+        "trigger source and item source can change socket matching"
+      ],
+      "sourceEdges": [
+        {
+          "from": "CalcTriggers.isTriggered",
+          "to": "skill.triggered",
+          "relation": "detects",
+          "evidence": [
+            "pob-trigger"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "pob_checked",
+        "fixtureRefs": [],
+        "next": "two trigger restriction fixtures"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No trigger fixture was captured in this run"
+        ],
+        "missingEvidence": [
+          "triggered support fixture",
+          "restriction fixture"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "gem.trigger.cooldown_tick",
+      "category": "trigger_timing",
+      "scope": "skill",
+      "domain": "DPS",
+      "status": "pob_checked",
+      "statement": "PoB models trigger cooldown/recovery and aligns trigger rotations to simulation ticks; real server timing is not claimed unless separately observed.",
+      "facts": {
+        "timingInputs": [
+          "cooldown",
+          "CooldownRecovery",
+          "triggerRate",
+          "server tick"
+        ]
+      },
+      "conditions": [
+        "PoB trigger simulation is enabled"
+      ],
+      "gamePatch": null,
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "pob-trigger-timing",
+          "type": "pob",
+          "title": "PoB trigger rotation and cooldown",
+          "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+          "repository": "PathOfBuildingCommunity/PathOfBuilding",
+          "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+          "commit": "1919296d052cb6934e810f763f9c34f50622a958",
+          "license": "MIT",
+          "attribution": "Path of Building Community",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": {
+        "repository": "PathOfBuildingCommunity/PathOfBuilding",
+        "ref": "1919296d052cb6934e810f763f9c34f50622a958",
+        "file": "src/Modules/CalcTriggers.lua",
+        "line": "65-110",
+        "function": "getTriggerData; trigger rotation",
+        "stat": "CooldownRecovery/trigger rate",
+        "modKey": "CooldownRecovery",
+        "observedValue": "Trigger data includes cooldown and recovery; rotation advances on simulation ticks and cooldown alignment is calculated.",
+        "observationContext": "PoB internal trigger simulation"
+      },
+      "calculation": {
+        "stages": [
+          {
+            "id": "cooldown",
+            "stage": 1,
+            "order": [
+              "read_base_cooldown",
+              "apply_recovery",
+              "apply_added_cast_time"
+            ],
+            "operation": "TRIGGER_COOLDOWN",
+            "inputs": [
+              "cooldown",
+              "CooldownRecovery"
+            ],
+            "output": "skill.cd"
+          },
+          {
+            "id": "tick",
+            "stage": 2,
+            "order": [
+              "align_to_tick",
+              "advance_rotation"
+            ],
+            "operation": "TRIGGER_ROTATION",
+            "inputs": [
+              "skill.cd",
+              "triggerRate"
+            ],
+            "output": "rotation"
+          }
+        ],
+        "precision": {
+          "internal": "PoB raw seconds",
+          "ui": "display seconds",
+          "tool": "raw and tick trace",
+          "final": "presentation only",
+          "floatingPoint": "preserve raw",
+          "serverTick": "PoB tick model only; live server not simulated",
+          "tickRule": "not_simulated_live_server"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "skill.cooldown",
+          "to": "trigger.rotation",
+          "condition": "trigger is active"
+        }
+      ],
+      "interactions": [
+        "cooldown recovery and cast-time additions affect trigger rate"
+      ],
+      "sourceEdges": [
+        {
+          "from": "CalcTriggers.trigger_data",
+          "to": "CalcTriggers.rotation",
+          "relation": "feeds",
+          "evidence": [
+            "pob-trigger-timing"
+          ]
+        }
+      ],
+      "verification": {
+        "state": "pob_checked",
+        "fixtureRefs": [],
+        "next": "trigger timing fixture"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "PoB model is not proof of live server timing"
+        ],
+        "missingEvidence": [
+          "fixture with observed PoB trigger output"
+        ],
+        "temporaryEvidence": false
+      }
+    },
+    {
+      "id": "gem.alternate_quality",
+      "category": "gem_variant",
+      "scope": "skill",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "Alternate quality is a quality variant and must be represented separately from the numeric quality amount.",
+      "facts": {
+        "identityField": "qualityId"
+      },
+      "conditions": [
+        "quality variant is present"
+      ],
+      "gamePatch": null,
+      "pobVersion": null,
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "wiki-alt-quality",
+          "type": "temporary_evidence",
+          "title": "Alternate gem quality",
+          "url": "https://www.poewiki.net/wiki/Alternate_gem_quality",
+          "repository": null,
+          "ref": null,
+          "commit": null,
+          "license": "CC BY-SA 3.0 where applicable",
+          "attribution": "PoE Wiki contributors",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": null,
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "not established",
+          "ui": "variant label",
+          "tool": "qualityId plus uncertainty",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [],
+      "interactions": [],
+      "sourceEdges": [],
+      "verification": {
+        "state": "draft",
+        "fixtureRefs": [],
+        "next": "alternate quality fixture and parsed source"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "Wiki fetch failed and no fixture was captured"
+        ],
+        "missingEvidence": [
+          "qualityId fixture"
+        ],
+        "temporaryEvidence": true
+      }
+    },
+    {
+      "id": "gem.exceptional_awakened_greater",
+      "category": "gem_variant",
+      "scope": "support",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "Exceptional, Awakened, and Greater gems are distinct gem identities or variants and must not be collapsed by display-name similarity.",
+      "facts": {
+        "identityFields": [
+          "gemId",
+          "variantId",
+          "grantedEffectId"
+        ]
+      },
+      "conditions": [
+        "variant is resolved from PoB data"
+      ],
+      "gamePatch": null,
+      "pobVersion": null,
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "wiki-gem-timeline",
+          "type": "temporary_evidence",
+          "title": "Timeline of support gems",
+          "url": "https://www.poewiki.net/wiki/Timeline_of_support_gems",
+          "repository": null,
+          "ref": null,
+          "commit": null,
+          "license": "CC BY-SA 3.0 where applicable",
+          "attribution": "PoE Wiki contributors",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": null,
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "identifier exact",
+          "ui": "display name",
+          "tool": "identity fields",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [],
+      "interactions": [],
+      "sourceEdges": [],
+      "verification": {
+        "state": "draft",
+        "fixtureRefs": [],
+        "next": "two greater/awakened fixture observations"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No matching fixture and Wiki page not parsed"
+        ],
+        "missingEvidence": [
+          "variant fixture"
+        ],
+        "temporaryEvidence": true
+      }
+    },
+    {
+      "id": "gem.corrupted",
+      "category": "gem_state",
+      "scope": "skill",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "Corruption is a gem state that must be retained as source context when resolving level, quality, and variant behavior.",
+      "facts": {
+        "stateField": "corrupted"
+      },
+      "conditions": [
+        "build data exposes corruption state"
+      ],
+      "gamePatch": null,
+      "pobVersion": null,
+      "dataRevision": null,
+      "sources": [],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "not established",
+          "ui": "state label",
+          "tool": "state plus uncertainty",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [],
+      "interactions": [
+        "corruption can coexist with quality and variant selection"
+      ],
+      "sourceEdges": [],
+      "verification": {
+        "state": "draft",
+        "fixtureRefs": [],
+        "next": "corrupted gem fixture"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No fixture or parsed source"
+        ],
+        "missingEvidence": [
+          "corrupted gem state evidence"
+        ],
+        "temporaryEvidence": false
+      }
+    }
+  ]
+}
+

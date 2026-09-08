@@ -1,0 +1,16 @@
+<!-- Status: Superseded
+Authority: Not authoritative
+Superseded by: AGENT.md, PRD_SDD.md, CUSTOMER.md, agent/knowledge/RULE_AUTHORING.md, agent/knowledge/RULE_SCHEMA.md, agent/knowledge/VALIDATION_WORKFLOW.md -->
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Saved Build Synthetic Resolver Scope</title></head><body>
+<h1>Saved Build Synthetic Resolver Scope</h1>
+<h2>Goal</h2><p>Resolve skills only from a saved XML build after PoB has generated its synthetic socket groups.</p>
+<h2>In scope</h2><ul><li>Require an existing readable XML path in the Python/Lua bridge; do not expose GUI-memory build access.</li><li>After XML load and calculation, scan <code>build.skillsTab.socketGroupList</code>.</li><li>Include socketed, item-granted, tree-granted, and triggered groups using <code>source</code>, <code>sourceItem</code>, <code>sourceNode</code>, and <code>gem.fromItem</code>.</li><li>Use <code>displayGemList</code> when present so item-granted skills include same-slot support gems; fall back to <code>gemList</code>.</li><li>Return source, slot, group index, skill name, support names, link count, enabled state, and active skill index.</li></ul>
+<h2>Out of scope</h2><ul><li>Reading unsaved PoB GUI memory, reverse-engineering process memory, or changing PoB UI.</li><li>Manually reconstructing item-granted support behavior outside PoB's generated groups.</li></ul>
+<h2>Deterministic provenance</h2><p>Classify in this precedence order: <code>sourceItem</code> or <code>gem.fromItem</code> → <code>item_granted</code>; else <code>sourceNode</code> → <code>tree_granted</code>; else <code>group.source</code> → <code>generated</code>; else <code>socketed</code>. <code>sourceItem</code> is summarized as <code>{name?,baseName?}</code>; <code>sourceNode</code> is returned as a scalar ID/string. If more than one group matches the skill name after selector filtering, return <code>nil,error</code> with an ambiguity message.</p>
+<p>Read <code>displayGemList</code> when present, otherwise <code>gemList</code>. The first active gem is the skill; remaining entries whose granted effect is a support are support names. <code>linkCount</code> is the number of entries in this effective list.</p>
+<h2>Contract</h2><pre><code>find_skill(build, selector, name) -&gt; {
+  skillSet, socketGroup, skillIndex, name, sourceType, sourceItem, sourceNode,
+  slot, supports, linkCount, enabled
+} | nil,error</code></pre>
+</body></html>
+

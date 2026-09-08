@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pob-agent.local/schemas/poe-rule.json",
+  "title": "PoE 1 Rule (legacy and semantic forms)",
+  "type": "object",
+  "required": ["id", "category", "statement", "sources", "verification"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9._-]+$"},
+    "category": {"type": "string"},
+    "statement": {"type": "string"},
+    "schemaVersion": {"type": "integer"},
+    "facts": {"type": "object"},
+    "terms": {"type": "array", "items": {"type": "string"}},
+    "patchRange": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": {"type": ["string", "null"]},
+        "to": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "scope": {"type": "string"},
+    "domain": {"type": "string"},
+    "status": {"type": "string"},
+    "conditions": {"type": "array"},
+    "gamePatch": {"type": ["string", "null"]},
+    "pobVersion": {"type": ["string", "null"]},
+    "dataRevision": {"type": ["string", "null"]},
+    "pobEvidence": {"type": ["object", "array", "null"]},
+    "calculation": {"type": "object"},
+    "dependencies": {"type": "array"},
+    "interactions": {"type": "array"},
+    "relatedRuleIds": {"type": "array", "items": {"type": "string"}},
+    "fieldRefs": {"type": "array"},
+    "unresolvedConcepts": {"type": "array", "items": {"type": "string"}},
+    "sourceEdges": {"type": "array"},
+    "uncertainty": {"type": "object"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "id": {"type": "string"},
+          "type": {"enum": ["pob", "official", "wiki", "poedb", "craft_of_exile", "in-game", "test", "temporary_evidence", "planned_source"]},
+          "ref": {"type": ["string", "null"]},
+          "title": {"type": ["string", "null"]},
+          "url": {"type": ["string", "null"]},
+          "repository": {"type": ["string", "null"]},
+          "commit": {"type": ["string", "null"]},
+          "license": {"type": ["string", "null"]},
+          "attribution": {"type": ["string", "null"]},
+          "retrievedAt": {"type": ["string", "null"]},
+          "gamePatch": {"type": ["string", "null"]},
+          "pobVersion": {"type": ["string", "null"]},
+          "dataRevision": {"type": ["string", "null"]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "verification": {
+      "oneOf": [
+        {"type": "string", "enum": ["draft", "needs_patch_check", "verified", "planned", "partial", "unverified", "conflict", "canonical"]},
+        {"type": "object", "required": ["state"], "properties": {"state": {"enum": ["planned", "parsed", "normalized", "source_checked", "pob_checked", "fixture_verified", "canonical", "partial", "unverified", "conflict", "rejected"]}, "fixtureRefs": {"type": "array"}, "next": {"type": "string"}}, "additionalProperties": true}
+      ]
+    }
+  },
+  "additionalProperties": true
+}

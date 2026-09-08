@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "source": "poe1-wiki",
+  "scope": "gem-mechanics-p0",
+  "crawl": {
+    "mode": "manual_seed_and_link_inventory",
+    "crawlerVersion": "manual-search/1.0",
+    "crawlTimestamp": "2026-09-08T00:00:00+09:00",
+    "robotsStatus": "unknown",
+    "note": "PoE Wiki direct page requests returned HTTP 403 during this run. Search snippets identify navigation candidates only; they are not canonical rule evidence."
+  },
+  "sourceMetadata": {
+    "license": "CC BY-SA 3.0 where applicable",
+    "attribution": "PoE Wiki contributors",
+    "retrievedAt": "2026-09-08T00:00:00+09:00",
+    "repository": null,
+    "ref": null,
+    "commit": null
+  },
+  "pages": [
+    {"id":"game-mechanics","url":"https://www.poewiki.net/wiki/Game_mechanics","canonicalUrl":"https://www.poewiki.net/wiki/Game_mechanics","namespace":"main","poeEdition":"common-or-poe1","status":"failed","httpStatus":403,"parseStatus":"failed","robotsStatus":"unknown","wikiOldid":"1626294","wikiLastModified":null,"gamePatch":null,"patchApplicability":"latest page; exact patch not established","retrievedAt":"2026-09-08T00:00:00+09:00","crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"keyword","url":"https://www.poewiki.net/wiki/Keyword","canonicalUrl":"https://www.poewiki.net/wiki/Keyword","namespace":"main","poeEdition":"common-or-poe1","status":"failed","httpStatus":403,"parseStatus":"failed","robotsStatus":"unknown","wikiOldid":"1612616","wikiLastModified":null,"gamePatch":null,"patchApplicability":"latest page; exact patch not established","retrievedAt":"2026-09-08T00:00:00+09:00","crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"gem-tag","url":"https://www.poewiki.net/wiki/Gem_tag","canonicalUrl":"https://www.poewiki.net/wiki/Gem_tag","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"gem-version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"support-gem","url":"https://www.poewiki.net/wiki/Support_gem","canonicalUrl":"https://www.poewiki.net/wiki/Support_gem","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"gem-version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"skill-gem","url":"https://www.poewiki.net/wiki/Skill_gem","canonicalUrl":"https://www.poewiki.net/wiki/Skill_gem","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"gem-version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"trigger","url":"https://www.poewiki.net/wiki/Trigger","canonicalUrl":"https://www.poewiki.net/wiki/Trigger","namespace":"main","poeEdition":"poe1","status":"failed","httpStatus":403,"parseStatus":"failed","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":"2026-09-08T00:00:00+09:00","crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"alternate-gem-quality","url":"https://www.poewiki.net/wiki/Alternate_gem_quality","canonicalUrl":"https://www.poewiki.net/wiki/Alternate_gem_quality","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"gem-version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"list-skill-gems-by-tag","url":"https://www.poewiki.net/wiki/List_of_skill_gems_by_gem_tag","canonicalUrl":"https://www.poewiki.net/wiki/List_of_skill_gems_by_gem_tag","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"timeline-skill-gems","url":"https://www.poewiki.net/wiki/Timeline_of_skill_gems","canonicalUrl":"https://www.poewiki.net/wiki/Timeline_of_skill_gems","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiLastModified":null,"wikiOldid":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"timeline-support-gems","url":"https://www.poewiki.net/wiki/Timeline_of_support_gems","canonicalUrl":"https://www.poewiki.net/wiki/Timeline_of_support_gems","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"gem-version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"gem","url":"https://www.poewiki.net/wiki/Gem","canonicalUrl":"https://www.poewiki.net/wiki/Gem","namespace":"main","poeEdition":"poe1","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"}
+  ],
+  "linkEdges": [
+    {"from":"game-mechanics","to":"keyword","relation":"seed_to_seed","priority":"P0"},
+    {"from":"keyword","to":"gem-tag","relation":"links_to","priority":"P0"},
+    {"from":"gem-tag","to":"skill-gem","relation":"links_to","priority":"P0"},
+    {"from":"skill-gem","to":"support-gem","relation":"links_to","priority":"P0"},
+    {"from":"skill-gem","to":"alternate-gem-quality","relation":"links_to","priority":"P0"},
+    {"from":"skill-gem","to":"trigger","relation":"links_to","priority":"P0"},
+    {"from":"skill-gem","to":"timeline-skill-gems","relation":"links_to","priority":"P1"},
+    {"from":"support-gem","to":"timeline-support-gems","relation":"links_to","priority":"P1"},
+    {"from":"game-mechanics","to":"gem","relation":"links_to","priority":"P0"}
+  ],
+  "excludedLinks": [
+    {"id":"poe2-namespace-pages","pattern":"/wiki/Path_of_Exile_2*","reason":"PoE2 is out of scope"},
+    {"id":"league-pages","pattern":"/wiki/League*","reason":"P2/non-MVP gem mechanics"}
+  ]
+}

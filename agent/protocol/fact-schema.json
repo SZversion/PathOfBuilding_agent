@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PoB Agent Fact Envelope",
+  "type": "object",
+  "required": ["calculationVersion", "facts", "sources"],
+  "properties": {
+    "calculationVersion": {"type": "string"},
+    "facts": {"type": "object"},
+    "sources": {"type": "array", "items": {"type": "string"}},
+    "trace": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": false
+}

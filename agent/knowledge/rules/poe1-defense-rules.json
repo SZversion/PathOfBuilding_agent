@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "defence.primary_types",
+      "category": "defence",
+      "statement": "The primary global defence types are Armour, Evasion, Energy Shield, and Ward.",
+      "facts": {"types": ["armour", "evasion", "energy_shield", "ward"]},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Defences"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "defence.armour_scope",
+      "category": "defence",
+      "statement": "Armour mitigates physical damage from Hits; its effectiveness depends on the size of the incoming physical Hit.",
+      "facts": {"mitigates": ["physical_hit"]},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Armour"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "defence.evasion_scope",
+      "category": "defence",
+      "statement": "Evasion prevents attack Hits and is opposed by the attacker's Accuracy; spells cannot be evaded.",
+      "facts": {"prevents": ["attack_hit"], "requiresAccuracyCheck": true, "spellsCanBeEvaded": false},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Evasion"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "defence.spell_suppression",
+      "category": "defence",
+      "statement": "Spell Suppression is a chance-based mitigation layer for damage from spells; a successful suppression normally prevents 40% of the suppressed spell damage.",
+      "facts": {"defaultSuppressedDamagePreventedPercent": 40},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Spell_suppression"}],
+      "verification": "verified"
+    },
+    {
+      "id": "defence.resistance.cap",
+      "category": "defence.resistance",
+      "statement": "Resistance has a maximum cap; the default elemental resistance cap is 75% unless modifiers change it.",
+      "facts": {"defaultElementalMaximumPercent": 75},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"}],
+      "verification": "verified"
+    },
+    {
+      "id": "defence.block_scope",
+      "category": "defence",
+      "statement": "Block is a chance-based avoidance layer that can separately apply to attack damage and spell damage depending on the character's block stats.",
+      "facts": {"scopes": ["attack", "spell"]},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Block"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}

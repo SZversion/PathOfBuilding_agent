@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "language": "en",
+  "rules": [
+    {
+      "id": "character.base_resistance.elemental",
+      "category": "character.resistance",
+      "statement": "Before equipment, passives, and quest rewards are applied, a character has 0% base Fire, Cold, and Lightning Resistance.",
+      "facts": {"elements": ["fire", "cold", "lightning"], "basePercent": 0},
+      "terms": ["base elemental resistance"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"},
+        {"type": "test", "ref": "tests/agent/knowledge/resistance-baseline.json"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "character.base_resistance.chaos",
+      "category": "character.resistance",
+      "statement": "Before equipment, passives, and quest rewards are applied, a character has 0% base Chaos Resistance.",
+      "facts": {"element": "chaos", "basePercent": 0},
+      "terms": ["base chaos resistance"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "campaign.resistance_penalty.act5",
+      "category": "campaign.resistance",
+      "statement": "After completing Act 5, a -30% campaign penalty applies to Fire, Cold, and Lightning Resistance.",
+      "facts": {"afterAct": 5, "elements": ["fire", "cold", "lightning"], "penaltyPercent": -30},
+      "terms": ["Act 5 resistance penalty", "Kitava resistance penalty"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"},
+        {"type": "pob", "ref": "src/Modules/CalcPerform.lua"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "campaign.resistance_penalty.act10",
+      "category": "campaign.resistance",
+      "statement": "After completing Act 10, the Act 5 penalty and the final campaign penalty total -60% to Fire, Cold, and Lightning Resistance.",
+      "facts": {"afterAct": 10, "elements": ["fire", "cold", "lightning"], "totalPenaltyPercent": -60},
+      "terms": ["Act 10 resistance penalty", "endgame resistance penalty"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Resistance"},
+        {"type": "test", "ref": "tests/agent/knowledge/resistance-baseline.json"}
+      ],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "curse.default_limit",
+      "category": "curse.limit",
+      "statement": "Without modifiers that increase the limit, the default maximum number of curses on one target is 1.",
+      "facts": {"defaultLimit": 1, "scope": "target"},
+      "terms": ["default curse limit", "maximum curses"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [
+        {"type": "wiki", "ref": "https://www.poewiki.net/wiki/Curse"},
+        {"type": "pob", "ref": "src/Modules/CalcPerform.lua"}
+      ],
+      "verification": "verified"
+    },
+    {
+      "id": "damage.types",
+      "category": "damage-type",
+      "statement": "The five base damage types in Path of Exile 1 are Physical, Fire, Cold, Lightning, and Chaos.",
+      "facts": {"damageTypes": ["physical", "fire", "cold", "lightning", "chaos"]},
+      "terms": ["damage type"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage"}],
+      "verification": "verified"
+    },
+    {
+      "id": "damage.elemental_definition",
+      "category": "damage-type",
+      "statement": "Elemental damage means Fire, Cold, and Lightning damage. Physical and Chaos damage are not elemental damage.",
+      "facts": {"elementalTypes": ["fire", "cold", "lightning"]},
+      "terms": ["elemental damage"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Elemental_damage"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "damage.hit_vs_dot",
+      "category": "delivery",
+      "statement": "A Hit is a single damage instance, while Damage over Time is damage applied over time. Damage over Time is not a Hit.",
+      "facts": {"deliveryTypes": ["hit", "damage_over_time"], "dotIsHit": false},
+      "terms": ["Hit", "Damage over Time", "DoT"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Damage_over_time"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "ailment.damaging",
+      "category": "ailment",
+      "statement": "Ignite, Bleed, and Poison are damaging ailments that deal damage over time. Their base damage types are Fire, Physical, and Chaos respectively.",
+      "facts": {
+        "damagingAilments": ["ignite", "bleed", "poison"],
+        "baseDamageTypes": {"ignite": "fire", "bleed": "physical", "poison": "chaos"},
+        "delivery": "damage_over_time"
+      },
+      "terms": ["damaging ailment", "ignite", "bleed", "poison"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Ailment"}],
+      "verification": "needs_patch_check"
+    },
+    {
+      "id": "ailment.non_damaging",
+      "category": "ailment",
+      "statement": "Chill, Freeze, Shock, Scorch, Brittle, and Sap are non-damaging ailments; they modify an enemy's behavior, defenses, or damage taken rather than dealing damage themselves.",
+      "facts": {"nonDamagingAilments": ["chill", "freeze", "shock", "scorch", "brittle", "sap"]},
+      "terms": ["non-damaging ailment"],
+      "patchRange": {"from": "3.0.0", "to": null},
+      "sources": [{"type": "wiki", "ref": "https://www.poewiki.net/wiki/Ailment"}],
+      "verification": "needs_patch_check"
+    }
+  ]
+}

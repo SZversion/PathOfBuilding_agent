@@ -24,6 +24,7 @@ local CalcsTabClass = newClass("CalcsTab", "UndoHandler", "ControlHost", "Contro
 	self.build = build
 
 	self.calcs = LoadModule("Modules/Calcs")
+	self.agentSnapshot = LoadModule("Modules/AgentSnapshot")
 
 	self.input = { }
 	self.input.skill_number = 1
@@ -453,6 +454,13 @@ function CalcsTabClass:BuildOutput()
 	self.mainOutput = self.mainEnv.player.output
 	self.calcsEnv = self.calcs.buildOutput(self.build, "CALCS")
 	self.calcsOutput = self.calcsEnv.player.output
+	self.build.agentSnapshot = self.agentSnapshot.capture(self.build)
+	self.build.explainAgentStat = function(stat, skillIndex)
+		return self.agentSnapshot.explain(self.build, stat, skillIndex)
+	end
+	self.build.saveAgentSnapshot = function(fileName)
+		return self.agentSnapshot.save(self.build.agentSnapshot, fileName)
+	end
 
 	if self.displayData then
 		self.controls.breakdown:SetBreakdownData()

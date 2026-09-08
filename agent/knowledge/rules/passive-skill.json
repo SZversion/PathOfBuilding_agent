@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "domain": "passive-skill",
+  "game": "poe1",
+  "status": "planned",
+  "rules": [
+    {
+      "id": "passive.node.allocation",
+      "category": "passive",
+      "scope": "passive",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "A passive rule preserves node id, tree version, class context, allocated state, granted stats/modifiers, jewel socket, and radius as separate facts.",
+      "facts": {
+        "fields": [
+          "nodeId",
+          "treeVersion",
+          "class",
+          "allocated",
+          "grantedStats",
+          "grantedModifiers",
+          "jewelSocket",
+          "radius"
+        ]
+      },
+      "conditions": [
+        "authoritative PoB tree is loaded"
+      ],
+      "gamePatch": null,
+      "pobVersion": null,
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "wiki-passive.node.allocation",
+          "type": "wiki",
+          "title": "passive reference",
+          "url": "https://www.poewiki.net/wiki/Passive_skill",
+          "repository": null,
+          "ref": null,
+          "commit": null,
+          "license": "CC BY-SA 3.0 where applicable",
+          "attribution": "PoE Wiki contributors",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": null,
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "node identity exact",
+          "ui": "tree display",
+          "tool": "node facts and source trace",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "passive.allocated",
+          "to": "modifier.runtime.base_inc_more",
+          "condition": "node is allocated"
+        }
+      ],
+      "relatedRuleIds": [
+        "modifier.runtime.base_inc_more",
+        "item-socket.colour-link-count",
+        "attribute.base-derived"
+      ],
+      "interactions": [
+        {
+          "ruleId": "item-socket.colour-link-count",
+          "relation": "jewel_socket_context"
+        },
+        {
+          "ruleId": "attribute.base-derived",
+          "relation": "grants_or_changes_attribute"
+        }
+      ],
+      "sourceEdges": [],
+      "verification": {
+        "state": "planned",
+        "fixtureRefs": [],
+        "next": "allocated before/after fixture with source trace",
+        "sourceEdgeStatus": "pending: no passive PoB output/source trace fixture"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No representative fixture captured",
+          "Wiki page was not parsed; source metadata is provisional"
+        ],
+        "missingEvidence": [
+          "tree version and node source output",
+          "wikiOldid/wikiLastModified and parsed claim"
+        ],
+        "temporaryEvidence": false
+      }
+    }
+  ]
+}
+
