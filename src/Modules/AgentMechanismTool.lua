@@ -346,7 +346,13 @@ local function get_socket_order(build, skillSetSelector, skillNameValue)
 	if type(skillNameValue) ~= "string" or skillNameValue == "" then return nil, "skill name is required" end
 	local target, targetId = skillSetFor(build, skillSetSelector)
 	if not target then return nil, targetId end
-	local groupIndex, groupErr = skillGroupFor(target, skillNameValue)
+	-- Prefer PoB's calculated display/synthetic resolver so variant gems and
+	-- item-granted skills use the same identity as get_skill_chain.
+	local groupIndex, groupErr
+	local context = (LoadModule and LoadModule("Modules/AgentContext")) or dofile("src/Modules/AgentContext.lua")
+	local resolved, resolveErr = context.find_skill and context.find_skill(build, skillSetSelector, skillNameValue)
+	if resolved then groupIndex = resolved.socketGroup else groupErr = resolveErr end
+	if not groupIndex then groupIndex, groupErr = skillGroupFor(target, skillNameValue) end
 	if not groupIndex then return nil, groupErr or "skill was not found in Skill Set" end
 	local gems = { }
 	for index, gem in ipairs(target.socketGroupList[groupIndex].gemList or { }) do

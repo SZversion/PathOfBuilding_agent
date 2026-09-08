@@ -3,7 +3,17 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 
-from agent.orchestration.agent_loop import AgentLoop, validate_plan
+from agent.orchestration.agent_loop import ALLOWED_TOOLS, AgentLoop, validate_plan
+from agent.orchestration.runtime import execute_plan
+from agent.pob.bridge import PobBridgeError
+
+assert {"get_character_stats", "get_skill_stats"}.issubset(ALLOWED_TOOLS)
+assert "compare_build_states" not in ALLOWED_TOOLS  # catalog marks it Planned
+
+structured = execute_plan("질문", {"intent": "x", "steps": [{"tool": "x", "arguments": {}}]}, handlers={"x": lambda args: (_ for _ in ()).throw(PobBridgeError("timeout", "TIMEOUT"))})
+assert structured["steps"][0]["error"]["code"] == "TIMEOUT"
+assert structured["steps"][0]["error"]["recovery_class"] == "RETRY_TOOL"
+assert structured["steps"][0]["error"]["max_attempts"] == 1
 
 
 class FakeModel:

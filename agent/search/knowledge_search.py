@@ -14,13 +14,16 @@ class KnowledgeSearch:
         alias_path = Path(index_path).parents[1] / "aliases" / "ko" / "skills-3.29.json"
         self.skill_aliases = json.loads(alias_path.read_text(encoding="utf-8"))["entries"] if alias_path.exists() else []
 
-    def search(self, query, limit=10, category=None):
+    def search(self, query, limit=10, category=None, include_non_authoritative=False):
         if not isinstance(query, str) or not query.strip():
             return []
         needle = query.casefold()
         query_tokens = _tokens(query)
         ranked = []
         for document in self.documents:
+            status = document.get("status")
+            if not include_non_authoritative and status and (status not in {"canonical", "fixture_verified", "verified"} or document.get("versionUnknown")):
+                continue
             if category and document["category"] != category:
                 continue
             haystack = document["searchText"]

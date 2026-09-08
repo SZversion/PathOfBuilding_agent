@@ -7,9 +7,10 @@ ALLOWED_TOOLS = frozenset({
     "search_knowledge", "resolve_item_alias", "resolve_skill_alias", "get_projectile_count", "get_curse_limit", "get_elemental_penetration",
     "get_socket_order", "get_skill_chain", "compare_support_effect", "explain_damage_change",
     "get_skill_dps", "get_highest_dps_skill", "get_skill_breakdown", "get_item_modifiers",
+    "get_character_stats", "get_skill_stats",
     "get_projectile_behavior", "get_trigger_sequence", "get_curse_application_order", "get_ailment_effect",
     "get_damage_breakdown", "get_conversion_chain", "get_effective_resistance", "get_support_links",
-    "resolve_skill_context", "compare_build_states",
+    "resolve_skill_context",
     "get_duration", "explain_stat",
 })
 TOOL_ALIASES = {tool.replace("_", ""): tool for tool in ALLOWED_TOOLS}

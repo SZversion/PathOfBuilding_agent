@@ -17,6 +17,7 @@ local build = {
 }
 
 local character = assert(tools.get_character_stats(build))
+assert(character.status == "calculated" and character.version and character.evidenceGraph and character.uncertainty)
 assert(character.calculationVersion == "3_29")
 assert(character.facts.Life == 5000)
 assert(#character.trace == 0)

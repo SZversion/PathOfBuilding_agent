@@ -3,6 +3,18 @@ local pairs = pairs
 local type = type
 local tostring = tostring
 
+local function evidenceGraph(sources, trace)
+	local nodes, stages, sourceEdges = { }, { }, { }
+	for index, source in ipairs(sources or { }) do
+		nodes[#nodes + 1] = { id = "source:" .. tostring(index), type = "source", value = source }
+		sourceEdges[#sourceEdges + 1] = { from = "output", to = "source:" .. tostring(index), relation = "derived_from" }
+	end
+	for index, entry in ipairs(trace or { }) do
+		stages[#stages + 1] = { order = index, operation = entry.operation or "TRACE", value = entry.value }
+	end
+	return { nodes = nodes, stages = stages, sourceEdges = sourceEdges }
+end
+
 local function scalarTable(source)
 	local result = { }
 	if type(source) ~= "table" then
@@ -52,11 +64,24 @@ local function finalTrace(skill, stat, value)
 end
 
 local function envelope(build, facts, sources, trace)
+	local sourceList = sources or { }
+	local traceList = trace or { }
+	local status = facts and facts.status
+	if status ~= "calculated" and status ~= "partial" and status ~= "unavailable" and status ~= "not_simulated" and status ~= "conflict" and status ~= "rejected" then status = "calculated" end
 	return {
+		status = status,
+		conditions = { },
 		calculationVersion = tostring(build and build.targetVersion or "unknown"),
+		version = {
+			gamePatch = build and (build.gamePatch or build.targetVersion) or nil,
+			pobVersion = build and (build.pobVersion or build.version) or nil,
+			dataRevision = build and build.dataRevision or nil,
+		},
 		facts = facts,
-		sources = sources,
-		trace = trace or { },
+		sources = sourceList,
+		trace = traceList,
+		evidenceGraph = evidenceGraph(sourceList, traceList),
+		uncertainty = { level = "none", reasons = { }, missingEvidence = { }, temporaryEvidence = false },
 	}
 end
 
@@ -269,7 +294,9 @@ end
 
 local function get_support_links(build, skillSetSelector, skillNameValue)
 	local mechanism = (LoadModule and LoadModule("Modules/AgentMechanismTool")) or dofile("src/Modules/AgentMechanismTool.lua")
-	return mechanism.get_socket_order(build, skillSetSelector, skillNameValue)
+	local result, err = mechanism.get_socket_order(build, skillSetSelector, skillNameValue)
+	if not result then return nil, err end
+	return envelope(build, result.facts, result.sources, result.trace)
 end
 
 local function resolve_skill_context(build, skillSetSelector, skillNameValue)
@@ -424,11 +451,15 @@ local function mechanism(name, build, skillSetSelector, skillNameValue, supportN
 end
 
 local function get_skill_chain(build, skillSetSelector, skillNameValue)
-	return mechanism("get_skill_chain", build, skillSetSelector, skillNameValue)
+	local result, err = mechanism("get_skill_chain", build, skillSetSelector, skillNameValue)
+	if not result then return nil, err end
+	return envelope(build, result.facts, result.sources, result.trace)
 end
 
 local function get_socket_order(build, skillSetSelector, skillNameValue)
-	return mechanism("get_socket_order", build, skillSetSelector, skillNameValue)
+	local result, err = mechanism("get_socket_order", build, skillSetSelector, skillNameValue)
+	if not result then return nil, err end
+	return envelope(build, result.facts, result.sources, result.trace)
 end
 
 local function compare_support_effect(build, skillSetSelector, skillNameValue, supportName)

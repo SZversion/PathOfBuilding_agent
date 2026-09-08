@@ -1,4 +1,9 @@
 from .planner import plan
+from agent.pob.bridge import PobBridgeError, PobTimeoutError, PobUnavailableError
+
+
+def _bridge_error(error):
+    return getattr(error, "error", {"code": "UNCLASSIFIED_FAILURE", "recovery_class": "FATAL_INTERNAL", "stage": "tool_execution", "retryable": False, "attempt": 1, "max_attempts": 1, "message": str(error), "details": {}, "next_action": "stop", "secondary_causes": []})
 
 
 def execute_plan(question, planned, search=None, handlers=None):
@@ -64,6 +69,12 @@ def execute_plan(question, planned, search=None, handlers=None):
             continue
         try:
             result = handler(arguments)
+        except PobUnavailableError as error:
+            output["steps"].append({"tool": tool, "status": "unavailable", "error": _bridge_error(error)})
+        except PobTimeoutError as error:
+            output["steps"].append({"tool": tool, "status": "timeout", "error": _bridge_error(error)})
+        except PobBridgeError as error:
+            output["steps"].append({"tool": tool, "status": "error", "error": _bridge_error(error)})
         except Exception as error:  # boundary: tool failures belong to the step
             output["steps"].append({"tool": tool, "status": "error", "error": str(error)})
         else:

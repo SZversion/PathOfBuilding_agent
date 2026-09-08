@@ -1,5 +1,6 @@
 local type = type
 local tostring = tostring
+local aliasEntries
 
 local function load_xml_file(path, name)
 	if type(path) ~= "string" or path == "" then return nil, "XML path is required" end
@@ -18,8 +19,36 @@ local function load_xml_file(path, name)
 	return build
 end
 
-local function lower(value)
-	return type(value) == "string" and value:lower() or nil
+local function normalize_name(value)
+	if type(value) ~= "string" then return nil end
+	return value:match("^%s*(.-)%s*$"):gsub("%s+", " "):lower()
+end
+
+local function resolve_skill_alias(value)
+	local normalized = normalize_name(value)
+	if not normalized then return nil, { code = "INPUT_INVALID", recovery_class = "REPAIR_INPUT", stage = "context_resolution", retryable = false, next_action = "repair_input", message = "skill name is required" } end
+	if not aliasEntries then
+		local file
+	for _, path in ipairs({ "agent/knowledge/aliases/ko/skills-3.29.json", "../agent/knowledge/aliases/ko/skills-3.29.json" }) do
+			file = io.open(path, "r")
+			if file then break end
+		end
+		if file then
+			local content = file:read("*a")
+			file:close()
+			local ok, decoder = pcall(require, "dkjson")
+			if ok and decoder then
+				local parsed = decoder.decode(content)
+				aliasEntries = parsed and parsed.entries or { }
+			else aliasEntries = { } end
+		else aliasEntries = { } end
+	end
+	local matches = { }
+	for _, entry in ipairs(aliasEntries) do
+		if normalize_name(entry.korean) == normalized or normalize_name(entry.english) == normalized then matches[#matches + 1] = entry.english end
+	end
+	if #matches > 1 then return nil, { code = "AMBIGUOUS_ALIAS", recovery_class = "ASK_USER", stage = "context_resolution", retryable = false, next_action = "ask_user", message = "skill alias is ambiguous" } end
+	return matches[1] or value
 end
 
 local function skill_set(build, selector)
@@ -34,7 +63,7 @@ local function skill_set(build, selector)
 		local numeric = tonumber(selector)
 		if numeric then id = tab.skillSetOrderList and tab.skillSetOrderList[numeric] end
 		for candidateId, candidate in pairs(tab.skillSets) do
-			if lower(candidate.title) == lower(selector) then
+			if normalize_name(candidate.title) == normalize_name(selector) then
 				if id and id ~= candidateId then return nil, "Skill Set selector is ambiguous" end
 				id = candidateId
 			end
@@ -94,7 +123,9 @@ local function find_skill(build, selector, name)
 	if type(name) ~= "string" or name == "" then return nil, "skill name is required" end
 	local set, setId = skill_set(build, selector)
 	if not set then return nil, setId end
-	local needle = name:lower()
+	local canonical, aliasErr = resolve_skill_alias(name)
+	if not canonical then return nil, aliasErr end
+	local needle = normalize_name(canonical)
 	local tab, calcs = build.skillsTab, build.calcsTab
 	if type(tab.SetActiveSkillSet) ~= "function" or not calcs or type(calcs.BuildOutput) ~= "function" then
 		return nil, "PoB calculation context cannot be switched"
@@ -110,9 +141,9 @@ local function find_skill(build, selector, name)
 		local first = gems[1]
 		local skillMatch
 		for skillIndex, activeSkill in ipairs(group.displaySkillList or { }) do
-			if lower(effect_name(activeSkill)) == needle then skillMatch = skillIndex end
+			if normalize_name(effect_name(activeSkill)) == needle then skillMatch = skillIndex end
 		end
-		if lower(gem_name(first) or (first and first.grantedEffect and first.grantedEffect.name)) == needle or skillMatch then
+		if normalize_name(gem_name(first) or (first and first.grantedEffect and first.grantedEffect.name)) == needle or skillMatch then
 			local sourceType, sourceValue = provenance(group, first)
 			local supports = {}
 			for index = 2, #gems do
@@ -133,7 +164,7 @@ local function find_skill(build, selector, name)
 	local selected = group.displaySkillList and group.displaySkillList[requestedSkillIndex or group.mainActiveSkill or 1]
 	local found
 	for index, skill in ipairs(calcs.mainEnv and calcs.mainEnv.player and calcs.mainEnv.player.activeSkillList or { }) do
-		if (skill == selected or (not selected and lower(effect_name(skill)) == needle)) and (not skill.socketGroup or skill.socketGroup == group) then
+		if (skill == selected or (not selected and normalize_name(effect_name(skill)) == needle)) and (not skill.socketGroup or skill.socketGroup == group) then
 			if found then return nil, "calculated skill is ambiguous" end
 			found = index
 		end
@@ -149,4 +180,4 @@ local function find_skill(build, selector, name)
 	}
 end
 
-return { load_xml_file = load_xml_file, find_skill = find_skill }
+	return { load_xml_file = load_xml_file, find_skill = find_skill, normalize_name = normalize_name, resolve_skill_alias = resolve_skill_alias }
