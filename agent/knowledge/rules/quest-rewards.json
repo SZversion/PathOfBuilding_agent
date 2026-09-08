@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "domain": "quest-rewards",
+  "game": "poe1",
+  "status": "planned",
+  "rules": [
+    {
+      "id": "quest-reward.act-class-patch",
+      "category": "progression",
+      "scope": "global",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "Quest rewards are indexed by act, quest, class, patch, and choice; they are reference knowledge and are not runtime modifier sources.",
+      "facts": {
+        "conditions": [
+          "act",
+          "class",
+          "gamePatch"
+        ],
+        "runtimeModifierSource": false
+      },
+      "conditions": [
+        "requested patch and class are known"
+      ],
+      "gamePatch": null,
+      "pobVersion": "not_applicable",
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "wiki-quest-reward.act-class-patch",
+          "type": "wiki",
+          "title": "progression reference",
+          "url": "https://www.poewiki.net/wiki/Quest_rewards",
+          "repository": null,
+          "ref": null,
+          "commit": null,
+          "license": "CC BY-SA 3.0 where applicable",
+          "attribution": "PoE Wiki contributors",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": null,
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "not_applicable",
+          "ui": "reference text",
+          "tool": "claim plus patch",
+          "final": "no rounding",
+          "floatingPoint": "not_applicable",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [],
+      "relatedRuleIds": [
+        "attribute.base-derived",
+        "passive.node.allocation"
+      ],
+      "interactions": [
+        {
+          "ruleId": "attribute.base-derived",
+          "relation": "may_change_progression_input"
+        },
+        {
+          "ruleId": "passive.node.allocation",
+          "relation": "may_grant_reward_passive"
+        }
+      ],
+      "sourceEdges": [],
+      "verification": {
+        "state": "planned",
+        "fixtureRefs": [],
+        "next": "one Act/class fixture and one patch-change fixture",
+        "sourceEdgeStatus": "pending: no official reward source fixture"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "P1 and no parsed source",
+          "Wiki page was not parsed; source metadata is provisional"
+        ],
+        "missingEvidence": [
+          "official or PoB-aligned reward data",
+          "wikiOldid/wikiLastModified and parsed claim"
+        ],
+        "temporaryEvidence": false
+      }
+    }
+  ]
+}
+

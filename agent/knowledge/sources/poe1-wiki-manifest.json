@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "source": "poe1-wiki",
+  "crawl": {
+    "mode": "manual_seed_and_link_inventory",
+    "crawlerVersion": "manual-search/1.0",
+    "crawlTimestamp": "2026-09-08T00:00:00+09:00",
+    "robotsStatus": "unknown",
+    "note": "Direct page fetches were blocked by HTTP 403 in this run; search excerpts and stable URLs are preserved without treating them as complete page parses."
+  },
+  "sourceMetadata": {
+    "license": "CC BY-SA 3.0 where applicable",
+    "attribution": "PoE Wiki contributors",
+    "retrievedAt": "2026-09-08T00:00:00+09:00",
+    "repository": null,
+    "commit": null
+  },
+  "pages": [
+    {"id":"game-mechanics","url":"https://www.poewiki.net/wiki/Game_mechanics","canonicalUrl":"https://www.poewiki.net/wiki/Game_mechanics","status":"failed","httpStatus":403,"parseStatus":"failed","robotsStatus":"unknown","wikiOldid":"1626294","wikiLastModified":null,"gamePatch":null,"patchApplicability":"latest page; exact patch not established","retrievedAt":"2026-09-08T00:00:00+09:00","crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"keyword","url":"https://www.poewiki.net/wiki/Keyword","canonicalUrl":"https://www.poewiki.net/wiki/Keyword","status":"failed","httpStatus":403,"parseStatus":"failed","robotsStatus":"unknown","wikiOldid":"1612616","wikiLastModified":null,"gamePatch":null,"patchApplicability":"latest page; exact patch not established","retrievedAt":"2026-09-08T00:00:00+09:00","crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"modifier","url":"https://www.poewiki.net/wiki/Modifier","canonicalUrl":"https://www.poewiki.net/wiki/Modifier","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"damage","url":"https://www.poewiki.net/wiki/Damage","canonicalUrl":"https://www.poewiki.net/wiki/Damage","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"damage-over-time","url":"https://www.poewiki.net/wiki/Damage_over_time","canonicalUrl":"https://www.poewiki.net/wiki/Damage_over_time","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"damage-conversion","url":"https://www.poewiki.net/wiki/Damage_conversion","canonicalUrl":"https://www.poewiki.net/wiki/Damage_conversion","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"resistance","url":"https://www.poewiki.net/wiki/Resistance","canonicalUrl":"https://www.poewiki.net/wiki/Resistance","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"resistance-penetration","url":"https://www.poewiki.net/wiki/Resistance_penetration","canonicalUrl":"https://www.poewiki.net/wiki/Resistance_penetration","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"exposure","url":"https://www.poewiki.net/wiki/Exposure","canonicalUrl":"https://www.poewiki.net/wiki/Exposure","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"projectile","url":"https://www.poewiki.net/wiki/Projectile","canonicalUrl":"https://www.poewiki.net/wiki/Projectile","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"chain","url":"https://www.poewiki.net/wiki/Chain","canonicalUrl":"https://www.poewiki.net/wiki/Chain","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"chain-support","url":"https://www.poewiki.net/wiki/Chain_Support","canonicalUrl":"https://www.poewiki.net/wiki/Chain_Support","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"gem-version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"curse","url":"https://www.poewiki.net/wiki/Curse","canonicalUrl":"https://www.poewiki.net/wiki/Curse","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"ailment","url":"https://www.poewiki.net/wiki/Ailment","canonicalUrl":"https://www.poewiki.net/wiki/Ailment","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"receiving-damage","url":"https://www.poewiki.net/wiki/Receiving_Damage","canonicalUrl":"https://www.poewiki.net/wiki/Receiving_Damage","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"skill","url":"https://www.poewiki.net/wiki/Skill","canonicalUrl":"https://www.poewiki.net/wiki/Skill","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"gem-tag","url":"https://www.poewiki.net/wiki/Gem_tag","canonicalUrl":"https://www.poewiki.net/wiki/Gem_tag","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"support-gem","url":"https://www.poewiki.net/wiki/Support_gem","canonicalUrl":"https://www.poewiki.net/wiki/Support_gem","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"gem-version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"duration","url":"https://www.poewiki.net/wiki/Duration","canonicalUrl":"https://www.poewiki.net/wiki/Duration","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"},
+    {"id":"resource","url":"https://www.poewiki.net/wiki/Resource","canonicalUrl":"https://www.poewiki.net/wiki/Resource","status":"discovered","httpStatus":null,"parseStatus":"not_attempted","robotsStatus":"unknown","wikiOldid":null,"wikiLastModified":null,"gamePatch":null,"patchApplicability":"version-sensitive","retrievedAt":null,"crawlTimestamp":"2026-09-08T00:00:00+09:00","crawlerVersion":"manual-search/1.0"}
+  ],
+  "linkEdges": [
+    {"from":"game-mechanics","to":"modifier","relation":"links_to","priority":"P0"},
+    {"from":"game-mechanics","to":"damage","relation":"links_to","priority":"P0"},
+    {"from":"game-mechanics","to":"resistance","relation":"links_to","priority":"P0"},
+    {"from":"game-mechanics","to":"projectile","relation":"links_to","priority":"P0"},
+    {"from":"game-mechanics","to":"curse","relation":"links_to","priority":"P0"},
+    {"from":"game-mechanics","to":"ailment","relation":"links_to","priority":"P0"},
+    {"from":"game-mechanics","to":"skill","relation":"links_to","priority":"P0"},
+    {"from":"game-mechanics","to":"resource","relation":"links_to","priority":"P0"},
+    {"from":"keyword","to":"damage-over-time","relation":"links_to","priority":"P0"},
+    {"from":"keyword","to":"resistance-penetration","relation":"links_to","priority":"P0"},
+    {"from":"keyword","to":"chain","relation":"links_to","priority":"P0"},
+    {"from":"keyword","to":"ailment","relation":"links_to","priority":"P0"},
+    {"from":"keyword","to":"duration","relation":"links_to","priority":"P0"},
+    {"from":"keyword","to":"gem-tag","relation":"links_to","priority":"P0"}
+  ],
+  "excludedLinks": [
+    {"id":"leagues","url":"https://www.poewiki.net/wiki/League","reason":"P2/non-MVP knowledge"},
+    {"id":"currency","url":"https://www.poewiki.net/wiki/Currency","reason":"P2/non-MVP knowledge"},
+    {"id":"microtransactions","url":"https://www.poewiki.net/wiki/Microtransaction","reason":"out of MVP mechanism scope"}
+  ]
+}

@@ -53,3 +53,29 @@ The fourth comparison pass added `poe1-projectile-rules.json`, confirming the de
 The fifth comparison pass added `poe1-map-monster-rules.json`, confirming representative map effects such as Hexproof, enemy resistance, monster Life, ailment avoidance, and gain-as-extra damage. The full map-modifier catalog remains data-driven and is not summarized as one universal rule.
 
 The sixth comparison pass added `poe1-recoup-rules.json` and `poe1-progression-rules.json`. Recoup is now fully indexed from the damage simulation path, including resource conversion and duration. Experience penalties, act/level estimation, Labyrinth recommendations, and Ascendancy point validation are also indexed; the complete quest reward catalog remains a data-indexing task.
+
+## Seed collection and P0 promotion gate
+
+The 2026-09-08 manual PoE Wiki seed collection is recorded in `agent/knowledge/sources/poe1-wiki-manifest.json`. The linked-page inventory and P0 status classification are in `poe1-p0-inventory.json`; planned rule shells are in `poe1-p0-planned.json`.
+
+The collection records canonical/overview/planned/excluded/conflict states, canonical URL deduplication, visited/failed/unfetched status, HTTP and parse status, robots status, crawl timestamp, crawler version, `wikiOldid`, `retrievedAt`, `wikiLastModified`, `gamePatch`, and `patchApplicability`. Direct seed-page fetches returned HTTP 403, so their search excerpts are not treated as complete parses.
+
+P0 promotion remains blocked until the required fixture minimum is met: damage 3, conversion 2, resistance/penetration 2, projectile/chain 2, curse/ailment 2, and item-granted/variant 2. Rules without the relevant fixture remain `planned` or `unverified`; source conflicts remain `conflict` and are not merged.
+
+RAG candidates are listed in `agent/knowledge/rag-update-needed.md`. External search is session-only `temporary_evidence` and cannot promote a canonical rule without source review and fixture verification.
+
+## Gem mechanics P0 comparison (2026-09-08)
+
+PoB source comparison established implementation-level observations for gem identity/variant fields, level and quality resolution, separate skill types/flags, support type-expression matching, item-source branches, trigger detection, and trigger cooldown/tick modeling. These observations are stored in `poe1-gem-mechanics-p0.json` with detailed `pobEvidence`.
+
+The Arc fixture verifies `VaalArcAltY`/`VaalArc` identity and level 21 quality 20. The Static Strike fixture verifies `StaticStrikeAltX`, level 20 quality 20, and Trauma level 21 quality 20, but its active Config requires runtime confirmation. These do not satisfy the complete item-granted, support-compatibility, or trigger fixture gates.
+
+The Gem Wiki manifest records the seed/link inventory and HTTP 403 fetch failures. Wiki search snippets remain temporary evidence. Alternate quality, exceptional/Awakened/Greater, corrupted state, item-granted synthetic groups, and paired trigger/support fixtures remain planned or unverified; live server trigger timing is explicitly `not_simulated`.
+
+## Domain file expansion (2026-09-08)
+
+The twelve requested domain files now exist as claim-oriented JSON shells. `modifier.json`, `skill.json`, and `skill-gem.json` contain PoB-checked implementation observations; `item-socket.json`, `attack.json`, `spell.json`, and `curse.json` are planned or fixture-gated; `warcry.json`, `aura.json`, `minion.json`, `totem.json`, and `trap.json` are P1 planned. No file claims canonical game behavior without source and fixture promotion.
+
+## Build and equipment domain expansion (2026-09-08)
+
+The nine requested domain files now exist as planned claim shells and are registered in `agent/knowledge/sources/poe1-build-domain-manifest.json`. No current attribute/stat/item value was added to the knowledge base. Passive and ascendancy records preserve node/tree/class/allocation fields; equipment records preserve local/global, override, granted-effect, socket, and slot relationships through references rather than copied rules. Required representative fixtures remain outstanding, so no record was promoted to canonical.

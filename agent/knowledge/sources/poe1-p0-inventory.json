@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "inventoryVersion": "2026-09-08",
+  "language": "en",
+  "sourceManifest": "agent/knowledge/sources/poe1-wiki-manifest.json",
+  "statusModel": ["discovered","parsed","normalized","source_checked","pob_checked","fixture_verified","canonical","planned","excluded","conflict","unfetched","failed"],
+  "domains": {
+    "P0": ["modifier","damage_hit_dot","resistance_penetration","projectile_chain","curse_ailment","skill_support_interaction","resource_duration"],
+    "P1": ["critical","overlap","DPS_aggregation","proxy_ownership","recovery_edge_cases"],
+    "P2": ["league_specific","full_quest_catalog","full_map_modifier_catalog","minion_proxy_matrix"]
+  },
+  "items": [
+    {"id":"modifier.increased_decreased","domain":"modifier","status":"planned","verification":"pob_checked","source":"poe1-pob-validation.json","reason":"PoB confirms additive aggregation; no P0 fixture with the required output/breakdown path is locked."},
+    {"id":"modifier.more_less","domain":"modifier","status":"planned","verification":"pob_checked","source":"poe1-pob-validation.json","reason":"Multiplicative operation is observed; universal stage ordering still needs fixtures."},
+    {"id":"damage.base_effectiveness_added","domain":"damage_hit_dot","status":"planned","verification":"partial","source":"poe1-pob-validation.json","reason":"PoB has separate damage tables; universal ordering needs a damage fixture."},
+    {"id":"damage.gain_conversion","domain":"damage_hit_dot","status":"planned","verification":"pob_checked","source":"poe1-pob-validation.json","reason":"Gain and conversion are exposed; two conversion fixtures are required."},
+    {"id":"damage.resistance_penetration","domain":"resistance_penetration","status":"planned","verification":"partial","source":"poe1-pob-validation.json","reason":"Separate paths are observed; two resistance/penetration fixtures are required."},
+    {"id":"projectile.chain_behavior","domain":"projectile_chain","status":"planned","verification":"partial","source":"poe1-projectile-rules.json","reason":"Count and flags are present; chain behavior and overlap need two fixtures."},
+    {"id":"curse.hex_mark_limit_order","domain":"curse_ailment","status":"planned","verification":"partial","source":"poe1-pob-validation.json","reason":"Limits and families are present; application order needs fixtures."},
+    {"id":"ailment.hit_dot_effect","domain":"curse_ailment","status":"planned","verification":"partial","source":"poe1-pob-validation.json","reason":"Application paths exist; two curse/ailment fixtures are required."},
+    {"id":"skill.support_scope","domain":"skill_support_interaction","status":"planned","verification":"pob_checked","source":"poe1-pob-validation.json","reason":"Tags gate scope; item-granted and variant interactions need fixtures."},
+    {"id":"resource.duration","domain":"resource_duration","status":"planned","verification":"pob_checked","source":"poe1-runtime-rules.json","reason":"Runtime rules exist; duration/resource fixture coverage is not locked."},
+    {"id":"overview.game_mechanics","domain":"overview","status":"overview","verification":"source_checked","source":"poe1-wiki-manifest.json","reason":"Navigation seed only; not a canonical rule chunk."},
+    {"id":"overview.keyword","domain":"overview","status":"overview","verification":"source_checked","source":"poe1-wiki-manifest.json","reason":"Keyword navigation seed only; article requires page-level verification."},
+    {"id":"campaign.chaos_penalty","domain":"resistance_penetration","status":"conflict","verification":"conflict","source":"poe1-pob-validation.json","reason":"PoB campaign penalty path includes Chaos while the existing game-rule statement covers elemental resistance only; do not merge."}
+  ],
+  "fixtureMinimum": {"damage":3,"conversion":2,"resistance_penetration":2,"projectile_chain":2,"curse_ailment":2,"item_granted_variant":2},
+  "canonicalPromotionRule":"No P0 item is canonical until source_checked, applicable PoB evidence is recorded, and the required fixture set reaches fixture_verified. Items without fixtures remain planned or unverified."
+}

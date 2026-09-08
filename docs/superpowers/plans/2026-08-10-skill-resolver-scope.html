@@ -1,6 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Skill Resolver Scope</title></head><body>
-<h1>Skill Resolver Scope</h1><h2>Goal</h2><p>Resolve a Skill Set selector and skill name to the corresponding PoB socket group and calculated active-skill index.</p>
-<h2>In scope</h2><ul><li>Case-insensitive title/name matching.</li><li>Skill Set title or numeric order selection.</li><li>Socket-group activation and PoB recalculation through existing methods.</li><li>Deterministic missing/ambiguous errors.</li></ul>
-<h2>Out of scope</h2><ul><li>Natural-language fuzzy matching, translation, gem recommendation, or damage simulation.</li></ul>
-<h2>Contract</h2><pre><code>find_skill(build, selector, name) -&gt; { skillSet, socketGroup, skillIndex } | nil, error</code></pre>
-</body></html>

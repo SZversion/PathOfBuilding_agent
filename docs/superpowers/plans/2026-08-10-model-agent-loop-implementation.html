@@ -1,5 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Model Agent Loop Implementation</title></head><body>
-<h1>Model Agent Loop Implementation</h1>
-<ol><li>Add a standard-library OpenAI-compatible chat client with configurable endpoint, model, API key, and timeout.</li><li>Add allowlisted plan parsing/validation (maximum 8 steps, object arguments, duplicate rejection) and a two-call <code>AgentLoop</code> around <code>execute_plan</code>.</li><li>Add model prompts for planning and evidence-based final answers.</li><li>Run a fake-model self-check plus existing planner/runtime/search checks and a local Ollama smoke request when available.</li></ol>
-<p><strong>ponytail:</strong> one synchronous HTTP client and two model calls; no agent framework or streaming abstraction.</p>
-</body></html>

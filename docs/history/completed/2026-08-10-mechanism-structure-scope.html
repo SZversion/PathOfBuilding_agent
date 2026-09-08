@@ -1,0 +1,78 @@
+<!-- Status: Historical
+Authority: Not authoritative
+Superseded by: AGENT.md, PRD_SDD.md, CUSTOMER.md, agent/knowledge/RULE_AUTHORING.md, agent/knowledge/RULE_SCHEMA.md, agent/knowledge/VALIDATION_WORKFLOW.md -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PoB Mechanism Fact Structure - Scope</title>
+  <style>body{max-width:900px;margin:2rem auto;padding:0 1rem;font:16px/1.5 system-ui,sans-serif;color:#202124}code,pre{background:#f3f4f6;border-radius:4px}code{padding:.1rem .25rem}pre{padding:1rem;overflow:auto}.scope{border-left:4px solid #2563eb;padding-left:1rem}.out{border-left:4px solid #dc2626;padding-left:1rem}</style>
+</head>
+<body>
+  <h1>PoB Mechanism Fact Structure</h1>
+  <p><strong>Status:</strong> Approved for implementation</p>
+  <p><strong>Branch:</strong> <code>feat/pob-agent-architecture</code></p>
+
+  <h2>Goal</h2>
+  <p>Convert PoB's already-calculated in-memory skill, socket, trigger, item, and breakdown state into a compact, explainable mechanism snapshot.</p>
+
+  <h2>In scope</h2>
+  <div class="scope"><ul>
+    <li>Add one read-only <code>AgentMechanismTool.lua</code> module.</li>
+    <li>Expose socket groups, gem order, item slot, enabled state, and main-skill indexes from <code>build.skillsTab.socketGroupList</code>.</li>
+    <li>Expose calculated skill metadata, trigger metadata, and scalar output values.</li>
+    <li>Expose available projectile and curse facts through the existing <code>AgentTool</code>.</li>
+    <li>Expose scalar entries from <code>player.breakdown</code> and each active skill's <code>breakdown</code> when present.</li>
+    <li>Attach <code>status = calculated</code>, <code>unavailable</code>, or <code>not_simulated</code> to each derived area.</li>
+    <li>Return the existing Fact Envelope shape and use only Lua standard features.</li>
+    <li>Add one deterministic fake-build self-check and extend the external smoke test.</li>
+  </ul></div>
+
+  <h2>Out of scope</h2>
+  <div class="out"><ul>
+    <li>New combat, curse-order, trigger, or damage simulation formulas.</li>
+    <li>Changes to PoB calculation modules or UI.</li>
+    <li>Natural-language routing, model, server, RAG, or database work.</li>
+    <li>Claiming an actual application order when PoB only exposes socket order.</li>
+    <li>Persistent mechanism snapshots or a new serialization format.</li>
+  </ul></div>
+
+  <h2>Contract</h2>
+  <pre><code>get_mechanism_snapshot(build) -&gt; envelope | nil, error
+
+envelope = {
+  calculationVersion = string,
+  facts = {
+    socketGroups = table[],
+    skills = table[],
+    projectile = table,
+    curse = table,
+    breakdown = table
+  },
+  sources = string[],
+  trace = table[]
+}</code></pre>
+  <ul>
+    <li>Every list preserves PoB order.</li>
+    <li>Unavailable optional data is represented as <code>{ status = "unavailable" }</code>.</li>
+    <li>Information that would require a new simulator is represented as <code>{ status = "not_simulated" }</code>.</li>
+    <li>Missing PoB calculation state returns <code>nil, error</code>.</li>
+  </ul>
+
+  <h2>Acceptance criteria</h2>
+  <ul>
+    <li>No PoB calculation source file changes.</li>
+    <li>The fake self-check verifies socket/gem order, trigger metadata, calculated values, and status markers.</li>
+    <li>The real user-build smoke test prints mechanism counts and succeeds when optional values are unavailable.</li>
+  </ul>
+
+  <h2>Files allowed to change</h2>
+  <ul>
+    <li><code>src/Modules/AgentMechanismTool.lua</code></li>
+    <li><code>tests/agent/tools/test_agent_mechanism_tool.lua</code></li>
+    <li><code>tests/agent/tools/test_user_build_headless.lua</code></li>
+    <li>This scope and implementation plan</li>
+  </ul>
+</body>
+</html>
+

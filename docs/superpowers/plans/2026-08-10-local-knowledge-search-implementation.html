@@ -1,9 +1,0 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Local Knowledge Search - Implementation Plan</title></head>
-<body>
-<h1>Local Knowledge Search Implementation Plan</h1>
-<p><strong>Goal:</strong> build and query a deterministic local JSON index.</p>
-<p><strong>Architecture:</strong> one standard-library Python builder reads existing JSON sources; one search module loads the generated index and ranks exact, substring, and token matches.</p>
-<h2>Tasks</h2>
-<ol><li>Add failing English, Korean, category, and unknown-query tests.</li><li>Create <code>tools/build_knowledge_index.py</code> and emit <code>agent/knowledge/index/poe1-3.29.json</code>.</li><li>Create <code>agent/search/knowledge_search.py</code> with category filters and limits.</li><li>Run tests, rebuild twice, compare hashes, and commit.</li></ol>
-</body></html>

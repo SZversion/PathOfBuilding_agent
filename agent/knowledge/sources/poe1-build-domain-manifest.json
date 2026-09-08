@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "scope": "poe1-build-domains",
+  "crawl": {
+    "mode": "manual_inventory",
+    "crawlerVersion": "manual-search/1.0",
+    "crawlTimestamp": "2026-09-08T00:00:00+09:00",
+    "robotsStatus": "unknown"
+  },
+  "sourceMetadata": {
+    "license": "CC BY-SA 3.0 where applicable",
+    "attribution": "PoE Wiki contributors",
+    "retrievedAt": "2026-09-08T00:00:00+09:00"
+  },
+  "pages": [
+    {
+      "id": "passive-skill",
+      "url": "https://www.poewiki.net/wiki/Passive_skill",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Passive_skill",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "tree-version-sensitive",
+      "poeEdition": "poe1"
+    },
+    {
+      "id": "ascendancy-class",
+      "url": "https://www.poewiki.net/wiki/Ascendancy_class",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Ascendancy_class",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "tree-version-sensitive",
+      "poeEdition": "poe1"
+    },
+    {
+      "id": "attribute",
+      "url": "https://www.poewiki.net/wiki/Attribute",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Attribute",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "version-sensitive",
+      "poeEdition": "poe1"
+    },
+    {
+      "id": "stat",
+      "url": "https://www.poewiki.net/wiki/Stat",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Stat",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "version-sensitive",
+      "poeEdition": "poe1"
+    },
+    {
+      "id": "quest-rewards",
+      "url": "https://www.poewiki.net/wiki/Quest_rewards",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Quest_rewards",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "act-and-patch-sensitive",
+      "poeEdition": "poe1"
+    },
+    {
+      "id": "weapon",
+      "url": "https://www.poewiki.net/wiki/Weapon",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Weapon",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "item-version-sensitive",
+      "poeEdition": "poe1"
+    },
+    {
+      "id": "unique-item",
+      "url": "https://www.poewiki.net/wiki/Unique_item",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Unique_item",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "item-version-sensitive",
+      "poeEdition": "poe1"
+    },
+    {
+      "id": "armour-equipment",
+      "url": "https://www.poewiki.net/wiki/Armour_(equipment)",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Armour_(equipment)",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "item-version-sensitive",
+      "poeEdition": "poe1",
+      "resolvedUrl": null,
+      "redirectStatus": "not_resolved"
+    },
+    {
+      "id": "jewellery",
+      "url": "https://www.poewiki.net/wiki/Jewellery",
+      "canonicalUrl": "https://www.poewiki.net/wiki/Jewellery",
+      "status": "discovered",
+      "httpStatus": null,
+      "parseStatus": "not_attempted",
+      "wikiOldid": null,
+      "wikiLastModified": null,
+      "gamePatch": null,
+      "patchApplicability": "item-version-sensitive",
+      "poeEdition": "poe1"
+    }
+  ],
+  "inventoryPolicy": "All pages/items are indexed; only representative rules with source and fixture evidence may become canonical.",
+  "impactRelations": [
+    {
+      "pages": [
+        "passive-skill",
+        "ascendancy-class"
+      ],
+      "rules": [
+        "passive.node.allocation",
+        "ascendancy.node.allocation"
+      ],
+      "interactions": [
+        "modifier scope",
+        "jewel socket/radius"
+      ],
+      "plannedTools": [
+        {
+          "name": "get_passive_context",
+          "status": "planned"
+        },
+        {
+          "name": "explain_stat_source",
+          "status": "planned"
+        }
+      ],
+      "fixtures": [
+        "planned-passive-allocation",
+        "planned-ascendancy-allocation"
+      ],
+      "rag": [
+        "passive.node.allocation",
+        "ascendancy.node.allocation"
+      ]
+    },
+    {
+      "pages": [
+        "weapon",
+        "unique-item",
+        "armour-equipment",
+        "jewellery"
+      ],
+      "rules": [
+        "weapon.local-global",
+        "unique.override-granted",
+        "armour.defence",
+        "jewellery.modifiers"
+      ],
+      "interactions": [
+        "modifier runtime",
+        "item socket/link"
+      ],
+      "plannedTools": [
+        {
+          "name": "get_item_context",
+          "status": "planned"
+        },
+        {
+          "name": "compare_item",
+          "status": "planned"
+        }
+      ],
+      "fixtures": [
+        "planned-weapon-swap",
+        "planned-unique-swap",
+        "planned-armour-swap",
+        "planned-jewellery-swap"
+      ],
+      "rag": [
+        "weapon.local-global",
+        "unique.override-granted",
+        "armour.defence",
+        "jewellery.modifiers"
+      ]
+    },
+    {
+      "pages": [
+        "attribute",
+        "stat"
+      ],
+      "rules": [
+        "attribute.base-derived",
+        "stat.actor-skill-source"
+      ],
+      "interactions": [
+        "modifier scope",
+        "skill context"
+      ],
+      "plannedTools": [
+        {
+          "name": "get_stat_trace",
+          "status": "planned"
+        }
+      ],
+      "fixtures": [
+        "planned-attribute-change",
+        "planned-stat-source"
+      ],
+      "rag": [
+        "attribute.base-derived",
+        "stat.actor-skill-source"
+      ]
+    }
+  ]
+}
+

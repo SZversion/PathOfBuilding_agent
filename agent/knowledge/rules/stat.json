@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "domain": "stat",
+  "game": "poe1",
+  "status": "planned",
+  "rules": [
+    {
+      "id": "stat.actor-skill-source",
+      "category": "stat",
+      "scope": "global",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "A stat trace distinguishes actor-level, skill-level, support-level, item-level, passive-level, enemy, hit, ailment, and DoT sources; the current value is read from PoB output.",
+      "facts": {
+        "sourceScopes": [
+          "actor",
+          "skill",
+          "support",
+          "item",
+          "passive",
+          "enemy",
+          "hit",
+          "ailment",
+          "dot"
+        ]
+      },
+      "conditions": [
+        "requested stat is present in authoritative PoB context"
+      ],
+      "gamePatch": null,
+      "pobVersion": null,
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "wiki-stat.actor-skill-source",
+          "type": "wiki",
+          "title": "stat reference",
+          "url": "https://www.poewiki.net/wiki/Stat",
+          "repository": null,
+          "ref": null,
+          "commit": null,
+          "license": "CC BY-SA 3.0 where applicable",
+          "attribution": "PoE Wiki contributors",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": null,
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "PoB raw",
+          "ui": "PoB display",
+          "tool": "raw value and source edges",
+          "final": "presentation only",
+          "floatingPoint": "preserve raw",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "modifier.runtime.base_inc_more",
+          "to": "stat.actor-skill-source",
+          "condition": "modifier contributes to stat"
+        }
+      ],
+      "relatedRuleIds": [
+        "modifier.runtime.base_inc_more",
+        "skill.granted_effect_and_types",
+        "item-socket.colour-link-count"
+      ],
+      "interactions": [
+        {
+          "ruleId": "skill.granted_effect_and_types",
+          "relation": "skill_scope_source"
+        },
+        {
+          "ruleId": "modifier.runtime.base_inc_more",
+          "relation": "runtime_modifier_source"
+        }
+      ],
+      "sourceEdges": [],
+      "verification": {
+        "state": "planned",
+        "fixtureRefs": [],
+        "next": "two actor/skill source fixtures",
+        "sourceEdgeStatus": "pending: no actor/skill breakdown fixture"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No source trace fixture",
+          "Wiki page was not parsed; source metadata is provisional"
+        ],
+        "missingEvidence": [
+          "actor and skill stat breakdown",
+          "wikiOldid/wikiLastModified and parsed claim"
+        ],
+        "temporaryEvidence": false
+      }
+    }
+  ]
+}
+

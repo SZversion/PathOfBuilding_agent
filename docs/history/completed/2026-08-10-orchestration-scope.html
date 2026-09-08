@@ -1,0 +1,17 @@
+<!-- Status: Historical
+Authority: Not authoritative
+Superseded by: AGENT.md, PRD_SDD.md, CUSTOMER.md, agent/knowledge/RULE_AUTHORING.md, agent/knowledge/RULE_SCHEMA.md, agent/knowledge/VALIDATION_WORKFLOW.md -->
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Agent Orchestration - Scope</title></head><body>
+<h1>Agent Orchestration</h1><p><strong>Status:</strong> Approved for implementation</p>
+<h2>Goal</h2><p>Turn a user question into a deterministic intent and ordered retrieval/PoB-tool plan before any model is called.</p>
+<h2>In scope</h2><ul><li>Classify questions as <code>item_alias</code>, <code>rule_search</code>, <code>pob_stat</code>, <code>mechanism_compare</code>, or <code>unknown</code>.</li><li>Extract simple entities: skill name, support name, Skill Set selector, and stat terms.</li><li>Return ordered steps such as <code>search_knowledge</code>, <code>get_projectile_count</code>, <code>compare_support_effect</code>, and <code>explain_damage_change</code>.</li><li>Keep the plan JSON-serializable and deterministic.</li><li>Add standard-library Python self-checks.</li></ul>
+<h2>Out of scope</h2><ul><li>LLM/API calls, model download, prompt generation, tool execution, UI, server, and persistence.</li><li>Guessing entities not present in the question.</li></ul>
+<h2>Contract</h2><pre><code>plan(question) -&gt; {
+  intent = string,
+  entities = table,
+  steps = [{ tool, arguments }],
+  confidence = number
+}</code></pre>
+<h2>Acceptance</h2><ul><li>Known Korean item query plans alias search.</li><li>Projectile/curse questions plan the matching PoB tool.</li><li>Greater Volley damage questions plan cache comparison then explanation.</li><li>Unknown questions return an explicit unknown plan.</li></ul>
+</body></html>
+

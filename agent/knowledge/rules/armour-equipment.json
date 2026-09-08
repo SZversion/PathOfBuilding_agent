@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "domain": "armour-equipment",
+  "game": "poe1",
+  "status": "planned",
+  "rules": [
+    {
+      "id": "armour.defence",
+      "category": "armour",
+      "scope": "item",
+      "domain": "mechanism",
+      "status": "planned",
+      "statement": "Armour equipment comparison preserves slot, base defence, local modifiers, global modifiers, sockets, and equipped state; final defence remains a PoB output value.",
+      "facts": {
+        "fields": [
+          "slot",
+          "baseDefence",
+          "localModifiers",
+          "globalModifiers",
+          "sockets",
+          "equipped"
+        ]
+      },
+      "conditions": [
+        "armour is equipped in authoritative state"
+      ],
+      "gamePatch": null,
+      "pobVersion": null,
+      "dataRevision": null,
+      "sources": [
+        {
+          "id": "wiki-armour.defence",
+          "type": "wiki",
+          "title": "armour reference",
+          "url": "https://www.poewiki.net/wiki/Armour_(equipment)",
+          "repository": null,
+          "ref": null,
+          "commit": null,
+          "license": "CC BY-SA 3.0 where applicable",
+          "attribution": "PoE Wiki contributors",
+          "retrievedAt": "2026-09-08T00:00:00+09:00",
+          "gamePatch": null,
+          "pobVersion": null,
+          "dataRevision": null
+        }
+      ],
+      "pobEvidence": null,
+      "calculation": {
+        "stages": [],
+        "precision": {
+          "internal": "PoB raw",
+          "ui": "defence display",
+          "tool": "raw before/after output and source edges",
+          "final": "presentation only",
+          "floatingPoint": "preserve raw",
+          "serverTick": "not_applicable"
+        }
+      },
+      "dependencies": [
+        {
+          "from": "armour.localModifiers",
+          "to": "modifier.runtime.base_inc_more",
+          "condition": "defence modifier contributes to actor stat"
+        }
+      ],
+      "relatedRuleIds": [
+        "modifier.runtime.base_inc_more",
+        "item-socket.colour-link-count",
+        "stat.actor-skill-source"
+      ],
+      "interactions": [
+        {
+          "ruleId": "stat.actor-skill-source",
+          "relation": "contributes_defence_stat"
+        },
+        {
+          "ruleId": "item-socket.colour-link-count",
+          "relation": "preserves_socket_state"
+        }
+      ],
+      "sourceEdges": [],
+      "verification": {
+        "state": "planned",
+        "fixtureRefs": [],
+        "next": "two armour defence change fixtures",
+        "sourceEdgeStatus": "pending: no armour before/after defence output"
+      },
+      "uncertainty": {
+        "level": "high",
+        "reasons": [
+          "No armour fixture",
+          "Wiki page was not parsed; source metadata is provisional"
+        ],
+        "missingEvidence": [
+          "before/after defence output",
+          "wikiOldid/wikiLastModified and parsed claim"
+        ],
+        "temporaryEvidence": false
+      }
+    }
+  ]
+}
+

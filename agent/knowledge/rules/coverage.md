@@ -25,6 +25,17 @@ Sources: [Damage](https://www.poewiki.net/wiki/Damage), [Resistance penetration]
 - [ ] Triggered skills versus `use a skill` conditions
 - [ ] support gem link scope
 
+#### Gem mechanics P0 (2026-09-08)
+
+- [x] gem identity fields and variant separation (PoB checked; fixture promotion pending)
+- [x] gem level and quality fields (two observed build instances)
+- [x] gem tags versus resolved skill flags (PoB checked)
+- [ ] support compatibility and item-granted exceptions (fixture pair missing)
+- [ ] synthetic socket groups for item-provided skills (runtime capture missing)
+- [ ] trigger compatibility and restrictions (fixture pair missing)
+- [ ] trigger cooldown/tick model (PoB checked; live server timing not simulated)
+- [ ] alternate quality, exceptional/awakened/greater, and corrupted states (planned)
+
 Sources: [Skill](https://www.poewiki.net/wiki/Skill), [Gem tag](https://www.poewiki.net/wiki/Gem_tag)
 
 ### Defenses and survival
@@ -69,3 +80,37 @@ Sources: [Ailment](https://www.poewiki.net/wiki/Ailment), [Curse](https://www.po
 ## Collection principle
 
 Use PoE Wiki for concepts and cross-references, then compare current values and behavior against PoB data and official patch notes. Store only the rules needed by the agent instead of copying entire wiki pages.
+
+## 2026-09-08 seed collection status
+
+The manual Wiki seed and link inventory is stored in:
+
+- `agent/knowledge/sources/poe1-wiki-manifest.json`
+- `agent/knowledge/sources/poe1-p0-inventory.json`
+- `agent/knowledge/rules/poe1-p0-planned.json`
+
+The seed pages `Game mechanics` and `Keyword` were discovered with stable oldids, but direct page fetches returned HTTP 403 in the collection run. They are therefore navigation overviews, not canonical rule evidence. Link targets are tracked as discovered/unfetched until parsed and verified.
+
+No P0 domain has been promoted to canonical solely from this seed. The P0 minimum fixture counts are recorded in the inventory; missing fixtures keep items planned or unverified. P1 and P2 links remain inventory-only for MVP.
+
+## Domain rule-file inventory (2026-09-08)
+
+- [x] modifier runtime operation shell (`modifier.json`)
+- [x] skill and socketed gem identity shells (`skill.json`, `skill-gem.json`)
+- [x] item socket/link shell (`item-socket.json`)
+- [x] attack and spell search domains (`attack.json`, `spell.json`)
+- [x] curse interaction shell (`curse.json`)
+- [ ] warcry, aura, minion, totem, and trap P1 fixtures (`planned`)
+
+## Build and equipment domain inventory (2026-09-08)
+
+- [ ] passive allocation and source trace (`passive-skill.json`)
+- [ ] ascendancy allocation and class restrictions (`ascendancy-class.json`)
+- [ ] attribute versus derived stat separation (`attribute.json`, `stat.json`)
+- [ ] quest reward act/class/patch index (`quest-rewards.json`, P1)
+- [ ] weapon local/global and hand comparison (`weapon.json`)
+- [ ] unique override/granted interaction (`unique-item.json`)
+- [ ] armour defence comparison (`armour-equipment.json`)
+- [ ] ring/amulet/belt comparison (`jewellery.json`)
+
+All nine are currently planned because the required representative fixtures have not been captured.

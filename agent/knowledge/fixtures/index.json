@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "game": "poe1",
+  "fixtures": [
+    {
+      "id": "arc-3.29",
+      "document": "docs/fixtures/arc-of-oscillating.md",
+      "buildFile": "C:/Users/SZ/Documents/Path of Building/Builds/3.29/arc.xml",
+      "gamePatch": "3.29",
+      "pobVersion": "1919296d052cb6934e810f763f9c34f50622a958",
+      "dataRevision": null,
+      "status": "observed",
+      "ruleIds": ["skill.variant.identity", "projectile.chain_behavior"]
+    },
+    {
+      "id": "static-strike-3.29",
+      "document": "docs/fixtures/static-strike.md",
+      "buildFile": "3.29/static strike.xml",
+      "gamePatch": "3.29",
+      "pobVersion": null,
+      "dataRevision": null,
+      "status": "partial",
+      "ruleIds": ["resource.duration.context", "stat.actor-skill-source"]
+    }
+  ]
+}

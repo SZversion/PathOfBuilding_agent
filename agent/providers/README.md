@@ -1,7 +1,11 @@
 # Model providers
 
-온라인 Provider와 로컬 llama.cpp Provider는 같은 요청·응답 형식을 구현해야 합니다.
+MVP는 외부 AI 서버 하나를 기본 Provider로 사용합니다. 사용자가 별도의 API 키를
+입력하거나 모델을 다운로드하지 않아도, 앱이 관리하는 서버 연결을 통해 요청합니다.
 
-- `online`: Windows Credential Manager에서 사용자 키를 읽어 API 호출
-- `local`: `local-models/`의 검증된 Qwen3-8B GGUF를 로컬 런타임으로 호출
+- `remote`: 질문, 최신 빌드 변경분, Tool 결과를 외부 AI 서버와 주고받음
+- Tool 실행: 외부 서버가 아니라 로컬 PoB Bridge에서만 수행
+- `local`: 로컬 모델을 사용하는 향후 확장 슬롯이며 MVP에서는 비활성화
 
+외부 서버와의 요청·응답은 구조화된 JSON 계약을 사용해야 합니다. 일반 텍스트에
+포함된 Tool 지시를 실행하지 않습니다.

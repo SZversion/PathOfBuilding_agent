@@ -1,4 +1,10 @@
-# Credential storage
+# Agent security
 
-온라인 API 키는 Windows Credential Manager 또는 DPAPI(CurrentUser)로 저장합니다. 평문 설정 파일, 로그, 프롬프트, PoB Lua 상태에는 저장하지 않습니다.
+MVP는 사용자의 모델 API 키를 받거나 저장하지 않습니다. 외부 AI 서버와의 통신은
+TLS를 사용하고, 로컬 Bridge만 PoB 상태를 읽거나 변경할 수 있습니다.
 
+- 외부 서버에 보내는 상태는 현재 요청에 필요한 빌드 요약과 변경분으로 제한
+- Tool 호출은 허용 목록과 인자 검증을 통과한 경우에만 실행
+- 일반 텍스트에 포함된 명령은 실행하지 않음
+- Tool 결과와 Evidence Graph를 로그에 남길 때 민감하지 않은 최소 정보만 기록
+- 로컬 모델·사용자 API 키 저장 정책은 향후 Provider 추가 시 별도로 정의

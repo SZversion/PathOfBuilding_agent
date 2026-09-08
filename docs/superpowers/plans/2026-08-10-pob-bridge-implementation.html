@@ -1,3 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PoB Bridge Implementation</title></head><body>
-<h1>PoB Bridge Implementation</h1><ol><li>Add a Lua JSON bridge script accepting <code>{tool, arguments}</code>, loading XML, running <code>OnFrame</code>, and emitting <code>{ok,result}</code> or <code>{ok:false,error}</code>.</li><li>Add a Python standard-library subprocess client and handler factory with timeout, exit-code, JSON, and Tool-error mapping.</li><li>Add a fake subprocess/client self-check without requiring a model or server.</li></ol><p><strong>ponytail:</strong> one subprocess per request is intentional; replace it only when startup cost is measured.</p>
-</body></html>

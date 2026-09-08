@@ -1,0 +1,108 @@
+<!-- Status: Historical
+Authority: Not authoritative
+Superseded by: AGENT.md, PRD_SDD.md, CUSTOMER.md, agent/knowledge/RULE_AUTHORING.md, agent/knowledge/RULE_SCHEMA.md, agent/knowledge/VALIDATION_WORKFLOW.md -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Internal PoB Tool Layer - Scope and Plan</title>
+  <style>
+    body { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font: 16px/1.5 system-ui, sans-serif; color: #202124; }
+    code, pre { background: #f3f4f6; border-radius: 4px; }
+    code { padding: .1rem .25rem; }
+    pre { padding: 1rem; overflow: auto; }
+    .scope { border-left: 4px solid #2563eb; padding-left: 1rem; }
+    .out { border-left: 4px solid #dc2626; padding-left: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Internal PoB Tool Layer</h1>
+  <p><strong>Status:</strong> Awaiting implementation approval</p>
+  <p><strong>Branch:</strong> <code>feat/pob-agent-architecture</code></p>
+
+  <h2>Goal</h2>
+  <p>Expose the already-calculated PoB in-memory state through small, read-only Lua functions that return a consistent Fact Envelope with values, provenance, and optional breakdown data.</p>
+
+  <h2>In scope</h2>
+  <div class="scope">
+    <ul>
+      <li>Create one internal <code>AgentTool.lua</code> module.</li>
+      <li>Implement <code>get_character_stats(build)</code>.</li>
+      <li>Implement <code>get_skill_stats(build, skillIndex)</code>.</li>
+      <li>Implement <code>get_projectile_count(build, skillIndex)</code>.</li>
+      <li>Implement <code>get_curse_limit(build)</code>.</li>
+      <li>Implement <code>explain_stat(build, stat, skillIndex)</code>.</li>
+      <li>Reuse <code>AgentSnapshot.lua</code>; do not duplicate PoB calculations.</li>
+      <li>Return <code>calculationVersion</code>, <code>facts</code>, <code>sources</code>, and optional <code>trace</code>.</li>
+      <li>Add focused Lua tests and one external user-build test.</li>
+    </ul>
+  </div>
+
+  <h2>Out of scope</h2>
+  <div class="out">
+    <ul>
+      <li>Qwen or online model integration.</li>
+      <li>PoB UI changes or a chat window.</li>
+      <li>HTTP, MCP, or any separate server process.</li>
+      <li>Natural-language question routing.</li>
+      <li>PoB calculation formula changes.</li>
+      <li>RAG, prompts, Korean aliases, or new game-rule collection.</li>
+      <li>Bulk analysis or persistent database storage.</li>
+    </ul>
+  </div>
+
+  <h2>Interface contract</h2>
+  <pre><code>get_character_stats(build) -&gt; envelope | nil, error
+get_skill_stats(build, skillIndex) -&gt; envelope | nil, error
+get_projectile_count(build, skillIndex) -&gt; envelope | nil, error
+get_curse_limit(build) -&gt; envelope | nil, error
+explain_stat(build, stat, skillIndex) -&gt; envelope | nil, error
+
+envelope = {
+  calculationVersion = string,
+  facts = table,
+  sources = string[],
+  trace = table[] -- empty for non-explain tools
+}</code></pre>
+  <p><code>AgentTool.lua</code> must normalize the existing snapshot shapes into this envelope; it must not expose <code>outputs</code> or <code>skills</code> as the top-level tool contract.</p>
+  <ul>
+    <li><code>get_character_stats</code> returns <code>nil, error</code> when build state is unavailable.</li>
+    <li><code>get_character_stats.facts</code> is the scalar character output map.</li>
+    <li><code>get_skill_stats.facts</code> is <code>{ skillIndex, name, skillPart, trigger, output }</code>.</li>
+    <li><code>get_projectile_count.facts</code> is <code>{ skillIndex, value }</code>.</li>
+    <li><code>get_curse_limit.facts</code> is <code>{ value }</code>.</li>
+    <li><code>explain_stat.facts</code> is <code>{ stat, value }</code>.</li>
+    <li><code>get_projectile_count</code> reads <code>activeSkillList[skillIndex].output.ProjectileCount</code>.</li>
+    <li><code>get_curse_limit</code> reads <code>player.output.EnemyCurseLimit</code>.</li>
+    <li>Missing build state, invalid/non-integer skill indexes, and missing stats return <code>nil, error</code> with the same error convention.</li>
+  </ul>
+
+  <h2>Implementation steps</h2>
+  <ol>
+    <li>Add <code>AgentTool.lua</code> with input validation and envelope construction.</li>
+    <li>Map projectile and curse tools to existing PoB output fields.</li>
+    <li>Map character and skill tools to scalar snapshot fields.</li>
+    <li>Delegate explanation calls to <code>AgentSnapshot.explain</code>.</li>
+    <li>Add self-checks for valid values, missing skill indexes, and missing stats.</li>
+    <li>Run the external <code>Imported build.xml</code> headless test.</li>
+  </ol>
+
+  <h2>Acceptance criteria</h2>
+  <ul>
+    <li>No PoB calculation module is modified.</li>
+    <li>Every tool is read-only and returns the same envelope shape.</li>
+    <li>Invalid input returns an explicit error instead of throwing an opaque error.</li>
+    <li>Projectile and curse results expose the exact PoB output keys above.</li>
+    <li>Focused user-build testing is a smoke test: it asserts snapshot creation, skill count, and a non-nil curse value; projectile is non-nil when the fixture has a projectile skill and otherwise reports the documented unavailable state.</li>
+  </ul>
+
+  <h2>Files allowed to change</h2>
+  <ul>
+    <li><code>src/Modules/AgentTool.lua</code></li>
+    <li><code>src/Classes/CalcsTab.lua</code> only if tool binding is required</li>
+    <li><code>tests/agent/tools/</code></li>
+    <li>This plan and related test documentation</li>
+  </ul>
+</body>
+</html>
+

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "domain": "gem-mechanics",
+  "game": "poe1",
+  "status": "partial",
+  "sourceManifest": "agent/knowledge/sources/poe1-gem-wiki-manifest.json",
+  "collectionPolicy": {
+    "canonicalization": "deduplicate by final canonical or redirect URL",
+    "externalSearch": "temporary_evidence only",
+    "fullArticleCopy": false,
+    "canonicalPromotion": "source_checked and PoB/fixture verified"
+  },
+  "p0Domains": [
+    {"id":"gem.identity.variant","status":"pob_checked","requiredFixtures":2,"fixtureCoverage":1},
+    {"id":"gem.tags.skill_flags","status":"pob_checked","requiredFixtures":2,"fixtureCoverage":1},
+    {"id":"support.compatibility","status":"pob_checked","requiredFixtures":2,"fixtureCoverage":0},
+    {"id":"gem.level.quality","status":"pob_checked","requiredFixtures":2,"fixtureCoverage":1},
+    {"id":"gem.item_granted","status":"unverified","requiredFixtures":2,"fixtureCoverage":0},
+    {"id":"gem.synthetic_socket_group","status":"unverified","requiredFixtures":2,"fixtureCoverage":0},
+    {"id":"gem.trigger.compatibility","status":"pob_checked","requiredFixtures":2,"fixtureCoverage":0},
+    {"id":"gem.trigger.cooldown_tick","status":"pob_checked","requiredFixtures":2,"fixtureCoverage":0},
+    {"id":"gem.alternate_quality","status":"planned","requiredFixtures":2,"fixtureCoverage":0},
+    {"id":"gem.exceptional_awakened_greater","status":"planned","requiredFixtures":2,"fixtureCoverage":0},
+    {"id":"gem.corrupted","status":"planned","requiredFixtures":2,"fixtureCoverage":0}
+  ],
+  "fixtures": [
+    {"id":"arc-of-oscillating-3.29","path":"C:/Users/SZ/Documents/Path of Building/Builds/3.29/arc.xml","kind":"observed_build","status":"fixture_verified","skillSet":"1 (title absent)","mainSkill":"Vaal Arc of Oscillating","config":"Default (id 1)","gamePatch":"3.29","pobVersion":"1919296d052cb6934e810f763f9c34f50622a958","facts":["variantId=VaalArcAltY","skillId=VaalArc","level=21","quality=20","supports include Greater Chain, Greater Spell Echo, Archmage"]},
+    {"id":"static-strike-gathering-lightning-3.29","path":"C:/Users/SZ/Documents/Path of Building/Builds/3.29/static strike.xml","kind":"observed_build","status":"partial","skillSet":"7 (title Midgame)","mainSkill":"Static Strike of Gathering Lightning","config":"Endgame id 1 exists; exact active selection requires PoB load verification","gamePatch":"3.29","pobVersion":"1919296d052cb6934e810f763f9c34f50622a958","facts":["variantId=StaticStrikeAltX","level=20","quality=20","Trauma level=21 quality=20"]},
+    {"id":"impending-doom-vixens","path":null,"kind":"design_fixture","status":"planned","skillSet":null,"mainSkill":null,"config":null,"gamePatch":null,"pobVersion":null},
+    {"id":"item-granted-skill","path":null,"kind":"design_fixture","status":"planned","skillSet":null,"mainSkill":null,"config":null,"gamePatch":null,"pobVersion":null},
+    {"id":"variant-gem","path":null,"kind":"design_fixture","status":"planned","skillSet":null,"mainSkill":null,"config":null,"gamePatch":null,"pobVersion":null}
+  ],
+  "missingEvidence": [
+    "A parsed PoE Wiki page or official game-data source for gem terminology",
+    "Two fixture-verified support compatibility cases",
+    "Two item-granted and two synthetic socket group cases",
+    "Two trigger restriction cases and server timing fixture observations",
+    "Alternate-quality, exceptional/awakened/greater, and corrupted gem fixtures"
+  ],
+  "impactRelations": [
+    {"wikiPages":["gem-tag","skill-gem","support-gem"],"rules":["gem.tags.skill_flags","support.compatibility","skill.granted_effect_and_types"],"interactions":["support link activation","skill type flags"],"tools":["get_skill_context","get_support_compatibility"],"fixtures":["arc-of-oscillating-3.29","static-strike-gathering-lightning-3.29"],"ragChunks":["gem.tags.skill_flags","support.compatibility"]},
+    {"wikiPages":["trigger","alternate-gem-quality"],"rules":["gem.trigger.compatibility","gem.trigger.cooldown_tick","gem.alternate_quality"],"interactions":["trigger activation","cooldown/recovery","quality variant"],"tools":["get_skill_context","get_duration"],"fixtures":["variant-gem","impending-doom-vixens"],"ragChunks":["gem.trigger.compatibility","gem.trigger.cooldown_tick"]},
+    {"wikiPages":["skill-gem","gem"],"rules":["gem.identity.variant","gem.level.quality","gem.item_granted.source","gem.synthetic_socket_group"],"interactions":["variant selection","item-provided skill support scope"],"tools":["resolve_skill","get_socket_order"],"fixtures":["arc-of-oscillating-3.29","item-granted-skill","impending-doom-vixens"],"ragChunks":["gem.identity.variant","gem.level.quality","gem.item_granted.source"]}
+  ],
+  "p1P2InventoryOnly": ["minion ownership matrix","totem/trap/mine proxy matrix","server-side trigger timing","league-specific gem mechanics"]
+}
