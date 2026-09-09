@@ -1,12 +1,13 @@
 {
-  "defaultMode": "online",
-  "online": {
-    "provider": "user-configured",
-    "credentialTarget": "PoB-Agent/online-provider"
+  "defaultMode": "remote",
+  "remote": {
+    "endpoint": "https://agent.example.invalid/v1/agent",
+    "protocol": "pob-agent-json-v1",
+    "tlsRequired": true,
+    "maxToolCalls": 8
   },
   "local": {
-    "modelId": "qwen3-8b-q4",
-    "runtime": "llama.cpp",
-    "modelDirectory": "local-models"
+    "enabled": false,
+    "reservedFor": "post-mvp"
   }
 }

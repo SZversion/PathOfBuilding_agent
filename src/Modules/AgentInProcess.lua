@@ -3,6 +3,7 @@ local type = type
 
 local tools = (LoadModule and LoadModule("Modules/AgentTool")) or dofile("src/Modules/AgentTool.lua")
 local snapshot = (LoadModule and LoadModule("Modules/AgentSnapshot")) or dofile("src/Modules/AgentSnapshot.lua")
+local context = (LoadModule and LoadModule("Modules/AgentContext")) or dofile("src/Modules/AgentContext.lua")
 
 local function currentBuild()
 	if type(build) ~= "table" then return nil, "current PoB build is unavailable" end
@@ -12,12 +13,14 @@ end
 
 local function currentSkillIndex(current, name)
 	if type(name) ~= "string" or name == "" then return nil, "skill name is required" end
-	local needle = name:lower()
+	local canonical, aliasErr = context.resolve_skill_alias(name)
+	if not canonical then return nil, aliasErr end
+	local needle = context.normalize_name(canonical)
 	local found
 	for index, skill in ipairs(current.calcsTab.mainEnv.player and current.calcsTab.mainEnv.player.activeSkillList or { }) do
 		local effect = skill.activeEffect and skill.activeEffect.grantedEffect
 		local value = effect and effect.name or skill.name or skill.baseName
-		if type(value) == "string" and value:lower() == needle then
+		if type(value) == "string" and context.normalize_name(value) == needle then
 			if found then return nil, "skill name is ambiguous in current PoB state" end
 			found = index
 		end

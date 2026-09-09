@@ -14,6 +14,8 @@ assert result and result[0]["text"] == "Blue Pearl Amulet"
 assert searcher.search("모루", category="item.base_type") == []
 assert searcher.search("파란 진주 목걸이", category="item.base_type")
 assert searcher.search("zzzzzzzz-qwerty") == []
+assert all(item.get("status") in {None, "canonical", "fixture_verified", "verified"} for item in searcher.search("passive allocation"))
+assert any(item.get("ruleId") == "passive.node.allocation" for item in searcher.search("passive allocation", include_non_authoritative=True))
 alias = searcher.resolve_item_alias("모루")
 assert alias and alias["english"] == "The Anvil" and alias["korean"] == "모루"
 skill = searcher.resolve_skill_alias("뇌동의 연쇄 번개")

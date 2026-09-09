@@ -19,10 +19,14 @@ local build = {
 
 local result = snapshot.capture(build)
 assert(result.calculationVersion == "3.29")
+assert(result.snapshotRevision == "unknown")
 assert(result.outputs.Life == 5000)
 assert(result.outputs.ignoredTable == nil)
 assert(result.skills[1].name == "Fireball")
 assert(result.skills[1].output.ProjectileCount == 3)
+local ok, conflict = snapshot.assertRevision({ snapshotRevision = "new" }, "old")
+assert(ok == nil and conflict.code == "SNAPSHOT_REVISION_CONFLICT" and conflict.recovery_class == "REFRESH_CONTEXT")
+assert(conflict.attempt == 1 and conflict.max_attempts == 1 and conflict.side_effect == "none" and conflict.details.expected == "old")
 build.calcsTab.mainEnv.player.breakdown = { Life = { "5000 (base)", "= 5000" } }
 local explanation = snapshot.explain(build, "Life")
 assert(explanation.value == 5000)

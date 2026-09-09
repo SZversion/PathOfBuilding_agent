@@ -15,9 +15,12 @@ local build = {
 	},
 	itemsTab = { items = { [1] = { name = "Test Wand", baseName = "Wand", raw = "Test Wand", implicitModLines = { { line = "+10% to Fire Resistance" } }, explicitModLines = { { line = "+20 to Life" } } } } },
 }
+build.snapshotRevision = "rev-7"
 
 local character = assert(tools.get_character_stats(build))
+assert(character.status == "calculated" and character.version and character.evidenceGraph and character.uncertainty)
 assert(character.calculationVersion == "3_29")
+assert(character.snapshotRevision == "rev-7" and character.side_effect == "none" and character.operator_message == nil)
 assert(character.facts.Life == 5000)
 assert(#character.trace == 0)
 
@@ -55,7 +58,7 @@ assert(curse.facts.value == 2)
 
 local explanation = assert(tools.explain_stat(build, "Life"))
 assert(explanation.facts.value == 5000)
-assert(explanation.trace[1] == "5000 (base)")
+assert(explanation.trace[1].value == "5000 (base)" and explanation.trace[1].snapshotRevision == "rev-7")
 
 local function assertError(call)
 	local result, err = call()

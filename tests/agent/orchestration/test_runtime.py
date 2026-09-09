@@ -38,9 +38,10 @@ failed = execute_plan("x", {"intent": "test", "steps": [
     {"tool": "bad_args", "arguments": []},
     {"tool": "missing_args"},
 ]}, handlers={"broken": lambda args: (_ for _ in ()).throw(RuntimeError("boom"))})
-assert failed["steps"][0] == {"tool": "broken", "status": "error", "error": "boom"}
-assert failed["steps"][1]["error"] == "arguments must be a dict"
-assert failed["steps"][2]["error"] == "arguments are required"
+assert failed["steps"][0]["error"]["code"] == "TOOL_EXECUTION_ERROR"
+assert failed["steps"][0]["error"]["message"] == "boom"
+assert failed["steps"][1]["error"]["code"] == "INPUT_INVALID"
+assert failed["steps"][2]["error"]["code"] == "INPUT_INVALID"
 assert execute is execute_plan
 
 print("orchestration runtime self-check passed")
