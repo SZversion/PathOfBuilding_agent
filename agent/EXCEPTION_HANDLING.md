@@ -52,9 +52,9 @@ The following registry is the minimum stable vocabulary. New leaf codes must be 
 | `RETRY_LLM` | `NO_JSON`, `JSON_DECODE`, `SCHEMA_VIOLATION`, `LLM_CONTENT_REPAIRABLE` |
 | `RETRY_TOOL` | `TIMEOUT`, `SEARCH_TRANSIENT`, `MODEL_TRANSIENT`, `TOOL_TRANSIENT`, `RAG_TRANSIENT`, `RAG_UNAVAILABLE` |
 | `REPAIR_INPUT` | `INPUT_INVALID`, `TOOL_NOT_FOUND`, `CONTENT_CONFLICT`, `INVALID_MUTATION_PLAN` |
-| `REFRESH_CONTEXT` | `SNAPSHOT_REVISION_CONFLICT`, `STALE_CACHE`, `VERSION_STALE`, `POB_STATE_CHANGED`, `DIFF_UNTRUSTED`, `CONTEXT_RECAPTURE_FAILED` |
+| `REFRESH_CONTEXT` | `SNAPSHOT_REVISION_CONFLICT`, `STALE_CACHE`, `VERSION_STALE`, `POB_STATE_CHANGED`, `DIFF_UNTRUSTED`, `CONTEXT_RECAPTURE_FAILED`, `MUTATION_TIMEOUT`, `MUTATION_UNCERTAIN` |
 | `ASK_USER` | `USER_CONTEXT_MISSING`, `AMBIGUOUS_ALIAS`, `USER_CONFIRMATION_REQUIRED` |
-| `REJECT` | `GROUNDING_MISSING`, `GROUNDING_CONFLICT`, `VERSION_MISMATCH`, `VALUE_UNAVAILABLE`, `BUILD_LOAD_FAILED`, `SEARCH_POLICY_DENIED`, `MUTATION_FAILED`, `RETRY_EXHAUSTED` |
+| `REJECT` | `GROUNDING_MISSING`, `GROUNDING_CONFLICT`, `VERSION_MISMATCH`, `VALUE_UNAVAILABLE`, `BUILD_LOAD_FAILED`, `SEARCH_POLICY_DENIED`, `MUTATION_FAILED`, `MUTATION_NOT_PERSISTENT`, `RETRY_EXHAUSTED` |
 | `HUMAN_REVIEW` | `HUMAN_REVIEW_REQUIRED`, `RETRY_BUDGET_EXHAUSTED`, `POLICY_APPROVAL_REQUIRED`, `UNRESOLVED_EVIDENCE_CONFLICT` |
 | `FATAL_INTERNAL` | `INTERNAL_INVARIANT_VIOLATION`, `POB_CALCULATION_ERROR`, `BRIDGE_PROTOCOL_ERROR`, `UNCLASSIFIED_FAILURE` |
 
@@ -72,6 +72,9 @@ Every internal result uses this envelope:
 {
   "schema_version": "1.0",
   "status": "ok|partial|unavailable|timeout|rejected|human_review|error",
+  "snapshotRevision": "rev-123",
+  "side_effect": "none|in_memory|persisted|unknown",
+  "operator_message": null,
   "facts": {},
   "trace": [],
   "sources": [],
@@ -95,7 +98,9 @@ When `status` is not `ok`, `error` is required:
   "message": "No JSON object was found in the model response.",
   "details": {},
   "next_action": "repair_llm_output",
-  "secondary_causes": []
+  "secondary_causes": [],
+  "side_effect": "none",
+  "operator_message": null
 }
 ```
 
@@ -174,7 +179,8 @@ Defaults:
 - LLM output repair: maximum 2 LLM attempts total. LLM attempts are tracked separately from Tool calls.
 - External model transient failure: maximum 2 LLM attempts with bounded backoff.
 - `tool_call_count <= 8` for each user request. This is the single hard limit for PoB, RAG, and approved-search Tool calls; retries are counted in the same total and there is no separate retry allowance.
-- PoB timeout: maximum 1 retry after cancelling the current request and discarding its execution context; do not run unbounded retries.
+- Tool timeout/transient failures: one initial attempt plus at most 3 retries (4 total attempts). Each retry cancels/discards the failed execution context before starting the next attempt; the limit is hard and there is no unbounded loop.
+- User-input errors (`REPAIR_INPUT`/`ASK_USER`), grounding missing or conflict, snapshot/mutation conflicts, and other non-transient failures are never retried automatically.
 - Tool argument or version errors: zero automatic retries; repair the plan or ask the user.
 - Grounding failure: at most one additional Tool/search plan, then reject if evidence remains missing.
 - `tool_call_count <= 8` is evaluated independently of the LLM attempt limit. Every Tool retry, including RAG and approved-search retries, increments `tool_call_count`. On exhaustion, route to `HUMAN_REVIEW` when an operator can inspect the evidence, otherwise `REJECT`.

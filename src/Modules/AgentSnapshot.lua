@@ -5,6 +5,22 @@ local type = type
 local tostring = tostring
 local io = io
 
+local function snapshotRevision(build)
+	local value = build and (build.snapshotRevision or build.revision or build.agentSnapshotRevision)
+	return value ~= nil and tostring(value) or "unknown"
+end
+
+local function assertRevision(build, expected)
+	if expected == nil then return true, snapshotRevision(build) end
+	local actual = snapshotRevision(build)
+	if tostring(expected) ~= actual then
+		return nil, { code = "SNAPSHOT_REVISION_CONFLICT", recovery_class = "REFRESH_CONTEXT", stage = "mutation_precondition", retryable = false, attempt = 1, max_attempts = 1,
+			message = "PoB snapshot revision is stale", details = { expected = tostring(expected), actual = actual }, next_action = "recapture_snapshot",
+			secondary_causes = {}, side_effect = "none", operator_message = nil, expected = tostring(expected), actual = actual }
+	end
+	return true, actual
+end
+
 local function calculatedOutput(player, skill)
 	local output = skill and skill.output or { }
 	if next(output) == nil and player and player.mainSkill and player.mainSkill.actor then
@@ -74,6 +90,7 @@ local function capture(build)
 	local snapshot = {
 		schemaVersion = 1,
 		calculationVersion = tostring(build and build.targetVersion or "unknown"),
+		snapshotRevision = snapshotRevision(build),
 		characterLevel = build and build.characterLevel,
 		mainSkillIndex = build and build.mainSocketGroup,
 		outputs = scalarTable(player and player.output),
@@ -150,4 +167,6 @@ return {
 	capture = capture,
 	explain = explain,
 	save = save,
+	snapshotRevision = snapshotRevision,
+	assertRevision = assertRevision,
 }

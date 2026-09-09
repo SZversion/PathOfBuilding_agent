@@ -51,6 +51,103 @@ local function resolve_skill_alias(value)
 	return matches[1] or value
 end
 
+-- Resolve and apply the three pieces of PoB state that affect a calculation.
+-- Set ids are stable keys in PoB's tables; numeric selectors therefore prefer
+-- an id and fall back to the corresponding position in the ordered list.
+local function resolve_title_selector(value, entries, order, label)
+	local function invalid(message)
+		return nil, message or (label .. " selector is invalid")
+	end
+	if value == nil then
+		local id = order and order[1]
+		return id and entries[id], id or invalid(label .. " is not available")
+	end
+	local id
+	if type(value) == "number" then
+		id = entries[value] and value or (order and order[value])
+	elseif type(value) == "string" then
+		local numeric = tonumber(value)
+		if numeric then
+			id = entries[numeric] and numeric or (order and order[numeric])
+		end
+		local needle = normalize_name(value)
+		for candidateId, candidate in pairs(entries or {}) do
+			if normalize_name(candidate and candidate.title) == needle then
+				if id and id ~= candidateId then return invalid(label .. " selector is ambiguous") end
+				id = candidateId
+			end
+		end
+	else
+		return invalid()
+	end
+	if not id or not entries[id] then return invalid(label .. " was not found") end
+	return entries[id], id
+end
+
+local function resolve_spec_selector(value, treeTab)
+	local specs = treeTab and treeTab.specList
+	if type(specs) ~= "table" then return nil, "Tree Spec state is unavailable" end
+	if value == nil then
+		local id = treeTab.activeSpec or 1
+		return specs[id], id
+	end
+	local id
+	if type(value) == "number" then
+		id = value
+	elseif type(value) == "string" then
+		id = tonumber(value)
+		local needle = normalize_name(value)
+		for candidateId, candidate in ipairs(specs) do
+			if normalize_name(candidate and candidate.title) == needle then
+				if id and id ~= candidateId then return nil, "Tree Spec selector is ambiguous" end
+				id = candidateId
+			end
+		end
+	else
+		return nil, "Tree Spec selector is invalid"
+	end
+	if not id or not specs[id] then return nil, "Tree Spec was not found" end
+	return specs[id], id
+end
+
+local function apply_calculation_context(build, selectors)
+	if type(build) ~= "table" then return nil, "PoB build is unavailable" end
+	selectors = selectors or {}
+	local treeTab, skillsTab, itemsTab = build.treeTab, build.skillsTab, build.itemsTab
+	local selected = {}
+	if treeTab then
+		local spec, specId = resolve_spec_selector(selectors.activeSpec, treeTab)
+		if not spec then return nil, specId end
+		selected.activeSpec = { id = specId, title = spec.title or "Default" }
+	end
+	if selectors.activeSpec ~= nil then
+		if not treeTab then return nil, "Tree Spec state is unavailable" end
+		if type(treeTab.SetActiveSpec) ~= "function" then return nil, "Tree Spec selector cannot be applied" end
+		treeTab:SetActiveSpec(selected.activeSpec.id)
+	end
+	if skillsTab then
+		local skillSet, skillId = resolve_title_selector(selectors.activeSkillSet, skillsTab.skillSets, skillsTab.skillSetOrderList, "Skill Set")
+		if not skillSet then return nil, skillId end
+		selected.activeSkillSet = { id = skillId, title = skillSet.title or "Default" }
+	end
+	if selectors.activeSkillSet ~= nil then
+		if not skillsTab then return nil, "Skill Set state is unavailable" end
+		if type(skillsTab.SetActiveSkillSet) ~= "function" then return nil, "Skill Set selector cannot be applied" end
+		skillsTab:SetActiveSkillSet(selected.activeSkillSet.id)
+	end
+	if itemsTab then
+		local itemSet, itemId = resolve_title_selector(selectors.activeItemSet, itemsTab.itemSets, itemsTab.itemSetOrderList, "Item Set")
+		if not itemSet then return nil, itemId end
+		selected.activeItemSet = { id = itemId, title = itemSet.title or "Default" }
+	end
+	if selectors.activeItemSet ~= nil then
+		if not itemsTab then return nil, "Item Set state is unavailable" end
+		if type(itemsTab.SetActiveItemSet) ~= "function" then return nil, "Item Set selector cannot be applied" end
+		itemsTab:SetActiveItemSet(selected.activeItemSet.id)
+	end
+	return selected
+end
+
 local function skill_set(build, selector)
 	local tab = build and build.skillsTab
 	if not tab or not tab.skillSets then return nil, "Skill Set state is unavailable" end
@@ -180,4 +277,4 @@ local function find_skill(build, selector, name)
 	}
 end
 
-	return { load_xml_file = load_xml_file, find_skill = find_skill, normalize_name = normalize_name, resolve_skill_alias = resolve_skill_alias }
+	return { load_xml_file = load_xml_file, find_skill = find_skill, normalize_name = normalize_name, resolve_skill_alias = resolve_skill_alias, apply_calculation_context = apply_calculation_context }

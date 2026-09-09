@@ -1,13 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "PoB Agent Fact Envelope",
+  "description": "Authoritative runtime envelope. Tool-specific facts may add fields; error envelopes use the same error contract at the protocol boundary.",
   "type": "object",
-  "required": ["calculationVersion", "facts", "sources"],
+  "required": ["status", "version", "snapshotRevision", "side_effect", "operator_message", "facts", "conditions", "trace", "sources", "evidenceGraph", "uncertainty"],
   "properties": {
+    "status": {"type": "string", "enum": ["calculated", "partial", "unavailable", "not_simulated", "conflict", "rejected"]},
+    "version": {"type": "object", "properties": {"gamePatch": {}, "pobVersion": {}, "dataRevision": {}}, "additionalProperties": true},
+    "snapshotRevision": {"type": "string"},
     "calculationVersion": {"type": "string"},
     "facts": {"type": "object"},
     "sources": {"type": "array", "items": {"type": "string"}},
-    "trace": {"type": "array", "items": {"type": "object"}}
+    "trace": {"type": "array", "items": {"type": "object"}},
+    "evidenceGraph": {"type": "object", "required": ["nodes", "stages", "sourceEdges"], "properties": {"nodes": {"type": "array"}, "stages": {"type": "array"}, "sourceEdges": {"type": "array"}}, "additionalProperties": true},
+    "conditions": {"type": "array"},
+    "uncertainty": {"type": "object", "required": ["level", "reasons", "missingEvidence", "temporaryEvidence"], "properties": {"level": {"type": "string"}, "reasons": {"type": "array"}, "missingEvidence": {"type": "array"}, "temporaryEvidence": {"type": "boolean"}}, "additionalProperties": true},
+    "error": {"type": "object"},
+    "side_effect": {"type": "string", "enum": ["none", "in_memory", "persisted", "unknown"]},
+    "operator_message": {"type": ["string", "null"]}
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

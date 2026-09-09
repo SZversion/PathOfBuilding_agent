@@ -2,6 +2,51 @@
 local pairs = pairs
 local type = type
 local tostring = tostring
+local itemAliasEntries
+local skillAliasEntries
+
+local function normalize_name(value)
+	if type(value) ~= "string" then return "" end
+	return value:match("^%s*(.-)%s*$"):gsub("%s+", " "):lower()
+end
+
+local function canonical_item_identity(value)
+	if type(value) ~= "string" or value == "" then return nil, { code = "INPUT_INVALID", recovery_class = "REPAIR_INPUT", stage = "item_alias", retryable = false, next_action = "repair_input", message = "itemIdentity is required" } end
+	if not itemAliasEntries then
+		itemAliasEntries = {}
+		for _, path in ipairs({ "agent/knowledge/aliases/ko/items-3.29.json", "../agent/knowledge/aliases/ko/items-3.29.json" }) do
+			local file = io.open(path, "r")
+			if file then
+				local content = file:read("*a"); file:close()
+				local ok, decoder = pcall(require, "dkjson")
+				if ok and decoder then local parsed = decoder.decode(content); itemAliasEntries = parsed and parsed.entries or {} end
+				break
+			end
+		end
+	end
+	local needle, matches = normalize_name(value), {}
+	for _, entry in ipairs(itemAliasEntries) do
+		if normalize_name(entry.korean) == needle or normalize_name(entry.english) == needle then matches[#matches + 1] = entry.english end
+	end
+	if #matches > 1 then return nil, { code = "AMBIGUOUS_ALIAS", recovery_class = "ASK_USER", stage = "item_alias", retryable = false, next_action = "ask_user", message = "itemIdentity is ambiguous" } end
+	if #matches == 0 then return nil, { code = "USER_CONTEXT_MISSING", recovery_class = "ASK_USER", stage = "item_alias", retryable = false, next_action = "ask_user", message = "itemIdentity was not found in the item alias catalog" } end
+	return matches[1]
+end
+
+local function load_skill_alias_entries()
+	if skillAliasEntries then return skillAliasEntries end
+	skillAliasEntries = {}
+	for _, path in ipairs({ "agent/knowledge/aliases/ko/skills-3.29.json", "../agent/knowledge/aliases/ko/skills-3.29.json" }) do
+		local file = io.open(path, "r")
+		if file then
+			local content = file:read("*a"); file:close()
+			local ok, decoder = pcall(require, "dkjson")
+			if ok and decoder then local parsed = decoder.decode(content); skillAliasEntries = parsed and parsed.entries or {} end
+			break
+		end
+	end
+	return skillAliasEntries
+end
 
 local function evidenceGraph(sources, trace)
 	local nodes, stages, sourceEdges = { }, { }, { }
@@ -63,13 +108,33 @@ local function finalTrace(skill, stat, value)
 	return result
 end
 
+local function snapshotRevision(build)
+	local value = build and (build.snapshotRevision or build.revision or build.agentSnapshotRevision)
+	return value ~= nil and tostring(value) or "unknown"
+end
+
 local function envelope(build, facts, sources, trace)
 	local sourceList = sources or { }
 	local traceList = trace or { }
 	local status = facts and facts.status
 	if status ~= "calculated" and status ~= "partial" and status ~= "unavailable" and status ~= "not_simulated" and status ~= "conflict" and status ~= "rejected" then status = "calculated" end
+	local revision = snapshotRevision(build)
+	local traceWithRevision = { }
+	for _, entry in ipairs(traceList) do
+		if type(entry) == "table" then
+			local copy = { }
+			for key, value in pairs(entry) do copy[key] = value end
+			copy.snapshotRevision = copy.snapshotRevision or revision
+			traceWithRevision[#traceWithRevision + 1] = copy
+		else
+			traceWithRevision[#traceWithRevision + 1] = { value = entry, snapshotRevision = revision }
+		end
+	end
 	return {
 		status = status,
+		snapshotRevision = revision,
+		side_effect = "none",
+		operator_message = nil,
 		conditions = { },
 		calculationVersion = tostring(build and build.targetVersion or "unknown"),
 		version = {
@@ -79,8 +144,8 @@ local function envelope(build, facts, sources, trace)
 		},
 		facts = facts,
 		sources = sourceList,
-		trace = traceList,
-		evidenceGraph = evidenceGraph(sourceList, traceList),
+		trace = traceWithRevision,
+		evidenceGraph = evidenceGraph(sourceList, traceWithRevision),
 		uncertainty = { level = "none", reasons = { }, missingEvidence = { }, temporaryEvidence = false },
 	}
 end
@@ -212,6 +277,247 @@ local function get_item_modifiers(build, itemId)
 	return envelope(build, { itemId = itemId, name = item.name, baseName = item.baseName, raw = item.raw, modLines = lines }, { "PoB:ItemsTab.items.modLines" })
 end
 
+local function itemMetadata(item)
+	return item and { id = item.id, name = item.name, baseName = item.baseName, raw = item.raw, rarity = item.rarity, slot = item.slot } or {}
+end
+
+local function scalarOutput(build)
+	local player = build and build.calcsTab and build.calcsTab.mainEnv and build.calcsTab.mainEnv.player
+	return scalarTable(player and player.output)
+end
+
+local function replace_item(build, args)
+	if type(args) ~= "table" then return nil, "item replacement arguments are required" end
+	local slot, itemIdentity, itemText = args.slot, args.itemIdentity, args.itemText
+	if type(slot) ~= "string" or slot == "" then return nil, "slot is required" end
+	local canonicalIdentity, identityErr = canonical_item_identity(itemIdentity)
+	if not canonicalIdentity then return nil, identityErr end
+	if type(itemText) ~= "string" or itemText == "" then return nil, "itemText is required" end
+	local tab = build and build.itemsTab
+	local set = tab and tab.activeItemSet
+	if not tab or not set or not tab.slots or not tab.slots[slot] or not set[slot] then return nil, "item slot is invalid or unavailable" end
+	if type(new) ~= "function" then return nil, "PoB item constructor is unavailable" end
+	local candidate = new("Item", itemText)
+	if not candidate or not candidate.base then return nil, "PoB item text could not be parsed" end
+	local expectedType = ({ ["Weapon 1"] = "weapon", ["Weapon 2"] = "weapon", ["Weapon 1 Swap"] = "weapon", ["Weapon 2 Swap"] = "weapon", ["Helmet"] = "Helmet", ["Body Armour"] = "Body Armour", ["Gloves"] = "Gloves", ["Boots"] = "Boots", ["Amulet"] = "Amulet", ["Ring 1"] = "Ring", ["Ring 2"] = "Ring", ["Ring 3"] = "Ring", ["Belt"] = "Belt", ["Flask 1"] = "Flask", ["Flask 2"] = "Flask", ["Flask 3"] = "Flask", ["Flask 4"] = "Flask", ["Flask 5"] = "Flask" })[slot]
+	local candidateType = candidate.base.weapon and "weapon" or candidate.base.type or candidate.type
+	if not expectedType or (expectedType == "weapon" and candidateType ~= "weapon") or (expectedType ~= "weapon" and candidateType ~= expectedType) then
+		return nil, { code = "INPUT_INVALID", recovery_class = "REPAIR_INPUT", stage = "item_slot_validation", retryable = false, attempt = 1, max_attempts = 1, message = "parsed item type does not match the requested slot", details = { slot = slot, expectedType = expectedType, candidateType = candidateType }, next_action = "repair_input", secondary_causes = {}, side_effect = "none", operator_message = nil }
+	end
+	local identityNeedle = normalize_name(canonicalIdentity)
+	local identityText = normalize_name(candidate.name or candidate.baseName or candidate.raw or "")
+	if not identityText:find(identityNeedle, 1, true) then return nil, "itemIdentity does not match parsed PoB item" end
+	local oldId = set[slot].selItemId
+	local oldItem = tab.items and tab.items[oldId]
+	local beforeOutput = scalarOutput(build)
+	local beforeMeta = itemMetadata(oldItem)
+	local mutation = (LoadModule and LoadModule("Modules/AgentMutation")) or dofile("src/Modules/AgentMutation.lua")
+	local request = { expectedSnapshotRevision = args.expectedSnapshotRevision, idempotencyKey = args.idempotencyKey, fingerprint = args.fingerprint }
+	local transaction, transactionErr = mutation.run(build, request, function(state)
+		local itemsTab = state.itemsTab
+		local id = 1
+		for existingId in pairs(itemsTab.items or {}) do if type(existingId) == "number" and existingId >= id then id = existingId + 1 end end
+		candidate.id = id
+		itemsTab.items = itemsTab.items or {}
+		itemsTab.items[id] = candidate
+		itemsTab.activeItemSet[slot].selItemId = id
+		if type(itemsTab.PopulateSlots) == "function" then itemsTab:PopulateSlots() end
+	end)
+	if not transaction then return nil, transactionErr end
+	local afterOutput = scalarOutput(build)
+	local delta = {}
+	local outputKeys = {}
+	for key in pairs(beforeOutput) do outputKeys[key] = true end
+	for key in pairs(afterOutput) do outputKeys[key] = true end
+	for key in pairs(outputKeys) do
+		local beforeValue, afterValue = beforeOutput[key], afterOutput[key]
+		if type(beforeValue) == "number" and type(afterValue) == "number" then delta[key] = afterValue - beforeValue
+		elseif type(beforeValue) == "number" then delta[key] = -beforeValue
+		elseif type(afterValue) == "number" then delta[key] = afterValue end
+	end
+	local result = envelope(build, {
+		status = "calculated", slot = slot, itemIdentity = canonicalIdentity, requestedItemIdentity = itemIdentity,
+		before = { item = beforeMeta, output = beforeOutput },
+		after = { item = itemMetadata(tab.activeItemSet and tab.activeItemSet[slot] and tab.items[tab.activeItemSet[slot].selItemId]), output = afterOutput },
+		delta = delta, saved = false, idempotencyKey = request.idempotencyKey,
+	}, { "PoB:ItemsTab.activeItemSet[" .. slot .. "]", "PoB:CalcsTab.mainEnv.player.output" }, {
+		{ operation = "REPLACE_ITEM", slot = slot, before = beforeMeta, after = itemMetadata(tab.items[tab.activeItemSet[slot].selItemId]), value = delta, snapshotRevision = transaction.snapshotRevision },
+	})
+	result.side_effect, result.operator_message, result.snapshotRevision = "in_memory", transaction.operator_message, transaction.snapshotRevision
+	return result
+end
+
+local function gemDisplayName(gem)
+	local effect = gem and (gem.grantedEffect or (gem.gemData and gem.gemData.grantedEffect))
+	return (gem and (gem.nameSpec or gem.name)) or (effect and effect.name) or (gem and gem.gemData and gem.gemData.name)
+end
+
+local function canonical_gem_identity(build, value)
+	if type(value) ~= "string" or value == "" then return nil, { code = "INPUT_INVALID", recovery_class = "REPAIR_INPUT", stage = "gem_alias", retryable = false, next_action = "repair_input", message = "gemIdentity is required" } end
+	local context = (LoadModule and LoadModule("Modules/AgentContext")) or dofile("src/Modules/AgentContext.lua")
+	local canonical, aliasErr = context.resolve_skill_alias(value)
+	if not canonical then return nil, aliasErr end
+	local needle = normalize_name(canonical)
+	for _, gem in pairs(build.data and build.data.gems or {}) do
+		if normalize_name(gem.name) == needle or normalize_name(gem.nameSpec) == needle then return gem.name or canonical, gem end
+	end
+	for _, group in ipairs(build.skillsTab and build.skillsTab.socketGroupList or {}) do
+		for _, gem in ipairs(group.gemList or {}) do if normalize_name(gemDisplayName(gem)) == needle then return canonical, gem.gemData end end
+	end
+	for _, entry in ipairs(load_skill_alias_entries()) do
+		if normalize_name(entry.english) == needle or normalize_name(entry.korean) == normalize_name(value) then
+			return nil, { code = "INPUT_INVALID", recovery_class = "REPAIR_INPUT", stage = "gem_validation", retryable = false, attempt = 1, max_attempts = 1, next_action = "repair_input", message = "gemIdentity does not match a parsed PoB gem", details = { gemIdentity = value }, secondary_causes = {}, side_effect = "none", operator_message = nil }
+		end
+	end
+	return nil, { code = "USER_CONTEXT_MISSING", recovery_class = "ASK_USER", stage = "gem_alias", retryable = false, next_action = "ask_user", message = "gemIdentity was not found in the PoB gem catalog" }
+end
+
+local function gemError(code, recovery, stage, message, details)
+	return { code = code, recovery_class = recovery, stage = stage, retryable = false,
+		attempt = 1, max_attempts = 1, message = message, details = details or {},
+		next_action = recovery == "ASK_USER" and "ask_user" or "repair_input",
+		secondary_causes = {}, side_effect = "none", operator_message = nil }
+end
+
+local function replace_gem(build, args)
+	if type(args) ~= "table" then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "gem replacement arguments are required") end
+	if type(args.socketGroup) ~= "number" or args.socketGroup % 1 ~= 0 or args.socketGroup < 1 then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "socketGroup must be a positive integer") end
+	if type(args.level) ~= "number" or args.level % 1 ~= 0 or args.level < 1 or args.level > 40 then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "gem level must be an integer from 1 to 40") end
+	if type(args.quality) ~= "number" or args.quality % 1 ~= 0 or args.quality < 0 or args.quality > 30 then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "gem quality must be an integer from 0 to 30") end
+	if args.alternateQuality ~= nil and type(args.alternateQuality) ~= "string" then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "alternateQuality must be a string") end
+	local tab, group = build and build.skillsTab, build and build.skillsTab and build.skillsTab.socketGroupList and build.skillsTab.socketGroupList[args.socketGroup]
+	if not tab or not group then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "socket group was not found", { socketGroup = args.socketGroup }) end
+	local canonical, gemData = canonical_gem_identity(build, args.gemIdentity)
+	if not canonical then
+		if type(gemData) == "table" and (gemData.code == "AMBIGUOUS_ALIAS" or gemData.code == "USER_CONTEXT_MISSING" or gemData.code == "INPUT_INVALID") then
+			if gemData.code == "INPUT_INVALID" then
+				gemData.stage, gemData.next_action = "gem_validation", "repair_input"
+			else
+				gemData.stage, gemData.next_action = "gem_alias", "ask_user"
+			end
+			return nil, gemData
+		end
+		return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "gemIdentity does not match a parsed PoB gem", { gemIdentity = args.gemIdentity })
+	end
+	local targetIndex = args.gemIndex
+	if targetIndex ~= nil and (type(targetIndex) ~= "number" or targetIndex % 1 ~= 0 or targetIndex < 1) then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "gemIndex must be a positive integer") end
+	if not targetIndex then
+		for index, gem in ipairs(group.gemList or {}) do
+			if normalize_name(gemDisplayName(gem)) == normalize_name(args.currentGemIdentity or args.gemIdentity) then targetIndex = index; break end
+		end
+	end
+	if not targetIndex or not group.gemList[targetIndex] then return nil, gemError("INPUT_INVALID", "REPAIR_INPUT", "gem_validation", "target gem was not found in socket group") end
+	local current = group.gemList[targetIndex]
+	if current.fromItem or current.itemGranted or group.sourceItem then return nil, gemError("ITEM_GRANTED_SKILL", "REPAIR_INPUT", "gem_resolution", "item-granted skills cannot be replaced as socketed gems") end
+	local granted = gemData and gemData.grantedEffect or current.grantedEffect or (current.gemData and current.gemData.grantedEffect)
+	local support = granted and granted.support == true
+	if targetIndex == 1 and support then return nil, gemError("GEM_LINK_INCOMPATIBLE", "REPAIR_INPUT", "socket_compatibility", "a support gem cannot occupy the active skill position") end
+	if targetIndex > 1 and not support then return nil, gemError("GEM_LINK_INCOMPATIBLE", "REPAIR_INPUT", "socket_compatibility", "a non-support gem cannot occupy a support position") end
+	local beforeOutput = scalarOutput(build)
+	local beforeGems = {}
+	for index, gem in ipairs(group.gemList) do beforeGems[index] = { name = gemDisplayName(gem), level = gem.level, quality = gem.quality, enabled = gem.enabled ~= false, support = gem.grantedEffect and gem.grantedEffect.support or gem.gemData and gem.gemData.grantedEffect and gem.gemData.grantedEffect.support } end
+	local mutation = (LoadModule and LoadModule("Modules/AgentMutation")) or dofile("src/Modules/AgentMutation.lua")
+	local transaction, transactionErr = mutation.run(build, { expectedSnapshotRevision = args.expectedSnapshotRevision, idempotencyKey = args.idempotencyKey, fingerprint = args.fingerprint }, function(state)
+		local target = state.skillsTab.socketGroupList[args.socketGroup].gemList[targetIndex]
+		target.nameSpec, target.level, target.quality, target.enabled = canonical, args.level, args.quality, args.enabled ~= false
+		if args.alternateQuality then target.qualityId, target.alternateQuality = args.alternateQuality, args.alternateQuality end
+		if gemData then target.gemData, target.grantedEffect, target.gemId, target.skillId = gemData, gemData.grantedEffect, gemData.id, gemData.grantedEffectId end
+	end)
+	if not transaction then return nil, transactionErr end
+	local afterOutput = scalarOutput(build)
+	local delta, keys = {}, {}
+	for key in pairs(beforeOutput) do keys[key] = true end; for key in pairs(afterOutput) do keys[key] = true end
+	for key in pairs(keys) do if type(beforeOutput[key]) == "number" and type(afterOutput[key]) == "number" then delta[key] = afterOutput[key] - beforeOutput[key] elseif type(afterOutput[key]) == "number" then delta[key] = afterOutput[key] elseif type(beforeOutput[key]) == "number" then delta[key] = -beforeOutput[key] end end
+	local afterGems = {}
+	for index, gem in ipairs(group.gemList) do afterGems[index] = { name = gemDisplayName(gem), level = gem.level, quality = gem.quality, enabled = gem.enabled ~= false, support = gem.grantedEffect and gem.grantedEffect.support or gem.gemData and gem.gemData.grantedEffect and gem.gemData.grantedEffect.support } end
+	local result = envelope(build, { socketGroup = args.socketGroup, gemIdentity = canonical, before = { gems = beforeGems, output = beforeOutput }, after = { gems = afterGems, output = afterOutput }, delta = delta, saved = false, supportLinks = afterGems }, { "PoB:SkillsTab.socketGroupList[" .. args.socketGroup .. "].gemList", "PoB:CalcsTab.mainEnv.player.output" }, { { operation = "REPLACE_GEM", socketGroup = args.socketGroup, value = delta, snapshotRevision = transaction.snapshotRevision } })
+	result.side_effect, result.operator_message, result.snapshotRevision = "in_memory", transaction.operator_message, transaction.snapshotRevision
+	return result
+end
+
+local function passiveError(code, recovery, stage, message, details)
+	return { code = code, recovery_class = recovery, stage = stage, retryable = false,
+		attempt = 1, max_attempts = 1, message = message, details = details or {},
+		next_action = recovery == "ASK_USER" and "ask_user" or "repair_input",
+		secondary_causes = {}, side_effect = "none", operator_message = nil }
+end
+
+local function treeSnapshot(spec)
+	local nodes, jewels = {}, {}
+	for nodeId, node in pairs(spec.allocNodes or {}) do nodes[#nodes + 1] = { id = nodeId, name = node.name, type = node.type } end
+	for nodeId, itemId in pairs(spec.jewels or {}) do jewels[nodeId] = itemId end
+	table.sort(nodes, function(a, b) return tonumber(a.id) < tonumber(b.id) end)
+	local used = 0
+	if type(spec.CountAllocNodes) == "function" then used = select(1, spec:CountAllocNodes()) or 0 end
+	return { allocatedNodes = nodes, jewels = jewels, pointsUsed = used }
+end
+
+local function change_passive(build, args)
+	if type(args) ~= "table" then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "passive mutation arguments are required") end
+	local operation = args.operation
+	if operation ~= "allocate" and operation ~= "deallocate" and operation ~= "replace_cluster_jewel" then
+		return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "operation must be allocate, deallocate, or replace_cluster_jewel")
+	end
+	local spec = build and build.spec
+	if not spec and build and build.treeTab and build.treeTab.specList then spec = build.treeTab.specList[build.treeTab.activeSpec or 1] end
+	if not spec then return nil, passiveError("VALUE_UNAVAILABLE", "REJECT", "passive_validation", "active passive spec is unavailable") end
+	local nodeId = args.nodeId or args.socketNodeId
+	if operation ~= "replace_cluster_jewel" and (type(nodeId) ~= "number" or nodeId % 1 ~= 0) then
+		return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "nodeId must be an integer")
+	end
+	local node = nodeId and spec.nodes and spec.nodes[nodeId]
+	if operation ~= "replace_cluster_jewel" and not node then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "passive node was not found", { nodeId = nodeId }) end
+	if operation == "allocate" then
+		if node.alloc or spec.allocNodes[nodeId] then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "passive node is already allocated", { nodeId = nodeId }) end
+		if not node.path and #(node.intuitiveLeapLikesAffecting or {}) == 0 then return nil, passiveError("INVALID_PASSIVE_PATH", "REPAIR_INPUT", "passive_validation", "passive node is not connected to the allocated tree", { nodeId = nodeId }) end
+		local available = build.availablePassivePoints or spec.availablePoints or spec.totalPoints
+		if type(available) == "number" then
+			local used = type(spec.CountAllocNodes) == "function" and select(1, spec:CountAllocNodes()) or 0
+			if used >= available then return nil, passiveError("INSUFFICIENT_PASSIVE_POINTS", "REPAIR_INPUT", "passive_validation", "not enough passive points", { available = available, used = used }) end
+		end
+	elseif operation == "deallocate" then
+		if not node.alloc and not spec.allocNodes[nodeId] then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "passive node is not allocated", { nodeId = nodeId }) end
+		for _, dependent in ipairs(node.depends or {}) do
+			if dependent.alloc or spec.allocNodes[dependent.id] then return nil, passiveError("INVALID_PASSIVE_PATH", "REPAIR_INPUT", "passive_validation", "node has allocated dependent nodes", { nodeId = nodeId, dependentNodeId = dependent.id }) end
+		end
+	else
+		if type(nodeId) ~= "number" or nodeId % 1 ~= 0 then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "socketNodeId must be an integer") end
+		local socket = spec.nodes and spec.nodes[nodeId]
+		if not socket or socket.type ~= "Socket" then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "node is not a cluster jewel socket", { nodeId = nodeId }) end
+		local itemId = args.itemId or args.clusterJewelId
+		local item = build.itemsTab and build.itemsTab.items and build.itemsTab.items[itemId]
+		if type(itemId) ~= "number" or not item then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "cluster jewel item was not found", { itemId = itemId }) end
+		local baseName = normalize_name(item.baseName or item.name or "")
+		local isClusterJewel = type(item.clusterJewel) == "table" or item.clusterJewel == true or baseName:find("cluster jewel", 1, true) ~= nil
+		if item.type ~= "Jewel" or not isClusterJewel then return nil, passiveError("INPUT_INVALID", "REPAIR_INPUT", "passive_validation", "item is not a cluster jewel", { itemId = itemId, baseName = item.baseName }) end
+	end
+	local beforeTree, beforeOutput = treeSnapshot(spec), scalarOutput(build)
+	local mutation = (LoadModule and LoadModule("Modules/AgentMutation")) or dofile("src/Modules/AgentMutation.lua")
+	local request = { expectedSnapshotRevision = args.expectedSnapshotRevision, idempotencyKey = args.idempotencyKey, fingerprint = args.fingerprint }
+	local transaction, transactionErr = mutation.run(build, request, function(state)
+		local active = state.spec or (state.treeTab and state.treeTab.specList and state.treeTab.specList[state.treeTab.activeSpec or 1])
+		if operation == "allocate" then active:AllocNode(active.nodes[nodeId])
+		elseif operation == "deallocate" then active:DeallocNode(active.nodes[nodeId])
+		else
+			active.jewels[nodeId] = args.itemId or args.clusterJewelId
+			if type(active.BuildClusterJewelGraphs) == "function" then active:BuildClusterJewelGraphs() end
+		end
+	end)
+	if not transaction then return nil, transactionErr end
+	local afterTree, afterOutput = treeSnapshot(spec), scalarOutput(build)
+	local delta, keys = {}, {}
+	for key in pairs(beforeOutput) do keys[key] = true end
+	for key in pairs(afterOutput) do keys[key] = true end
+	for key in pairs(keys) do
+		if type(beforeOutput[key]) == "number" and type(afterOutput[key]) == "number" then delta[key] = afterOutput[key] - beforeOutput[key]
+		elseif type(afterOutput[key]) == "number" then delta[key] = afterOutput[key]
+		elseif type(beforeOutput[key]) == "number" then delta[key] = -beforeOutput[key] end
+	end
+	local result = envelope(build, { operation = operation, nodeId = nodeId, before = { tree = beforeTree, output = beforeOutput }, after = { tree = afterTree, output = afterOutput }, delta = delta, saved = false, idempotencyKey = request.idempotencyKey }, { "PoB:TreeTab.activeSpec.allocNodes", "PoB:TreeTab.activeSpec.jewels", "PoB:CalcsTab.mainEnv.player.output" }, { { operation = "CHANGE_PASSIVE", passiveOperation = operation, nodeId = nodeId, value = delta, snapshotRevision = transaction.snapshotRevision } })
+	result.side_effect, result.operator_message, result.snapshotRevision = "in_memory", transaction.operator_message, transaction.snapshotRevision
+	return result
+end
+
 local function get_projectile_behavior(build, skillIndex)
 	local player, err = playerFor(build)
 	if not player then return nil, err end
@@ -306,20 +612,69 @@ local function resolve_skill_context(build, skillSetSelector, skillNameValue)
 	return envelope(build, result, { "PoB:Modules/AgentContext.lua:find_skill" })
 end
 
-local function compare_build_states(buildA, buildB, skillIndexA, skillIndexB)
-	local playerA, errA = playerFor(buildA)
-	if not playerA then return nil, errA end
-	local playerB, errB = playerFor(buildB)
-	if not playerB then return nil, errB end
-	local skillA, skillErrA = skillFor(playerA, skillIndexA)
-	if not skillA then return nil, skillErrA end
-	local skillB, skillErrB = skillFor(playerB, skillIndexB)
-	if not skillB then return nil, skillErrB end
-	local before, after, delta = scalarTable(calculatedOutput(playerA, skillA)), scalarTable(calculatedOutput(playerB, skillB)), { }
-	for key, value in pairs(before) do
-		if type(value) == "number" and type(after[key]) == "number" then delta[key] = after[key] - value end
+local function comparisonOutput(state, skillIndex)
+	if type(state) ~= "table" then return nil, "comparison state is required" end
+	if state.skills then
+		local skill = state.skills[skillIndex]
+		return skill and (skill.output or skill.actorOutput), skill and skill.outputPath
 	end
-	return envelope(buildB, { before = before, after = after, delta = delta }, { "PoB:CalcsTab.mainEnv.player.activeSkillList.output" })
+	local player, err = playerFor(state)
+	if not player then return nil, err end
+	local skill, skillErr = skillFor(player, skillIndex)
+	if not skill then return nil, skillErr end
+	return calculatedOutput(player, skill), "PoB:CalcsTab.mainEnv.player.activeSkillList[" .. tostring(skillIndex) .. "].output"
+end
+
+local function compare_build_states(beforeState, afterState, skillIndex, comparisonFields)
+	if type(skillIndex) ~= "number" or skillIndex % 1 ~= 0 or skillIndex < 1 then return nil, "skillIndex must be an integer" end
+	local beforeOutput, beforePath = comparisonOutput(beforeState, skillIndex)
+	if not beforeOutput then return nil, beforePath end
+	local afterOutput, afterPath = comparisonOutput(afterState, skillIndex)
+	if not afterOutput then return nil, afterPath end
+	local function meta(state, key)
+		return state and (state[key] or (key == "gamePatch" and state.targetVersion) or (key == "pobVersion" and state.version))
+	end
+	for _, key in ipairs({ "gamePatch", "pobVersion", "dataRevision" }) do
+		local left, right = meta(beforeState, key), meta(afterState, key)
+		if left ~= nil and right ~= nil and tostring(left) ~= tostring(right) then
+			return nil, { code = "VERSION_MISMATCH", recovery_class = "REJECT", stage = "comparison_validation", retryable = false, next_action = "reject_request", message = key .. " differs between comparison states" }
+		end
+	end
+	local before, after, delta, percent, changed = scalarTable(beforeOutput), scalarTable(afterOutput), {}, {}, {}
+	local fields = {}
+	if type(comparisonFields) == "table" and #comparisonFields > 0 then
+		for _, key in ipairs(comparisonFields) do fields[key] = true end
+	else
+		for key in pairs(before) do fields[key] = true end
+		for key in pairs(after) do fields[key] = true end
+	end
+	for key in pairs(fields) do
+		if type(before[key]) == "number" and type(after[key]) == "number" then
+			delta[key] = after[key] - before[key]
+			percent[key] = before[key] ~= 0 and (delta[key] / before[key]) * 100 or nil
+			if delta[key] ~= 0 then changed[#changed + 1] = key end
+		end
+	end
+	table.sort(changed)
+	local result = envelope(afterState, {
+		before = before, after = after, delta = delta, changeRatePercent = percent,
+		changedFields = changed, skillIndex = skillIndex,
+		buildId = { before = meta(beforeState, "buildId"), after = meta(afterState, "buildId") },
+		outputPaths = { before = beforePath, after = afterPath },
+	}, { beforePath or "PoB output (before)", afterPath or "PoB output (after)" }, {
+		{ operation = "COMPARE_OUTPUTS", inputs = { before = before, after = after }, value = delta,
+			formula = "after - before", snapshotRevision = snapshotRevision(afterState) },
+	})
+	local beforeConditions, afterConditions = beforeState.conditions or {}, afterState.conditions or {}
+	local conditionsChanged = false
+	for key, value in pairs(beforeConditions) do if afterConditions[key] ~= value then conditionsChanged = true end end
+	for key, value in pairs(afterConditions) do if beforeConditions[key] ~= value then conditionsChanged = true end end
+	result.conditions = { before = beforeConditions, after = afterConditions, changed = conditionsChanged }
+	if result.conditions.changed then
+		result.uncertainty.level = "medium"
+		result.uncertainty.reasons = { "comparison conditions differ" }
+	end
+	return result
 end
 
 local function get_projectile_count(build, skillIndex)
@@ -477,6 +832,9 @@ return {
 	get_highest_dps_skill = get_highest_dps_skill,
 	get_skill_breakdown = get_skill_breakdown,
 	get_item_modifiers = get_item_modifiers,
+	replace_item = replace_item,
+	replace_gem = replace_gem,
+	change_passive = change_passive,
 	get_projectile_behavior = get_projectile_behavior,
 	get_trigger_sequence = get_trigger_sequence,
 	get_curse_application_order = get_curse_application_order,
