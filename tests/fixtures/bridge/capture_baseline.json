@@ -1,0 +1,8 @@
+{
+  "fixture_nodes": 5000,
+  "fixture_jewels": 100,
+  "payload_bytes": 24640,
+  "capture_ms_average": 0.8661,
+  "repetitions": 20,
+  "environment": "Windows 10 22H2 build 19045, Python bundled runtime"
+}
