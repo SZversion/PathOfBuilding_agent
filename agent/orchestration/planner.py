@@ -1,8 +1,38 @@
 import re
 
 
+# Contract shared by the external planner and local dispatcher.  The runtime
+# remains the authority; this declaration is intentionally read-only.
+PLAN_SCHEMA = {
+    "type": "object",
+    "required": ["steps"],
+    "properties": {
+        "intent": {"type": "string"},
+        "steps": {"type": "array", "maxItems": 8},
+        "metadata": {"type": "object"},
+    },
+    "additionalProperties": False,
+    "items": {
+        "type": "object",
+        "required": ["tool", "arguments"],
+        "properties": {
+            "tool": {"type": "string"},
+            "arguments": {"type": "object"},
+            "expectedSnapshotRevision": {"type": ["string", "null"]},
+        },
+        "additionalProperties": False,
+    },
+}
+
+
 SKILLS = ("Poisonous Concoction of Bouncing", "Impending Doom")
 SUPPORTS = ("Greater Volley", "Greater Multiple Projectiles")
+
+
+def validate_plan(value):
+    """Public schema entry point; implementation stays with the dispatcher."""
+    from .agent_loop import validate_plan as _validate_plan
+    return _validate_plan(value)
 
 
 def _find(text, values):
