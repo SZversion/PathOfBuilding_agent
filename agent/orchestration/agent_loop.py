@@ -1,6 +1,7 @@
 import json
 
 from .runtime import SnapshotSync, execute_plan
+from .trace import TraceRecorder
 
 
 ALLOWED_TOOLS = frozenset({
@@ -96,6 +97,9 @@ def _validate_arguments(tool, arguments):
     forbidden = {"command", "freeText", "prompt", "rawXml"} & set(arguments)
     if forbidden:
         raise PlanValidationError("free-text or raw PoB input is not allowed", details={"fields": sorted(forbidden)})
+    unknown = set(arguments) - set(ARGUMENT_TYPES)
+    if unknown:
+        raise PlanValidationError("unsupported tool arguments", details={"fields": sorted(unknown)})
     for key, value in arguments.items():
         expected = ARGUMENT_TYPES.get(key)
         if expected is not None:
@@ -147,63 +151,126 @@ def validate_plan(value):
 
 
 class AgentLoop:
-    def __init__(self, model, *, snapshot_provider=None):
+    def __init__(self, model, *, snapshot_provider=None, trace_factory=TraceRecorder, trace_exporter=None):
         if not hasattr(model, "chat"):
             raise TypeError("model must provide chat(messages)")
         self.model = model
         self.snapshot_provider = snapshot_provider
         self.snapshot_sync = SnapshotSync()
+        self.trace_factory = trace_factory
+        if trace_exporter is None:
+            from .langfuse_exporter import LangfuseExporter
+            trace_exporter = LangfuseExporter.from_env()
+        self.trace_exporter = trace_exporter
 
-    def _chat(self, messages, *, attempts=2):
+    def _chat(self, messages, *, attempts=2, recorder=None):
         last = None
         for attempt in range(1, attempts + 1):
+            started = __import__("time").monotonic()
+            provider = recorder.provider_metadata(self.model) if recorder else None
+            if recorder:
+                recorder.emit("provider_started", "provider", "started", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages))
             try:
-                return self.model.chat(messages)
+                result = self.model.chat(messages)
+                if recorder:
+                    recorder.emit("provider_completed", "provider", "ok", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), duration_ms=round((__import__("time").monotonic() - started) * 1000))
+                return result
             except Exception as error:
                 last = error
+                if recorder:
+                    detail = getattr(error, "error", {})
+                    timeout = detail.get("code") == "TIMEOUT" or detail.get("details", {}).get("timeout") is True or isinstance(error, TimeoutError)
+                    recorder.emit("provider_failed", "provider", "timeout" if timeout else "failed", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), error_ref="TIMEOUT" if timeout else detail.get("code", type(error).__name__), duration_ms=round((__import__("time").monotonic() - started) * 1000))
                 detail = getattr(error, "error", {})
+                if isinstance(error, TimeoutError):
+                    detail = {"retryable": True}
                 if detail.get("retryable") is not True or attempt >= attempts:
                     raise
         raise last
 
-    def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None):
+    def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None, request_id=None):
+        recorder = self.trace_factory(request_id=request_id, exporter=self.trace_exporter)
+        recorder.emit("run_started", "run", "started", provider=recorder.provider_metadata(self.model))
         if not isinstance(question, str) or not question.strip():
-            return {"status": "plan_error", "error": "question is required"}
+            recorder.emit("run_completed", "run", "rejected", error_ref="INPUT_INVALID")
+            return {"status": "plan_error", "error": "question is required", "trace": recorder.events}
         if snapshot is None and callable(self.snapshot_provider):
             snapshot = self.snapshot_provider()
         sync = self.snapshot_sync.prepare(snapshot) if snapshot is not None else None
         planning_payload = {"question": question}
         if sync is not None:
             planning_payload["context"] = sync
+            recorder.set_snapshot((sync or {}).get("snapshotRevision"), snapshot.get("buildId") if isinstance(snapshot, dict) else None)
         last_error = None
+        recorder.emit("planner_started", "planner", "started", provider=recorder.provider_metadata(self.model))
         for llm_attempt in range(1, 3):
             try:
                 planned = validate_plan(_json_object(self._chat([
                     {"role": "system", "content": PLANNER_SYSTEM},
                     {"role": "user", "content": json.dumps(planning_payload, ensure_ascii=False)},
-                ])))
+                ], recorder=recorder)))
+                recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, plan_ref=recorder.plan_ref(planned))
                 break
             except PlanValidationError as error:
-                return {"status": "error", "error": {"code": error.code, "recovery_class": "REJECT" if error.code == "MUTATION_NOT_PERSISTENT" else "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": 1, "max_attempts": 1, "message": str(error), "details": error.details, "next_action": "reject_request" if error.code == "MUTATION_NOT_PERSISTENT" else "repair_input", "side_effect": "none", "operator_message": None, "secondary_causes": []}}
+                recorder.emit("planner_failed", "planner", "rejected", attempt=llm_attempt, error_ref=error.code)
+                if llm_attempt < 2:
+                    continue
+                recorder.emit("run_completed", "run", "rejected", error_ref=error.code)
+                return {"status": "error", "error": {"code": error.code, "recovery_class": "REJECT" if error.code == "MUTATION_NOT_PERSISTENT" else "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": llm_attempt, "message": str(error), "details": error.details, "next_action": "reject_request" if error.code == "MUTATION_NOT_PERSISTENT" else "repair_input", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
             except Exception as error:
                 last_error = error
+                recorder.emit("planner_failed", "planner", "failed", attempt=llm_attempt, error_ref=getattr(error, "error", {}).get("code", type(error).__name__))
                 if llm_attempt == 2:
                     detail = getattr(error, "error", None) or {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_plan", "retryable": False, "attempt": llm_attempt, "max_attempts": 2, "message": str(error), "details": {}, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}
                     detail = dict(detail)
                     detail["attempt"] = llm_attempt
-                    return {"status": "plan_error", "error": detail}
+                    recorder.emit("run_completed", "run", "failed", error_ref=detail.get("code"))
+                    return {"status": "plan_error", "error": detail, "trace": recorder.events}
         if last_error is not None and "planned" not in locals():
-            return {"status": "plan_error", "error": {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_plan", "retryable": False, "attempt": 2, "max_attempts": 2, "message": str(last_error), "details": {}, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}}
+            recorder.emit("run_completed", "run", "failed", error_ref="RETRY_LLM")
+            return {"status": "plan_error", "error": {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_plan", "retryable": False, "attempt": 2, "max_attempts": 2, "message": str(last_error), "details": {}, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
         execution = execute_plan(question, planned, search=search, handlers=handlers,
                                  snapshot_revision_value=(sync or {}).get("snapshotRevision"),
                                  current_revision=current_revision)
+        for index, step in enumerate(execution.get("steps", [])):
+            final_attempt = step.get("attempt") or (step.get("error") or {}).get("attempt", 1)
+            final_count = step.get("tool_call_count", execution.get("tool_call_count"))
+            safe_args = recorder.safe_args_ref(planned.get("steps", [])[index].get("arguments", {}) if index < len(planned.get("steps", [])) else {})
+            for attempt in range(1, final_attempt + 1):
+                count = max(1, final_count - final_attempt + attempt) if isinstance(final_count, int) else final_count
+                retry_of = f"tool:{index}:attempt:{attempt - 1}" if attempt > 1 else None
+                recorder.emit("tool_started", "tool", "started", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, plan_ref=recorder.plan_ref(planned), safe_args_ref=safe_args)
+                if attempt < final_attempt:
+                    recorder.emit("tool_failed", "tool", "failed", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref="RETRY_TOOL")
+                elif step.get("status") == "ok":
+                    recorder.emit("tool_completed", "tool", "ok", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, result_ref=recorder.result_refs(step.get("result")))
+                else:
+                    status = "timeout" if step.get("status") == "timeout" or (step.get("error") or {}).get("code") == "TIMEOUT" else step.get("status", "failed")
+                    recorder.emit("tool_failed", "tool", status, attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref=(step.get("error") or {}).get("code"))
+        authoritative_failure = next((step.get("error") for step in execution.get("steps", [])
+                                      if isinstance(step.get("error"), dict) and step["error"].get("code") in {"POB_CALCULATION_ERROR", "VALUE_UNAVAILABLE"}), None)
+        if authoritative_failure:
+            recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned))
+            code = authoritative_failure.get("code")
+            next_action = authoritative_failure.get("next_action", "reject_request")
+            answer = f"PoB에서 값을 가져오지 못했습니다 ({code}). 다음 조치: {next_action}. 근거가 부족하므로 추측하지 않습니다."
+            uncertainty = {"code": code, "reason": "authoritative PoB result unavailable", "next_action": next_action}
+            recorder.emit("final_completed", "final", "partial", result_ref=recorder.result_refs({"uncertainty": uncertainty}))
+            recorder.emit("run_completed", "run", "partial", error_ref=code)
+            return {"status": "partial", "plan": planned, "execution": execution, "answer": answer, "uncertainty": uncertainty, "trace": recorder.events}
+        recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned))
         answer_payload = {"question": question, "results": _model_safe_execution(execution)}
         try:
             answer = self._chat([
             {"role": "system", "content": ANSWER_SYSTEM},
             {"role": "user", "content": json.dumps(answer_payload, ensure_ascii=False)},
-            ])
+            ], recorder=recorder)
         except Exception as error:
             detail = getattr(error, "error", None) or {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_answer", "retryable": True, "attempt": 1, "max_attempts": 2, "message": str(error), "details": {}, "next_action": "retry_llm", "side_effect": "none", "operator_message": None, "secondary_causes": []}
-            return {"status": "error", "plan": planned, "execution": execution, "error": detail}
-        return {"status": "ok", "plan": planned, "execution": execution, "answer": answer}
+            recorder.emit("final_failed", "final", "failed", error_ref=detail.get("code"))
+            recorder.emit("run_completed", "run", "failed", error_ref=detail.get("code"))
+            return {"status": "error", "plan": planned, "execution": execution, "error": detail, "trace": recorder.events}
+        outcome = "ok" if all(step.get("status") == "ok" for step in execution.get("steps", [])) else "partial"
+        recorder.emit("final_completed", "final", outcome, result_ref=recorder.result_refs(execution))
+        recorder.emit("run_completed", "run", outcome)
+        return {"status": "ok" if outcome == "ok" else "partial", "plan": planned, "execution": execution, "answer": answer, "trace": recorder.events}

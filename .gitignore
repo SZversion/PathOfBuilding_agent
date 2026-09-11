@@ -45,4 +45,8 @@ local-models/*.gguf
 local-models/*.bin
 local-models/*.safetensors
 agent/.cache/
+data/traces/
 __pycache__/
+.env
+.env.*
+!.env.example
