@@ -32,6 +32,14 @@ ARGUMENT_TYPES = {
     "comparisonFields": list,
 }
 REQUIRED_ARGUMENTS = {"search_knowledge": ("query",), "resolve_item_alias": ("query",), "resolve_skill_alias": ("query",)}
+SKILL_AWARE_READ_ONLY_TOOLS = frozenset({
+    "get_skill_dps", "get_skill_stats", "get_skill_breakdown", "get_projectile_count",
+    "get_projectile_behavior", "get_trigger_sequence", "get_curse_application_order",
+    "get_ailment_effect", "get_damage_breakdown", "get_conversion_chain",
+    "get_effective_resistance", "get_elemental_penetration", "get_support_links",
+    "resolve_skill_context", "get_skill_chain", "get_socket_order", "get_duration",
+    "explain_stat", "compare_support_effect", "explain_damage_change",
+})
 
 TOOL_MIN_ARGUMENTS = {tool: {} for tool in READ_ONLY_TOOLS}
 for _tool in REQUIRED_ARGUMENTS:
@@ -112,6 +120,24 @@ def _validate_arguments(tool, arguments):
             raise PlanValidationError("required argument is missing or invalid", details={"argument": key})
 
 
+def _normalize_skill_argument(tool, arguments):
+    """Accept the common shorthand only for Tools that actually resolve skills."""
+    if not isinstance(arguments, dict) or "skill" not in arguments:
+        return arguments
+    if tool not in SKILL_AWARE_READ_ONLY_TOOLS:
+        raise PlanValidationError("skill is not compatible with this Tool", details={"tool": tool, "argument": "skill"})
+    normalized = dict(arguments)
+    shorthand = normalized.pop("skill")
+    if "skillName" in normalized:
+        if not isinstance(shorthand, str) or not isinstance(normalized["skillName"], str):
+            raise PlanValidationError("skill and skillName must be strings", details={"arguments": ["skill", "skillName"]})
+        if shorthand.strip().casefold() != normalized["skillName"].strip().casefold():
+            raise PlanValidationError("skill and skillName conflict", details={"arguments": ["skill", "skillName"]})
+    else:
+        normalized["skillName"] = shorthand
+    return normalized
+
+
 def validate_plan(value):
     if not isinstance(value, dict) or not isinstance(value.get("steps"), list):
         raise PlanValidationError("plan.steps must be a list")
@@ -138,7 +164,8 @@ def validate_plan(value):
             raise PlanValidationError("tool is not allowed: " + tool, code="TOOL_NOT_FOUND")
         if tool in MUTATION_TOOLS:
             raise PlanValidationError("mutation tools are disabled in read-only orchestration", code="MUTATION_NOT_PERSISTENT")
-        _validate_arguments(tool, step.get("arguments"))
+        step["arguments"] = _normalize_skill_argument(tool, step.get("arguments"))
+        _validate_arguments(tool, step["arguments"])
         revision = step.get("expectedSnapshotRevision")
         if revision is not None and (not isinstance(revision, str) or not revision.strip()):
             raise PlanValidationError("expectedSnapshotRevision must be a non-empty string or null")
@@ -248,7 +275,10 @@ class AgentLoop:
                     status = "timeout" if step.get("status") == "timeout" or (step.get("error") or {}).get("code") == "TIMEOUT" else step.get("status", "failed")
                     recorder.emit("tool_failed", "tool", status, attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref=(step.get("error") or {}).get("code"))
         authoritative_failure = next((step.get("error") for step in execution.get("steps", [])
-                                      if isinstance(step.get("error"), dict) and step["error"].get("code") in {"POB_CALCULATION_ERROR", "VALUE_UNAVAILABLE"}), None)
+                                      if isinstance(step.get("error"), dict) and step["error"].get("code") in {
+                                          "POB_CALCULATION_ERROR", "VALUE_UNAVAILABLE", "USER_CONTEXT_MISSING",
+                                          "AMBIGUOUS_ALIAS", "SNAPSHOT_REVISION_CONFLICT",
+                                      }), None)
         if authoritative_failure:
             recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned))
             code = authoritative_failure.get("code")
