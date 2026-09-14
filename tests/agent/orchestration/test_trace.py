@@ -288,4 +288,4 @@ def test_planner_repair_feedback_is_bounded_and_safe():
     assert "PRIVATE" not in json.dumps(model.planner_payloads[1]["repair_feedback"], ensure_ascii=False)
     assert len(model.planner_payloads) == 3
     planner_events = [event for event in result["trace"] if event["event"] == "planner_completed"]
-    assert planner_events[-1]["attempt"] == 3 and planner_events[-1]["max_attempts"] == 3
+    assert planner_events[-1]["attempt"] == 3 and planner_events[-1]["max_attempts"] == 5

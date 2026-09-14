@@ -132,7 +132,7 @@ class LangfuseExporter:
             "timestamp_utc": event.get("timestamp_utc"), "duration_ms": event.get("duration_ms"),
             "status": event.get("status"), "attempt": event.get("attempt"), "max_attempts": event.get("max_attempts"), "tool": event.get("tool"),
             "step_index": event.get("step_index"), "tool_call_count": event.get("tool_call_count"),
-            "retry_of": event.get("retry_of"), "plan_ref": event.get("plan_ref"),
+            "retry_of": event.get("retry_of"), "plan_ref": event.get("plan_ref"), "query_ref": event.get("query_ref"),
             "safe_args_ref": event.get("safe_args_ref"), "prompt_ref": event.get("prompt_ref"),
             "error_ref": event.get("error_ref"), "provider": {"mode": provider.get("mode"), "model": provider.get("model"), "endpoint_ref": provider.get("endpoint_ref")},
             "snapshot": {"revision": snapshot.get("revision"), "build_id": snapshot.get("build_id")},
