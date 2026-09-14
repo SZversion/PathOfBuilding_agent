@@ -262,3 +262,30 @@ def test_skill_shorthand_normalizes_before_handler_in_agent_loop():
     result = AgentLoop(Model()).run("Arc DPS", handlers={"get_skill_dps": lambda args: seen.append(args) or {"facts": {"value": 1}}})
     assert result["status"] == "ok"
     assert seen == [{"skillName": "Arc"}]
+
+
+def test_planner_repair_feedback_is_bounded_and_safe():
+    import json
+
+    class Model:
+        def __init__(self):
+            self.planner_payloads = []
+
+        def chat(self, messages):
+            if messages[0]["role"] == "system" and "planner" in messages[0]["content"]:
+                payload = json.loads(messages[1]["content"])
+                self.planner_payloads.append(payload)
+                if len(self.planner_payloads) < 3:
+                    return '{"intent":"bad","steps":[{"tool":"get_skill_dps","arguments":{"bogus":"private"}}]}'
+                return '{"intent":"stat","steps":[]}'
+            return "복구 완료"
+
+    model = Model()
+    result = AgentLoop(model).run("질문 notes=PRIVATE")
+    assert result["status"] == "ok"
+    assert "repair_feedback" not in model.planner_payloads[0]
+    assert model.planner_payloads[1]["repair_feedback"]["code"] == "INPUT_INVALID"
+    assert "PRIVATE" not in json.dumps(model.planner_payloads[1]["repair_feedback"], ensure_ascii=False)
+    assert len(model.planner_payloads) == 3
+    planner_events = [event for event in result["trace"] if event["event"] == "planner_completed"]
+    assert planner_events[-1]["attempt"] == 3 and planner_events[-1]["max_attempts"] == 3

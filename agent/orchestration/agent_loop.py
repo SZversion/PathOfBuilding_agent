@@ -17,6 +17,7 @@ ALLOWED_TOOLS = frozenset({
 TOOL_ALIASES = {tool.replace("_", ""): tool for tool in ALLOWED_TOOLS}
 TOOL_ALIASES.update({"getCurseLimit": "get_curse_limit", "getProjectileCount": "get_projectile_count", "getElementalPenetration": "get_elemental_penetration", "searchKnowledge": "search_knowledge", "getSocketOrder": "get_socket_order", "getSkillChain": "get_skill_chain", "compareSupportEffect": "compare_support_effect", "explainDamageChange": "explain_damage_change"})
 MAX_STEPS = 8
+MAX_PLANNER_ATTEMPTS = 3
 MUTATION_TOOLS = frozenset({"replace_item", "replace_gem", "change_passive"})
 READ_ONLY_TOOLS = frozenset(ALLOWED_TOOLS - MUTATION_TOOLS)
 PLAN_FIELDS = frozenset({"intent", "steps", "metadata"})
@@ -82,6 +83,26 @@ def _model_safe_execution(execution):
             projected["result"] = step["result"]
         safe["steps"].append(projected)
     return safe
+
+
+def _repair_feedback(error):
+    """Build bounded planner feedback without echoing the failed plan/prompt."""
+    code = getattr(error, "code", None) or "MODEL_SCHEMA_INVALID"
+    details = getattr(error, "details", {})
+    safe_details = {}
+    if isinstance(details, dict):
+        for key in ("fields", "argument", "arguments", "tool", "expected", "actual"):
+            value = details.get(key)
+            if isinstance(value, (str, int, float, bool)) or value is None:
+                safe_details[key] = value
+            elif isinstance(value, list):
+                safe_details[key] = [item for item in value[:8] if isinstance(item, (str, int, float, bool))]
+    return {
+        "code": code,
+        "message": str(error)[:240] if isinstance(error, PlanValidationError) else "planner response failed the JSON/schema contract",
+        "details": safe_details,
+        "instruction": "Return a new plan using only canonical Tool names, object arguments, and the declared argument schema. Do not repeat the invalid field.",
+    }
 
 
 class PlanValidationError(ValueError):
@@ -230,32 +251,37 @@ class AgentLoop:
             recorder.set_snapshot((sync or {}).get("snapshotRevision"), snapshot.get("buildId") if isinstance(snapshot, dict) else None)
         last_error = None
         recorder.emit("planner_started", "planner", "started", provider=recorder.provider_metadata(self.model))
-        for llm_attempt in range(1, 3):
+        repair_feedback = None
+        for llm_attempt in range(1, MAX_PLANNER_ATTEMPTS + 1):
             try:
+                planner_input = dict(planning_payload)
+                if repair_feedback is not None:
+                    planner_input["repair_feedback"] = repair_feedback
                 planned = validate_plan(_json_object(self._chat([
                     {"role": "system", "content": PLANNER_SYSTEM},
-                    {"role": "user", "content": json.dumps(planning_payload, ensure_ascii=False)},
+                    {"role": "user", "content": json.dumps(planner_input, ensure_ascii=False)},
                 ], recorder=recorder)))
-                recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, plan_ref=recorder.plan_ref(planned))
+                recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, plan_ref=recorder.plan_ref(planned))
                 break
             except PlanValidationError as error:
-                recorder.emit("planner_failed", "planner", "rejected", attempt=llm_attempt, error_ref=error.code)
-                if llm_attempt < 2:
+                repair_feedback = _repair_feedback(error)
+                recorder.emit("planner_failed", "planner", "rejected", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error.code)
+                if llm_attempt < MAX_PLANNER_ATTEMPTS:
                     continue
-                recorder.emit("run_completed", "run", "rejected", error_ref=error.code)
-                return {"status": "error", "error": {"code": error.code, "recovery_class": "REJECT" if error.code == "MUTATION_NOT_PERSISTENT" else "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": llm_attempt, "message": str(error), "details": error.details, "next_action": "reject_request" if error.code == "MUTATION_NOT_PERSISTENT" else "repair_input", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
+                recorder.emit("run_completed", "run", "rejected", error_ref="REPAIR_INPUT")
+                return {"status": "error", "error": {"code": "REPAIR_INPUT", "recovery_class": "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": repair_feedback, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
             except Exception as error:
                 last_error = error
-                recorder.emit("planner_failed", "planner", "failed", attempt=llm_attempt, error_ref=getattr(error, "error", {}).get("code", type(error).__name__))
-                if llm_attempt == 2:
-                    detail = getattr(error, "error", None) or {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_plan", "retryable": False, "attempt": llm_attempt, "max_attempts": 2, "message": str(error), "details": {}, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}
+                repair_feedback = _repair_feedback(error)
+                recorder.emit("planner_failed", "planner", "failed", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=getattr(error, "error", {}).get("code", type(error).__name__))
+                if llm_attempt == MAX_PLANNER_ATTEMPTS:
+                    detail = {"code": "REPAIR_INPUT", "recovery_class": "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": repair_feedback, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}
                     detail = dict(detail)
-                    detail["attempt"] = llm_attempt
-                    recorder.emit("run_completed", "run", "failed", error_ref=detail.get("code"))
+                    recorder.emit("run_completed", "run", "rejected", error_ref=detail.get("code"))
                     return {"status": "plan_error", "error": detail, "trace": recorder.events}
         if last_error is not None and "planned" not in locals():
-            recorder.emit("run_completed", "run", "failed", error_ref="RETRY_LLM")
-            return {"status": "plan_error", "error": {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_plan", "retryable": False, "attempt": 2, "max_attempts": 2, "message": str(last_error), "details": {}, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
+            recorder.emit("run_completed", "run", "rejected", error_ref="REPAIR_INPUT")
+            return {"status": "plan_error", "error": {"code": "REPAIR_INPUT", "recovery_class": "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": MAX_PLANNER_ATTEMPTS, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": repair_feedback or {}, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
         execution = execute_plan(question, planned, search=search, handlers=handlers,
                                  snapshot_revision_value=(sync or {}).get("snapshotRevision"),
                                  current_revision=current_revision)
