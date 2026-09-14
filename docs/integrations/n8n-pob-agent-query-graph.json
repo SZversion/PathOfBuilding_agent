@@ -1,0 +1,265 @@
+{
+  "name": "PoB Agent - Query to Evidence Answer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pob-agent/query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "pob-webhook",
+      "name": "PoB Agent Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "webhookId": "pob-agent-query"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $json.body ?? $json;\nconst baseQuestion = body.question ?? body.text ?? body.previousQuestion;\nconst clarification = body.clarificationAnswer;\nconst question = clarification && typeof baseQuestion === 'string' ? `${baseQuestion}\\n사용자 추가 답변: ${clarification}` : baseQuestion;\nif (typeof question !== 'string' || !question.trim()) {\n  return [{ json: { route: 'error', response: { status: 'error', error: { code: 'INPUT_INVALID', message: 'question is required', next_action: 'repair_input' } } } }];\n}\nconst query = {\n  schema_version: '1.0',\n  text: question.trim(),\n  subject: body.subject ?? null,\n  context: body.context ?? {},\n  ambiguities: Array.isArray(body.ambiguities) ? body.ambiguities : [],\n  confidence: typeof body.confidence === 'number' ? body.confidence : null,\n  requires: Array.isArray(body.requires) ? body.requires : []\n};\nreturn [{ json: {\n  sessionId: body.sessionId ?? `n8n-${Date.now()}`,\n  snapshot: body.snapshot ?? null,\n  query,\n  plannerAttempt: 1,\n  repairFeedback: null\n} }];"
+      },
+      "id": "normalize-query",
+      "name": "Normalize Query Schema",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": { "conditions": { "options": { "caseSensitive": true, "typeValidation": "strict" }, "conditions": [{ "leftValue": "={{ $json.route }}", "rightValue": "error", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+      "id": "input-valid",
+      "name": "Input Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [330, 160]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\nconst system = 'You are the PoE PoB Agent planner. Return JSON only with schema_version, intent, operation, evidenceLevel, required_evidence, stop_condition, and steps. Use only canonical Tool names. For mechanism, damage, and compare questions, include detailed evidence tools. If the subject is ambiguous, return stop_condition.type=ask_user and a clarification object. Never invent values.';\nconst user = { query: item.query, snapshot: item.snapshot, repair_feedback: item.repairFeedback };\nreturn [{ json: { ...item, plannerRequest: { model: $env.POB_AGENT_MODEL ?? 'qwen3:8b', temperature: 0, messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify(user) }] } } }];"
+      },
+      "id": "build-planner-request",
+      "name": "Build Planner Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.POB_AGENT_LLM_URL ?? 'http://127.0.0.1:11434/v1/chat/completions') }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.plannerRequest) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "planner-llm",
+      "name": "Planner LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 0]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first().json;\nlet base;\ntry { base = $('Build Repair Request').item.json; } catch (error) { base = $('Build Planner Request').item.json; }\nconst raw = response.choices?.[0]?.message?.content ?? response.message?.content ?? response.content ?? response;\nlet plan;\ntry { plan = typeof raw === 'string' ? JSON.parse(raw.replace(/^```json\\s*|\\s*```$/g, '')) : raw; } catch (error) { plan = null; }\nreturn [{ json: { ...base, plan, plannerRaw: typeof raw === 'string' ? raw.slice(0, 2000) : null } }];"
+      },
+      "id": "parse-plan",
+      "name": "Parse Tool Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 0]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\nconst plan = item.plan;\nconst attempt = item.plannerAttempt ?? 1;\nconst allowed = new Set(['get_highest_dps_skill','resolve_skill_context','get_skill_dps','get_skill_breakdown','get_damage_breakdown','explain_stat','get_projectile_count','get_skill_chain','get_duration','get_curse_limit','get_elemental_penetration','get_socket_order','search_knowledge','compare_build_states']);\nconst required = {\n  mechanism: { tools: ['resolve_skill_context','get_skill_breakdown'], evidence: ['calculated','knowledge'] },\n  damage: { tools: ['get_skill_dps','get_damage_breakdown'], evidence: ['calculated','authoritative'] },\n  compare: { tools: ['compare_build_states'], evidence: ['calculated'] },\n  build_comparison: { tools: ['compare_build_states'], evidence: ['calculated'] }\n};\nconst fail = (code, message, details = {}) => ({ ...item, route: attempt < 5 ? 'planner_retry' : 'error', plannerAttempt: attempt + 1, repairFeedback: { code, message, details, instruction: 'Return a corrected JSON plan using canonical Tool names and all required evidence.' }, response: { status: 'error', error: { code: attempt < 5 ? code : 'REPAIR_INPUT', message, details, attempt, max_attempts: 5, next_action: attempt < 5 ? 'retry_planner' : 'human_review' } } });\nif (!plan || typeof plan !== 'object' || !Array.isArray(plan.steps)) return [{ json: fail('OUTPUT_CONTRACT', 'planner did not return a valid JSON plan') }];\nif (plan.stop_condition?.type === 'ask_user' || plan.intent === 'unknown' || (Array.isArray(plan.ambiguities) && plan.ambiguities.length)) {\n  const clarification = plan.clarification ?? { question: '어떤 스킬 또는 빌드를 기준으로 분석할까요?', options: ['현재 Main Skill', '가장 높은 DPS 스킬', '스킬명을 직접 입력'] };\n  return [{ json: { ...item, route: 'ask_user', response: { status: 'needs_user_input', clarification } } }];\n}\nconst names = plan.steps.map(step => step?.tool);\nconst bad = names.find(name => !allowed.has(name));\nif (bad) return [{ json: fail('UNKNOWN_TOOL', 'planner selected a non-canonical Tool', { tool: bad }) }];\nconst req = required[plan.intent];\nif (req) {\n  const missingTools = req.tools.filter(tool => !names.includes(tool));\n  const declared = new Set(Array.isArray(plan.required_evidence) ? plan.required_evidence : []);\n  const missingEvidence = req.evidence.filter(value => !declared.has(value));\n  if (missingTools.length || missingEvidence.length) return [{ json: fail('PLAN_INCOMPLETE', 'plan lacks required Tool or evidence', { missingTools, missingEvidence }) }];\n}\nreturn [{ json: { ...item, route: 'execute', plan } }];"
+      },
+      "id": "validate-plan",
+      "name": "Validate Plan Completeness",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 0]
+    },
+    {
+      "parameters": { "conditions": { "options": { "caseSensitive": true, "typeValidation": "strict" }, "conditions": [{ "leftValue": "={{ $json.route }}", "rightValue": "ask_user", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+      "id": "route-ask-user",
+      "name": "ASK_USER?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1370, 0]
+    },
+    {
+      "parameters": { "conditions": { "options": { "caseSensitive": true, "typeValidation": "strict" }, "conditions": [{ "leftValue": "={{ $json.route }}", "rightValue": "planner_retry", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+      "id": "route-retry",
+      "name": "Planner Retry?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1600, 120]
+    },
+    {
+      "parameters": { "conditions": { "options": { "caseSensitive": true, "typeValidation": "strict" }, "conditions": [{ "leftValue": "={{ $json.route }}", "rightValue": "error", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+      "id": "plan-error",
+      "name": "Planner Error?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1600, 260]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify($json.response) }}", "options": {} },
+      "id": "respond-ask-user",
+      "name": "Respond ASK_USER",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1600, -120]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify($json.response) }}", "options": {} },
+      "id": "respond-error",
+      "name": "Respond Planner Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1830, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.POB_AGENT_LLM_URL ?? 'http://127.0.0.1:11434/v1/chat/completions') }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.plannerRequest) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "planner-repair-llm",
+      "name": "Planner Repair LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1830, 0]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\nconst system = 'Repair the previous PoB Tool plan. Return JSON only. Preserve the query, use canonical Tool names, and satisfy the required evidence list.';\nreturn [{ json: { ...item, plannerRequest: { model: $env.POB_AGENT_MODEL ?? 'qwen3:8b', temperature: 0, messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify({ query: item.query, snapshot: item.snapshot, repair_feedback: item.repairFeedback }) }] } } }];"
+      },
+      "id": "build-repair-request",
+      "name": "Build Repair Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1830, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.POB_AGENT_BRIDGE_URL ?? 'http://127.0.0.1:8787/agent/execute') }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ sessionId: $json.sessionId, query: $json.query, snapshot: $json.snapshot, plan: $json.plan }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "execute-bridge",
+      "name": "Execute PoB Bridge Plan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1830, 360]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first().json;\nconst base = $('Validate Plan Completeness').item.json;\nconst result = response.execution ?? response.result ?? response;\nconst steps = Array.isArray(result.steps) ? result.steps : [];\nconst bad = steps.find(step => step.status !== 'ok');\nconst incomplete = steps.some(step => step.uncertainty?.reason === 'missing_evidence_graph');\nif (bad || incomplete) return [{ json: { ...base, ...response, route: 'partial', response: { status: 'partial', answer: 'PoB 근거가 부족해 추측하지 않습니다.', execution: result, uncertainty: bad?.error ?? { code: 'EVIDENCE_INCOMPLETE' } } } }];\nreturn [{ json: { ...base, ...response, route: 'final', finalRequest: { model: $env.POB_AGENT_MODEL ?? 'qwen3:8b', temperature: 0, messages: [{ role: 'system', content: 'Answer in Korean using only the supplied PoB Tool results. Separate final values, applied effects, source trace, and Evidence Graph. Never guess.' }, { role: 'user', content: JSON.stringify({ query: base.query, results: result }) }] } } }];"
+      },
+      "id": "evidence-gate",
+      "name": "Evidence Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2070, 360]
+    },
+    {
+      "parameters": { "conditions": { "options": { "caseSensitive": true, "typeValidation": "strict" }, "conditions": [{ "leftValue": "={{ $json.route }}", "rightValue": "final", "operator": { "type": "string", "operation": "equals" } }], "combinator": "and" } },
+      "id": "route-final",
+      "name": "Evidence Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2300, 360]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify($json.response) }}", "options": {} },
+      "id": "respond-partial",
+      "name": "Respond Partial",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2530, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.POB_AGENT_LLM_URL ?? 'http://127.0.0.1:11434/v1/chat/completions') }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.finalRequest) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "final-llm",
+      "name": "Final Answer LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2530, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first().json;\nconst base = $('Evidence Gate').item.json;\nconst answer = response.choices?.[0]?.message?.content ?? response.message?.content ?? response.content ?? response;\nreturn [{ json: { status: 'ok', answer, query: base.query, plan: base.plan } }];"
+      },
+      "id": "format-final",
+      "name": "Format Final Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2760, 300]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify($json) }}", "options": {} },
+      "id": "respond-final",
+      "name": "Respond Final Answer",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2990, 300]
+    }
+  ],
+  "connections": {
+    "PoB Agent Webhook": { "main": [[{ "node": "Normalize Query Schema", "type": "main", "index": 0 }]] },
+    "Normalize Query Schema": { "main": [[{ "node": "Input Valid?", "type": "main", "index": 0 }]] },
+    "Input Valid?": { "main": [[{ "node": "Respond Planner Error", "type": "main", "index": 0 }], [{ "node": "Build Planner Request", "type": "main", "index": 0 }]] },
+    "Build Planner Request": { "main": [[{ "node": "Planner LLM", "type": "main", "index": 0 }]] },
+    "Planner LLM": { "main": [[{ "node": "Parse Tool Plan", "type": "main", "index": 0 }]] },
+    "Parse Tool Plan": { "main": [[{ "node": "Validate Plan Completeness", "type": "main", "index": 0 }]] },
+    "Validate Plan Completeness": { "main": [[{ "node": "ASK_USER?", "type": "main", "index": 0 }]] },
+    "ASK_USER?": { "main": [[{ "node": "Respond ASK_USER", "type": "main", "index": 0 }], [{ "node": "Planner Error?", "type": "main", "index": 0 }]] },
+    "Planner Error?": { "main": [[{ "node": "Respond Planner Error", "type": "main", "index": 0 }], [{ "node": "Planner Retry?", "type": "main", "index": 0 }]] },
+    "Planner Retry?": { "main": [[{ "node": "Build Repair Request", "type": "main", "index": 0 }], [{ "node": "Execute PoB Bridge Plan", "type": "main", "index": 0 }]] },
+    "Build Repair Request": { "main": [[{ "node": "Planner Repair LLM", "type": "main", "index": 0 }]] },
+    "Planner Repair LLM": { "main": [[{ "node": "Parse Tool Plan", "type": "main", "index": 0 }]] },
+    "Execute PoB Bridge Plan": { "main": [[{ "node": "Evidence Gate", "type": "main", "index": 0 }]] },
+    "Evidence Gate": { "main": [[{ "node": "Evidence Complete?", "type": "main", "index": 0 }]] },
+    "Evidence Complete?": { "main": [[{ "node": "Final Answer LLM", "type": "main", "index": 0 }], [{ "node": "Respond Partial", "type": "main", "index": 0 }]] },
+    "Final Answer LLM": { "main": [[{ "node": "Format Final Answer", "type": "main", "index": 0 }]] },
+    "Format Final Answer": { "main": [[{ "node": "Respond Final Answer", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "pob-agent-query-graph-v1",
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}
