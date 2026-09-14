@@ -46,6 +46,8 @@ def env(**extra):
 def events():
     recorder = TraceRecorder(request_id="req-1")
     recorder.set_snapshot("rev-1", "build-1")
+    recorder.set_input({"question": "질문"})
+    recorder.set_output("답변")
     recorder.emit("run_started", "run", "started")
     recorder.emit("tool_completed", "tool", "ok", tool="get_skill_stats", prompt_ref="prompt-hash", safe_args_ref="args-hash", result_ref={"facts_ref": "ref-facts"})
     recorder.emit("run_completed", "run", "ok")
@@ -69,10 +71,13 @@ def test_success_maps_one_trace_and_redacted_events():
     client = FakeClient()
     exporter = LangfuseExporter.from_env(env(), sdk_module=sdk_for(client))
     trace_events = events()
-    assert exporter.export(trace_events).status == "sent"
+    assert exporter.export(trace_events, input_payload={"question": "질문"}, output_payload="답변").status == "sent"
     assert exporter.export(trace_events).status == "disabled"
     assert sum(item["name"] == "pob-agent" for item in client.observations) == 1
     assert sum(item["as_type"] == "span" for item in client.observations) == len(trace_events)
+    root = next(item for item in client.observations if item["name"] == "pob-agent")
+    assert root["input"] == {"question": "질문"}
+    assert root["output"] == "답변"
     text = json.dumps(client.observations, ensure_ascii=False)
     assert "public" not in text and "secret" not in text and "prompt-hash" in text
     assert "rev-1" in text and "ref-facts" in text
@@ -113,6 +118,32 @@ def test_agent_loop_exporter_failure_does_not_change_answer():
     exporter = LangfuseExporter(client, enabled=True, reason="enabled")
     result = AgentLoop(Model(), trace_exporter=exporter).run("질문")
     assert result["status"] == "ok"
+
+
+def test_agent_loop_exports_root_and_provider_input_output():
+    class Model:
+        model = "fake"
+        endpoint = "http://127.0.0.1:11434/v1"
+
+        def chat(self, messages):
+            if messages[0]["role"] == "system" and "planner" in messages[0]["content"]:
+                return '{"intent":"stat","operation":"answer","evidenceLevel":"authoritative","required_evidence":[],"stop_condition":{},"steps":[]}'
+            return "최종 답변"
+
+    client = FakeClient()
+    exporter = LangfuseExporter(client, enabled=True, reason="enabled")
+    result = AgentLoop(Model(), trace_exporter=exporter).run("입출력 확인")
+    assert result["status"] == "ok"
+    root = next(item for item in client.observations if item["name"] == "pob-agent")
+    assert root["input"]["question"] == "입출력 확인"
+    assert root["output"] == "최종 답변"
+    planner = next(item for item in client.observations if item["name"] == "planner_started")
+    assert planner["input"]["text"] == "입출력 확인"
+    completed = next(item for item in client.observations if item["name"] == "run_completed")
+    assert completed["input"]["question"] == "입출력 확인"
+    assert completed["output"] == "최종 답변"
+    provider_outputs = [item for item in client.observations if item["name"] == "provider_completed"]
+    assert any(item["output"] == "최종 답변" for item in provider_outputs)
 
 
 def test_real_langfuse_sdk_4_smoke_when_explicitly_configured():
