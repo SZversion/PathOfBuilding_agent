@@ -74,8 +74,8 @@ class TraceRecorder:
         endpoint = getattr(provider, "endpoint", None)
         return {"mode": getattr(provider, "mode", "remote"), "model": getattr(provider, "model", None), "endpoint_ref": "endpoint:" + _hash(endpoint) if isinstance(endpoint, str) else None}
 
-    def _event(self, name, stage, status, *, attempt=1, provider=None, tool=None, step_index=None, tool_call_count=None, retry_of=None, plan_ref=None, safe_args_ref=None, error_ref=None, result_ref=None, prompt_ref=None, duration_ms=None):
-        return {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": self.run_id, "request_id": self.request_id, "event": name, "stage": stage, "timestamp_utc": _utc_now(), "duration_ms": duration_ms, "status": status, "attempt": attempt, "provider": provider or {"mode": None, "model": None, "endpoint_ref": None}, "snapshot": dict(self.snapshot), "tool": tool, "step_index": step_index, "tool_call_count": tool_call_count, "retry_of": retry_of, "plan_ref": plan_ref, "safe_args_ref": safe_args_ref, "error_ref": error_ref, "result_ref": result_ref or {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": prompt_ref}
+    def _event(self, name, stage, status, *, attempt=1, max_attempts=None, provider=None, tool=None, step_index=None, tool_call_count=None, retry_of=None, plan_ref=None, query_ref=None, safe_args_ref=None, error_ref=None, result_ref=None, prompt_ref=None, duration_ms=None):
+        return {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": self.run_id, "request_id": self.request_id, "event": name, "stage": stage, "timestamp_utc": _utc_now(), "duration_ms": duration_ms, "status": status, "attempt": attempt, "max_attempts": max_attempts, "provider": provider or {"mode": None, "model": None, "endpoint_ref": None}, "snapshot": dict(self.snapshot), "tool": tool, "step_index": step_index, "tool_call_count": tool_call_count, "retry_of": retry_of, "plan_ref": plan_ref, "query_ref": query_ref, "safe_args_ref": safe_args_ref, "error_ref": error_ref, "result_ref": result_ref or {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": prompt_ref}
 
     def _append(self, event):
         encoded = json.dumps(event, ensure_ascii=False, separators=(",", ":"))
@@ -116,6 +116,9 @@ class TraceRecorder:
 
     def plan_ref(self, plan):
         return "plan:" + _hash(json.dumps({"intent": plan.get("intent"), "steps": [step.get("tool") for step in plan.get("steps", [])]} if isinstance(plan, dict) else {}, sort_keys=True, separators=(",", ":")))
+
+    def query_ref(self, query):
+        return "query:" + _hash(json.dumps(query if isinstance(query, dict) else {"text": query}, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
 
     def prompt_ref(self, messages):
         return "prompt:" + _hash(json.dumps(messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
