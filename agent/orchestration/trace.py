@@ -66,6 +66,9 @@ class TraceRecorder:
         self.snapshot = {"revision": None, "build_id": None}
         self.exporter = exporter
         self.export_result = None
+        self.input_payload = None
+        self.output_payload = None
+        self._payloads = {}
 
     def set_snapshot(self, revision=None, build_id=None):
         self.snapshot = {"revision": revision if isinstance(revision, str) else None, "build_id": build_id if isinstance(build_id, str) else None}
@@ -74,8 +77,16 @@ class TraceRecorder:
         endpoint = getattr(provider, "endpoint", None)
         return {"mode": getattr(provider, "mode", "remote"), "model": getattr(provider, "model", None), "endpoint_ref": "endpoint:" + _hash(endpoint) if isinstance(endpoint, str) else None}
 
-    def _event(self, name, stage, status, *, attempt=1, max_attempts=None, provider=None, tool=None, step_index=None, tool_call_count=None, retry_of=None, plan_ref=None, query_ref=None, safe_args_ref=None, error_ref=None, result_ref=None, prompt_ref=None, duration_ms=None):
-        return {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": self.run_id, "request_id": self.request_id, "event": name, "stage": stage, "timestamp_utc": _utc_now(), "duration_ms": duration_ms, "status": status, "attempt": attempt, "max_attempts": max_attempts, "provider": provider or {"mode": None, "model": None, "endpoint_ref": None}, "snapshot": dict(self.snapshot), "tool": tool, "step_index": step_index, "tool_call_count": tool_call_count, "retry_of": retry_of, "plan_ref": plan_ref, "query_ref": query_ref, "safe_args_ref": safe_args_ref, "error_ref": error_ref, "result_ref": result_ref or {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": prompt_ref}
+    def _event(self, name, stage, status, *, attempt=1, max_attempts=None, provider=None, tool=None, step_index=None, tool_call_count=None, retry_of=None, plan_ref=None, query_ref=None, safe_args_ref=None, error_ref=None, result_ref=None, prompt_ref=None, input_payload=None, output_payload=None, duration_ms=None):
+        if name == "run_completed":
+            input_payload = self.input_payload if input_payload is None else input_payload
+            output_payload = self.output_payload if output_payload is None else output_payload
+            if output_payload is None:
+                output_payload = {"status": status, "error_ref": error_ref}
+        event = {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": self.run_id, "request_id": self.request_id, "event": name, "stage": stage, "timestamp_utc": _utc_now(), "duration_ms": duration_ms, "status": status, "attempt": attempt, "max_attempts": max_attempts, "provider": provider or {"mode": None, "model": None, "endpoint_ref": None}, "snapshot": dict(self.snapshot), "tool": tool, "step_index": step_index, "tool_call_count": tool_call_count, "retry_of": retry_of, "plan_ref": plan_ref, "query_ref": query_ref, "safe_args_ref": safe_args_ref, "error_ref": error_ref, "result_ref": result_ref or {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": prompt_ref}
+        if input_payload is not None or output_payload is not None:
+            self._payloads[event["event_id"]] = {"input_payload": input_payload, "output_payload": output_payload}
+        return event
 
     def _append(self, event):
         encoded = json.dumps(event, ensure_ascii=False, separators=(",", ":"))
@@ -103,7 +114,18 @@ class TraceRecorder:
             self._append(self._event(event, stage, status, **kwargs))
             if event == "run_completed" and self.exporter is not None and self.export_result is None:
                 try:
-                    self.export_result = self.exporter.export(list(self.events))
+                    try:
+                        export_events = []
+                        for event in self.events:
+                            enriched = dict(event)
+                            enriched.update(self._payloads.get(event.get("event_id"), {}))
+                            export_events.append(enriched)
+                        self.export_result = self.exporter.export(export_events, input_payload=getattr(self, "input_payload", None), output_payload=getattr(self, "output_payload", None))
+                    except TypeError as error:
+                        # Preserve compatibility with small injected exporters used by callers/tests.
+                        if "input_payload" not in str(error) and "output_payload" not in str(error):
+                            raise
+                        self.export_result = self.exporter.export(list(self.events))
                 except Exception as error:
                     self._warning = self._warning or "exporter_failure:" + type(error).__name__
         except Exception as error:
@@ -122,6 +144,12 @@ class TraceRecorder:
 
     def prompt_ref(self, messages):
         return "prompt:" + _hash(json.dumps(messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+
+    def set_input(self, value):
+        self.input_payload = value
+
+    def set_output(self, value):
+        self.output_payload = value
 
     def result_refs(self, result):
         if not isinstance(result, dict):
