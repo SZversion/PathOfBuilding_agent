@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 
 from .orchestration.agent_loop import AgentLoop
+from .orchestration.recovery import recover_response
 from .orchestration.state_store import OrchestrationStateStore, StateStoreError
 from .pob.bridge import PobBridgeError, make_pob_handlers
 from .providers.ollama import DEFAULT_OLLAMA_MODEL, OllamaDevelopmentProvider
@@ -141,6 +142,8 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
             )}
         on_token = (lambda token: print(token, end="", flush=True)) if args.stream and not args.json_output else None
         result = AgentLoop(provider).run(question, handlers=handlers, snapshot=snapshot, on_token=on_token)
+        if not args.json_output:
+            result = recover_response(result, provider, on_token=on_token if args.stream else None)
         cache.save_state(build_id, {
             **previous,
             "session": {"buildId": build_id, "buildNameHash": snapshot["buildNameHash"]},
@@ -157,8 +160,13 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
 
 
 def _emit(value, json_output, streamed=False):
+    if not json_output and isinstance(value, dict) and isinstance(value.get("error"), dict) and not value.get("answer"):
+        value = recover_response(value)
     if streamed and value.get("answer"):
         print()
+        return 0 if value.get("status") not in {"error", "plan_error"} else 1
+    if not json_output and value.get("answer"):
+        print(value["answer"])
         return 0 if value.get("status") not in {"error", "plan_error"} else 1
     print(json.dumps(value, ensure_ascii=False, indent=None if json_output else 2))
     return 0 if value.get("status") not in {"error", "plan_error"} else 1
