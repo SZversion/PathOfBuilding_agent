@@ -5,13 +5,14 @@ dofile("HeadlessWrapper.lua")
 local json = require "dkjson"
 local context = LoadModule("Modules/AgentContext")
 local tools = LoadModule("Modules/AgentTool")
+local errorRegistry = LoadModule("Modules/AgentErrorRegistry")
 local build, loadErr = context.load_xml_file(buildPath, "Agent XML build")
 local currentRevision = "unknown"
 if build then
 	currentRevision = tostring(build.snapshotRevision or build.revision or build.agentSnapshotRevision or "unknown")
 end
 local function failure(code, recovery, stage, retryable, nextAction, message)
-	return { code = code, recovery_class = recovery, stage = stage, retryable = retryable, attempt = 1, max_attempts = retryable and 4 or 1, message = message, details = {}, next_action = nextAction, secondary_causes = {}, snapshotRevision = currentRevision, side_effect = "none", operator_message = nil }
+	return { code = code, error_ref = errorRegistry.parent(code), recovery_class = recovery, stage = stage, retryable = retryable, attempt = 1, max_attempts = retryable and 4 or 1, message = message, details = {}, next_action = nextAction, secondary_causes = {}, snapshotRevision = currentRevision, side_effect = "none", operator_message = nil }
 end
 local function emitFailure(failureValue)
 	io.write(json.encode({ ok = false, error = failureValue }))
@@ -91,6 +92,7 @@ else
 end
 if not result then
 	if type(err) == "table" then
+		if not err.error_ref then err.error_ref = errorRegistry.parent(err.code) end
 		if not err.side_effect then err.side_effect = "none" end
 		if err.operator_message == nil then err.operator_message = nil end
 		if not err.attempt then err.attempt = 1 end

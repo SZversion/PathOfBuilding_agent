@@ -28,8 +28,8 @@ local function canonical_item_identity(value)
 	for _, entry in ipairs(itemAliasEntries) do
 		if normalize_name(entry.korean) == needle or normalize_name(entry.english) == needle then matches[#matches + 1] = entry.english end
 	end
-	if #matches > 1 then return nil, { code = "AMBIGUOUS_ALIAS", recovery_class = "ASK_USER", stage = "item_alias", retryable = false, next_action = "ask_user", message = "itemIdentity is ambiguous" } end
-	if #matches == 0 then return nil, { code = "USER_CONTEXT_MISSING", recovery_class = "ASK_USER", stage = "item_alias", retryable = false, next_action = "ask_user", message = "itemIdentity was not found in the item alias catalog" } end
+	if #matches > 1 then return nil, { code = "AMBIGUOUS_ALIAS", error_ref = "AMBIGUOUS_CONTEXT", recovery_class = "ASK_USER", stage = "item_alias", retryable = false, next_action = "ask_user", message = "itemIdentity is ambiguous" } end
+	if #matches == 0 then return nil, { code = "USER_CONTEXT_MISSING", error_ref = "MISSING_CONTEXT", recovery_class = "ASK_USER", stage = "item_alias", retryable = false, next_action = "ask_user", message = "itemIdentity was not found in the item alias catalog" } end
 	return matches[1]
 end
 
@@ -369,7 +369,7 @@ local function canonical_gem_identity(build, value)
 			return nil, { code = "INPUT_INVALID", recovery_class = "REPAIR_INPUT", stage = "gem_validation", retryable = false, attempt = 1, max_attempts = 1, next_action = "repair_input", message = "gemIdentity does not match a parsed PoB gem", details = { gemIdentity = value }, secondary_causes = {}, side_effect = "none", operator_message = nil }
 		end
 	end
-	return nil, { code = "USER_CONTEXT_MISSING", recovery_class = "ASK_USER", stage = "gem_alias", retryable = false, next_action = "ask_user", message = "gemIdentity was not found in the PoB gem catalog" }
+	return nil, { code = "USER_CONTEXT_MISSING", error_ref = "MISSING_CONTEXT", recovery_class = "ASK_USER", stage = "gem_alias", retryable = false, next_action = "ask_user", message = "gemIdentity was not found in the PoB gem catalog" }
 end
 
 local function gemError(code, recovery, stage, message, details)

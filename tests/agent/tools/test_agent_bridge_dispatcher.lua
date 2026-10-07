@@ -1,4 +1,8 @@
 package.path = "runtime/lua/?.lua;" .. package.path
+_G.LoadModule = function(name)
+	if name == "Modules/AgentErrorRegistry" then return { parent = function(code) return code end } end
+	error("unexpected module " .. tostring(name))
+end
 
 local bridge = dofile("src/Modules/AgentBridge.lua")
 local tools = dofile("src/Modules/AgentTool.lua")
@@ -39,6 +43,15 @@ assert(gemChanged.snapshotRevision ~= enemyChanged.snapshotRevision)
 local result, err = bridge.dispatch(build, { tool = "get_character_stats", arguments = {} }, tools)
 assert(result and not err and result.snapshotRevision == gemChanged.snapshotRevision)
 assert(result.liveMode == "live_read_only" and result.facts.TotalDPS == 123.45)
+local dispatchedTool, dispatchedArguments
+local adapted, adaptedErr = bridge.dispatch(build, { tool = "get_duration", arguments = { skillIndex = 2, durationType = "duration" } }, nil,
+	function(current, name, arguments)
+		assert(current == build)
+		dispatchedTool, dispatchedArguments = name, arguments
+		return { facts = { duration = 3 } }
+	end)
+assert(adapted and not adaptedErr and adapted.snapshotRevision == gemChanged.snapshotRevision)
+assert(dispatchedTool == "get_duration" and dispatchedArguments.durationType == "duration")
 
 local fallback = { skillsTab = { activeSkillSet = 2, skillSetOrderList = { "missing", "fallback" }, skillSets = { fallback = { title = nil } } } }
 local fallbackSnapshot = assert(bridge.capture(fallback))

@@ -1,0 +1,14 @@
+"""Stable parent error references for cross-layer diagnostics."""
+
+PARENT_ERROR_REFS = {
+    "USER_CONTEXT_MISSING": "MISSING_CONTEXT",
+    "AMBIGUOUS_ALIAS": "AMBIGUOUS_CONTEXT",
+    "SNAPSHOT_REVISION_CONFLICT": "CONFLICTING_CONTEXT",
+    "CONTENT_CONFLICT": "CONFLICTING_CONTEXT",
+    "GROUNDING_CONFLICT": "CONFLICTING_CONTEXT",
+    "UNSUPPORTED_REQUEST": "UNSUPPORTED_REQUEST",
+}
+
+
+def parent_error_ref(code):
+    return PARENT_ERROR_REFS.get(code, code)

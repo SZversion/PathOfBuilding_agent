@@ -91,8 +91,11 @@ class OpenAICompatibleClient:
         finally:
             response.close()
 
-    def chat(self, messages):
-        payload = json.dumps({"model": self.model, "messages": messages, "temperature": 0}).encode("utf-8")
+    def chat(self, messages, *, format=None):
+        body = {"model": self.model, "messages": messages, "temperature": 0}
+        if format is not None:
+            body["format"] = format
+        payload = json.dumps(body).encode("utf-8")
         request = urllib.request.Request(self.endpoint + "/chat/completions", data=payload, headers={"Content-Type": "application/json"})
         if self.api_key:
             request.add_header("Authorization", "Bearer " + self.api_key)

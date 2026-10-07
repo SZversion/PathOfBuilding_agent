@@ -4,6 +4,7 @@ import hashlib
 import json
 
 from .bridge import project_snapshot
+from agent.error_registry import parent_error_ref
 
 MUTATION_TOOLS = frozenset({"replace_item", "replace_gem", "change_passive"})
 
@@ -11,7 +12,7 @@ MUTATION_TOOLS = frozenset({"replace_item", "replace_gem", "change_passive"})
 class LivePobBridgeError(RuntimeError):
     def __init__(self, message, *, code="VALUE_UNAVAILABLE", stage="live_bridge", details=None, recovery_class="REJECT", next_action="reject_request", operator_message=None):
         self.error = {
-            "code": code, "recovery_class": recovery_class, "stage": stage,
+            "code": code, "error_ref": parent_error_ref(code), "recovery_class": recovery_class, "stage": stage,
             "retryable": False, "attempt": 1, "max_attempts": 1,
             "message": message, "details": details or {},
             "next_action": next_action, "secondary_causes": [],

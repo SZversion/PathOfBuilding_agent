@@ -5,7 +5,7 @@ This document defines how the PoB Agent classifies, reports, retries, and escala
 ## 1. Non-negotiable rules
 
 1. Never hide a failure behind a guessed value.
-2. Every failure has a stable `code`, `stage`, `retryable` flag, and structured detail.
+2. Every failure has a stable parent `error_ref`, leaf `error_code`, `stage`, `retryable` flag, and structured detail.
 3. Internal Bridge and Tool responses are pure JSON; no prose or Markdown is accepted.
 4. A valid JSON document is not automatically a valid or correct answer. Schema, grounding, and business-rule checks are separate.
 5. Observed facts and remediation decisions are stored separately.
@@ -20,7 +20,10 @@ The Agent chooses the recovery action from the parent class first. The detailed 
 failure
 ├─ RETRY_LLM          → repair the model output and retry
 ├─ RETRY_TOOL         → retry the PoB/search/model dependency within a limit
-├─ REPAIR_INPUT       → fix arguments or planner output locally
+├─ MISSING_CONTEXT    → request missing user/build context
+├─ AMBIGUOUS_CONTEXT  → request clarification for ambiguous context
+├─ CONFLICTING_CONTEXT→ refresh or ask about conflicting state
+├─ UNSUPPORTED_REQUEST→ explain unsupported capability and stop safely
 ├─ REFRESH_CONTEXT    → recapture PoB state, version, or RAG context
 ├─ ASK_USER           → request missing or ambiguous user information
 ├─ REJECT             → stop because a safe answer is impossible
@@ -28,13 +31,14 @@ failure
 └─ FATAL_INTERNAL     → record the defect and stop the run
 ```
 
-`recovery_class` is the routing key. `code` is the diagnostic key. The same recovery class may contain many detailed codes. Exactly one `recovery_class` is primary for each failure; any additional observations are recorded as `secondary_causes` and never used as competing routing instructions. Resolution priority is: safety/contract failure, stale context, missing user input, dependency retry, then rejection/escalation. A registry entry, not a free-form message, assigns the primary class.
+`error_ref` is the parent routing category and `error_code` is the registered leaf diagnosis. Context errors use `recovery_class=ASK_USER`; `REPAIR_INPUT` is legacy-only and must not be emitted as a new primary class. Exactly one parent and one recovery class are primary for each failure. Legacy `error.code` is accepted and mirrored to `error_code` for compatibility.
 
 | recovery_class | Typical codes | Automatic action |
 |---|---|---|
 | `RETRY_LLM` | `NO_JSON`, `JSON_DECODE`, `SCHEMA_VIOLATION` | Send a targeted repair prompt |
 | `RETRY_TOOL` | `TIMEOUT`, `SEARCH_TRANSIENT`, `MODEL_TRANSIENT` | Retry with bounded backoff |
-| `REPAIR_INPUT` | `INPUT_INVALID`, `TOOL_NOT_FOUND`, `CONTENT_CONFLICT` | Repair or reject the plan locally |
+| `MISSING_CONTEXT` / `AMBIGUOUS_CONTEXT` / `CONFLICTING_CONTEXT` | `USER_CONTEXT_MISSING`, `AMBIGUOUS_ALIAS`, `SNAPSHOT_REVISION_CONFLICT` | Ask the user or refresh context |
+| `REPAIR_INPUT` (legacy) | `INPUT_INVALID`, `TOOL_NOT_FOUND`, `CONTENT_CONFLICT` | Repair or reject the plan locally |
 | `REFRESH_CONTEXT` | `SNAPSHOT_REVISION_CONFLICT` | Recapture state or rebuild context |
 | `ASK_USER` | `USER_CONTEXT_MISSING`, `AMBIGUOUS_ALIAS` | Ask one focused question |
 | `REJECT` | `GROUNDING_MISSING`, `GROUNDING_CONFLICT`, `VERSION_MISMATCH`, `VALUE_UNAVAILABLE` | Return a safe non-answer |
@@ -51,7 +55,7 @@ The following registry is the minimum stable vocabulary. New leaf codes must be 
 |---|---|
 | `RETRY_LLM` | `NO_JSON`, `JSON_DECODE`, `SCHEMA_VIOLATION`, `LLM_CONTENT_REPAIRABLE`, `MODEL_SCHEMA_INVALID` |
 | `RETRY_TOOL` | `TIMEOUT`, `SEARCH_TRANSIENT`, `MODEL_TRANSIENT`, `TOOL_TRANSIENT`, `RAG_TRANSIENT`, `RAG_UNAVAILABLE` |
-| `REPAIR_INPUT` | `INPUT_INVALID`, `TOOL_NOT_FOUND`, `CONTENT_CONFLICT`, `INVALID_MUTATION_PLAN` |
+| `REPAIR_INPUT` (legacy) | `INPUT_INVALID`, `TOOL_NOT_FOUND`, `CONTENT_CONFLICT`, `INVALID_MUTATION_PLAN` |
 | `REFRESH_CONTEXT` | `SNAPSHOT_REVISION_CONFLICT`, `STALE_CACHE`, `VERSION_STALE`, `POB_STATE_CHANGED`, `DIFF_UNTRUSTED`, `CONTEXT_RECAPTURE_FAILED`, `MUTATION_TIMEOUT`, `MUTATION_UNCERTAIN` |
 | `ASK_USER` | `USER_CONTEXT_MISSING`, `AMBIGUOUS_ALIAS`, `USER_CONFIRMATION_REQUIRED` |
 | `REJECT` | `GROUNDING_MISSING`, `GROUNDING_CONFLICT`, `VERSION_MISMATCH`, `VALUE_UNAVAILABLE`, `BUILD_LOAD_FAILED`, `SEARCH_POLICY_DENIED`, `MUTATION_FAILED`, `MUTATION_NOT_PERSISTENT`, `RETRY_EXHAUSTED`, `MODEL_REQUEST_FAILED` |
@@ -89,6 +93,8 @@ When `status` is not `ok`, `error` is required:
 
 ```json
 {
+  "error_ref": "NO_JSON",
+  "error_code": "NO_JSON",
   "code": "NO_JSON",
   "recovery_class": "RETRY_LLM",
   "stage": "parse",
@@ -104,7 +110,7 @@ When `status` is not `ok`, `error` is required:
 }
 ```
 
-`error.code` and `error.recovery_class` are the canonical locations in the envelope. They must not be duplicated as unrelated top-level fields. `secondary_causes` contains observed contributing codes only; it cannot override the primary routing class.
+`error_ref`, `error_code`, and `recovery_class` are the canonical error locations. `error.code` and `error.recovery_class` are legacy mirrors only. Context errors include `details.missing_fields` and a safe `details.message`. `secondary_causes` contains observed contributing codes only; it cannot override the parent or recovery class.
 
 Fixed keys, explicit types, enums, defaults, examples, and JSON-only transport are mandatory. Free-form human explanations belong only in the final Korean response.
 
@@ -180,7 +186,7 @@ Defaults:
 - External model transient failure: maximum 2 LLM attempts with bounded backoff.
 - `tool_call_count <= 8` for each user request. This is the single hard limit for PoB, RAG, and approved-search Tool calls; retries are counted in the same total and there is no separate retry allowance.
 - Tool timeout/transient failures: one initial attempt plus at most 3 retries (4 total attempts). Each retry cancels/discards the failed execution context before starting the next attempt; the limit is hard and there is no unbounded loop.
-- User-input errors (`REPAIR_INPUT`/`ASK_USER`), grounding missing or conflict, snapshot/mutation conflicts, and other non-transient failures are never retried automatically.
+- User-input errors (`MISSING_CONTEXT`/`AMBIGUOUS_CONTEXT`/`ASK_USER`; legacy `REPAIR_INPUT`), grounding missing or conflict, snapshot/mutation conflicts, and other non-transient failures are never retried automatically.
 - Tool argument or version errors: zero automatic retries; repair the plan or ask the user.
 - Grounding failure: at most one additional Tool/search plan, then reject if evidence remains missing.
 - `tool_call_count <= 8` is evaluated independently of the LLM attempt limit. Every Tool retry, including RAG and approved-search retries, increments `tool_call_count`. On exhaustion, route to `HUMAN_REVIEW` when an operator can inspect the evidence, otherwise `REJECT`.

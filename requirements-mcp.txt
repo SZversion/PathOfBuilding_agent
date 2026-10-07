@@ -1,0 +1,2 @@
+# Local MCP server/client runtime dependency
+mcp>=1.29,<2

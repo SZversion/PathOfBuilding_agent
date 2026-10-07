@@ -9,9 +9,17 @@ MVP는 외부 AI 서버 하나를 기본 Provider로 사용합니다. 사용자�
 
 `defaultMode`는 항상 `remote`로 유지합니다. `local.enabled=true`만으로는
 활성화되지 않으며, `defaultMode=local`과 development 실행 환경이 모두
-필요합니다. Ollama는 `http://127.0.0.1:11434/v1`의 OpenAI-compatible
-계약과 `qwen3:8b`를 기본값으로 사용하며, 서비스가 없을 때 remote로
-자동 전환하지 않습니다.
+필요합니다. 원격 Provider는 설정된 `/v1` OpenAI-compatible endpoint를
+사용하지만, Ollama 개발 Provider는 같은 설정값에서 호스트만 취해 native
+`/api/chat` endpoint로 요청합니다. 기본 모델은 `qwen3:8b`이며 서비스가
+없을 때 remote로 자동 전환하지 않습니다.
+
+Ollama native 요청은 `model`, `messages`, `stream`을 JSON으로 보내고,
+선택적인 planner JSON Schema만 `format` 필드로 보냅니다. 일반 응답은
+`message.content`를 읽으며, 스트리밍은 native NDJSON의 각
+`message.content`를 순서대로 전달하고 `done`에서 종료합니다. Ollama가
+`format`을 거부하는 경우에만 같은 native endpoint로 `format` 없이 한 번
+재요청합니다. Answer 요청에는 `format`을 보내지 않습니다.
 
 외부 서버와의 요청·응답은 구조화된 JSON 계약을 사용해야 합니다. 일반 텍스트에
 포함된 Tool 지시를 실행하지 않습니다.

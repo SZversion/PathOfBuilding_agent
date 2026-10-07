@@ -1,6 +1,7 @@
 -- In-process, read-only dispatcher for the currently running PoB Lua context.
 -- It never loads XML, mutates build state, or invokes Save/Save As.
 local pairs, type, tostring = pairs, type, tostring
+local ErrorRegistry = LoadModule("Modules/AgentErrorRegistry")
 
 local readOnlyTools = {
 	get_character_stats = true, get_skill_stats = true, get_skill_dps = true,
@@ -53,7 +54,7 @@ local function resolveSkillSet(skills)
 			local candidateTitle = candidate and (candidate.title or candidate.label)
 			if type(candidateTitle) == "string" and candidateTitle:match("^%s*(.-)%s*$"):lower() == needle then matches[#matches + 1] = id end
 		end
-		if #matches > 1 then return nil, nil, { code = "AMBIGUOUS_ALIAS", recovery_class = "ASK_USER", stage = "context_resolution", retryable = false, attempt = 1, max_attempts = 1, message = "Skill Set title is ambiguous", details = { title = position }, next_action = "ask_user", secondary_causes = {}, side_effect = "none", operator_message = nil, snapshotRevision = nil } end
+		if #matches > 1 then return nil, nil, { code = "AMBIGUOUS_ALIAS", error_ref = "AMBIGUOUS_CONTEXT", recovery_class = "ASK_USER", stage = "context_resolution", retryable = false, attempt = 1, max_attempts = 1, message = "Skill Set title is ambiguous", details = { title = position }, next_action = "ask_user", secondary_causes = {}, side_effect = "none", operator_message = nil, snapshotRevision = nil } end
 		if #matches == 1 then return sets[matches[1]], matches[1] end
 	end
 	for _, id in ipairs(order) do if sets[id] then return sets[id], id end end
@@ -148,7 +149,7 @@ local function capture(build)
 	local context, contextErr = activeContext(build)
 	if contextErr then return nil, contextErr end
 	if build.skillsTab and not context.activeSkillSet.id then
-		return nil, { code = "USER_CONTEXT_MISSING", recovery_class = "ASK_USER", stage = "context_resolution", retryable = false, attempt = 1, max_attempts = 1, message = "Skill Set was not found", details = {}, next_action = "ask_user", secondary_causes = {}, side_effect = "none", operator_message = nil, snapshotRevision = nil }
+		return nil, { code = "USER_CONTEXT_MISSING", error_ref = "MISSING_CONTEXT", recovery_class = "ASK_USER", stage = "context_resolution", retryable = false, attempt = 1, max_attempts = 1, message = "Skill Set was not found", details = {}, next_action = "ask_user", secondary_causes = {}, side_effect = "none", operator_message = nil, snapshotRevision = nil }
 	end
 	local state = revisions[build]
 	local signature = contextSignature(context)
@@ -161,11 +162,11 @@ local function capture(build)
 end
 
 local function errorEnvelope(code, recovery, stage, message, nextAction)
-	return { code = code, recovery_class = recovery, stage = stage, retryable = false, attempt = 1, max_attempts = 1,
+	return { code = code, error_ref = ErrorRegistry.parent(code), recovery_class = recovery, stage = stage, retryable = false, attempt = 1, max_attempts = 1,
 		message = message, details = {}, next_action = nextAction, secondary_causes = {}, side_effect = "none", operator_message = nil, snapshotRevision = nil }
 end
 
-local function dispatch(build, request, tools)
+local function dispatch(build, request, tools, dispatcher)
 	if type(request) ~= "table" or type(request.tool) ~= "string" or type(request.arguments) ~= "table" then
 		return nil, errorEnvelope("INPUT_INVALID", "REPAIR_INPUT", "request_validation", "request must contain tool and arguments", "repair_input")
 	end
@@ -174,19 +175,26 @@ local function dispatch(build, request, tools)
 	end
 	local snapshot, snapshotErr = capture(build)
 	if not snapshot then return nil, snapshotErr end
-	local handler = tools and tools[request.tool]
-	if type(handler) ~= "function" then return nil, errorEnvelope("TOOL_NOT_FOUND", "REPAIR_INPUT", "tool_dispatch", "read-only tool is not registered", "repair_input") end
 	local result, err
 	local args = request.arguments
-	if request.tool == "resolve_skill_context" or request.tool == "get_support_links" or request.tool == "get_skill_chain" or request.tool == "get_socket_order" or request.tool == "get_curse_application_order" then
+	if type(dispatcher) == "function" then
+		result, err = dispatcher(build, request.tool, args)
+	else
+		local handler = tools and tools[request.tool]
+		if type(handler) ~= "function" then return nil, errorEnvelope("TOOL_NOT_FOUND", "REPAIR_INPUT", "tool_dispatch", "read-only tool is not registered", "repair_input") end
+		if request.tool == "resolve_skill_context" or request.tool == "get_support_links" or request.tool == "get_skill_chain" or request.tool == "get_socket_order" or request.tool == "get_curse_application_order" then
 		result, err = handler(build, args.skillSetSelector, args.skillName)
-	elseif request.tool == "compare_support_effect" or request.tool == "explain_damage_change" then
+		elseif request.tool == "compare_support_effect" or request.tool == "explain_damage_change" then
 		result, err = handler(build, args.skillSetSelector, args.skillName, args.supportName)
-	elseif request.tool == "get_item_modifiers" then result, err = handler(build, args.itemId)
-	elseif request.tool == "get_duration" then result, err = handler(build, args.skillIndex, args.durationType)
-	elseif request.tool == "explain_stat" then result, err = handler(build, args.stat, args.skillIndex)
-	else result, err = handler(build, args.skillIndex) end
-	if not result then return nil, type(err) == "table" and err or errorEnvelope("POB_CALCULATION_ERROR", "FATAL_INTERNAL", "tool_execution", tostring(err or "PoB tool failed"), "report_error") end
+		elseif request.tool == "get_item_modifiers" then result, err = handler(build, args.itemId)
+		elseif request.tool == "get_duration" then result, err = handler(build, args.skillIndex, args.durationType)
+		elseif request.tool == "explain_stat" then result, err = handler(build, args.stat, args.skillIndex)
+		else result, err = handler(build, args.skillIndex) end
+	end
+	if not result then
+		if type(err) == "table" then err.error_ref = err.error_ref or ErrorRegistry.parent(err.code) end
+		return nil, type(err) == "table" and err or errorEnvelope("POB_CALCULATION_ERROR", "FATAL_INTERNAL", "tool_execution", tostring(err or "PoB tool failed"), "report_error")
+	end
 	result.snapshotRevision = snapshot.snapshotRevision
 	result.conditions = result.conditions or { context = snapshot.context }
 	result.liveMode = snapshot.mode

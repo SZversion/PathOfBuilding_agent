@@ -1,19 +1,12 @@
 import json
 
 from .runtime import SnapshotSync, execute_plan
+from .recovery import EXHAUSTED_ANSWER, is_exhausted
 from .trace import TraceRecorder
+from agent.error_registry import parent_error_ref
+from agent.tool_catalog import ALLOWED_TOOLS
 
 
-ALLOWED_TOOLS = frozenset({
-    "search_knowledge", "resolve_item_alias", "resolve_skill_alias", "get_projectile_count", "get_curse_limit", "get_elemental_penetration",
-    "get_socket_order", "get_skill_chain", "compare_support_effect", "explain_damage_change", "compare_build_states", "replace_item", "replace_gem", "change_passive",
-    "get_skill_dps", "get_highest_dps_skill", "get_skill_breakdown", "get_item_modifiers",
-    "get_character_stats", "get_skill_stats",
-    "get_projectile_behavior", "get_trigger_sequence", "get_curse_application_order", "get_ailment_effect",
-    "get_damage_breakdown", "get_conversion_chain", "get_effective_resistance", "get_support_links",
-    "resolve_skill_context",
-    "get_duration", "explain_stat",
-})
 TOOL_ALIASES = {tool.replace("_", ""): tool for tool in ALLOWED_TOOLS}
 TOOL_ALIASES.update({"getCurseLimit": "get_curse_limit", "getProjectileCount": "get_projectile_count", "getElementalPenetration": "get_elemental_penetration", "searchKnowledge": "search_knowledge", "getSocketOrder": "get_socket_order", "getSkillChain": "get_skill_chain", "compareSupportEffect": "compare_support_effect", "explainDamageChange": "explain_damage_change"})
 MAX_STEPS = 8
@@ -43,9 +36,9 @@ ARGUMENT_TYPES = {
     "limit": int, "nodeId": int, "operation": str, "slot": str,
     "itemIdentity": str, "itemText": str, "condition": dict,
     "config": dict, "beforeState": (dict, str), "afterState": (dict, str),
-    "comparisonFields": list,
+    "comparisonFields": list, "source": str,
 }
-REQUIRED_ARGUMENTS = {"search_knowledge": ("query",), "resolve_item_alias": ("query",), "resolve_skill_alias": ("query",)}
+REQUIRED_ARGUMENTS = {"search_knowledge": ("query",), "search_external": ("query",), "resolve_item_alias": ("query",), "resolve_skill_alias": ("query",)}
 SKILL_AWARE_READ_ONLY_TOOLS = frozenset({
     "get_skill_dps", "get_skill_stats", "get_skill_breakdown", "get_projectile_count",
     "get_projectile_behavior", "get_trigger_sequence", "get_curse_application_order",
@@ -59,12 +52,33 @@ TOOL_MIN_ARGUMENTS = {tool: {} for tool in READ_ONLY_TOOLS}
 for _tool in REQUIRED_ARGUMENTS:
     TOOL_MIN_ARGUMENTS[_tool] = {"required": list(REQUIRED_ARGUMENTS[_tool]), "types": {key: "string" for key in REQUIRED_ARGUMENTS[_tool]}}
 TOOL_MIN_ARGUMENTS["compare_build_states"] = {"required": ["beforeState", "afterState"], "types": {"beforeState": "object|string", "afterState": "object|string"}}
+TOOL_MIN_ARGUMENTS["search_external"] = {"required": ["query"], "types": {"query": "string", "source": "poedb|poewiki|both (default both)", "limit": "integer 1..3 (default 3)"}}
 
 _PLANNER_CATALOG = json.dumps(
     {tool: TOOL_MIN_ARGUMENTS[tool] for tool in sorted(READ_ONLY_TOOLS)},
     ensure_ascii=False, sort_keys=True, separators=(",", ":"),
 )
-PLANNER_SYSTEM = f"""You are a PoE Path of Building read-only tool planner. Return JSON only with schema_version, intent, operation, evidenceLevel, required_evidence, stop_condition, and steps. Each step has tool, arguments, and expectedSnapshotRevision. Use ONLY canonical Tool names and this registry: {_PLANNER_CATALOG}. Never invent, translate, or paraphrase Tool names. Never return mutation Tools, free-text commands, raw XML, or PoB numbers. Example: {{\"tool\":\"get_curse_limit\",\"arguments\":{{}}}}. If the query is ambiguous, return intent=unknown and stop_condition={{\"type\":\"ask_user\"}}."""
+PLANNER_JSON_SCHEMA = {
+    "type": "object",
+    "required": ["schema_version", "intent", "operation", "evidenceLevel", "steps"],
+    "properties": {
+        "schema_version": {"type": "string", "const": "1.0"}, "intent": {"type": "string", "enum": sorted(INTENT_ENUM)},
+        "operation": {"type": "string", "enum": sorted(OPERATION_ENUM)},
+        "evidenceLevel": {"type": "string", "enum": sorted(EVIDENCE_LEVEL_ENUM)},
+        "stop_condition": {"type": "object", "properties": {"type": {"type": "string"}}, "additionalProperties": True},
+        "ambiguities": {"type": "array", "minItems": 0, "items": {"type": "string", "minLength": 1}},
+        "steps": {"type": "array", "items": {"type": "object", "required": ["tool", "arguments"], "properties": {
+            "tool": {"type": "string", "enum": sorted(READ_ONLY_TOOLS)},
+            "arguments": {"type": "object"},
+            "expectedSnapshotRevision": {"type": ["string", "null"]},
+        }, "additionalProperties": False}},
+    },
+    "allOf": [
+        {"if": {"required": ["stop_condition"], "properties": {"stop_condition": {"required": ["type"], "properties": {"type": {"const": "ask_user"}}}}},
+         "then": {"required": ["ambiguities"], "properties": {"ambiguities": {"minItems": 1}}}},
+    ],
+}
+PLANNER_SYSTEM = f"""You are a PoE Path of Building read-only tool planner. Return JSON only with schema_version, intent, operation, evidenceLevel, required_evidence, stop_condition, ambiguities, and steps. Each step has tool, arguments, and expectedSnapshotRevision. Use ONLY canonical Tool names and this registry: {_PLANNER_CATALOG}. Never invent, translate, or paraphrase Tool names. Never return mutation Tools, free-text commands, raw XML, or PoB numbers. Classify the user's request before deciding whether clarification is needed. Resolve an omitted subject from the supplied authoritative PoB context whenever possible; for example, a request for the highest DPS skill should use get_highest_dps_skill when the build snapshot is available. If required information is genuinely missing or conflicting, list EVERY missing or conflicting field you know in ambiguities as concrete field names (such as skill, skill set, config, or comparison target), then set intent=unknown and stop_condition={{\"type\":\"ask_user\"}}. The ambiguities array must contain at least one item for ask_user and must never contain vague phrases such as \"more information\" or \"unclear\". Do not ask for information that can be determined from the PoB context. Correct clarification example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[\"skill\",\"skill set\"]}}. Incorrect example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[]}}. Planner ambiguity is a plan-level stop condition, not an execution error. Execution errors use the two-level contract: error_ref is one of MISSING_CONTEXT, AMBIGUOUS_CONTEXT, CONFLICTING_CONTEXT, or UNSUPPORTED_REQUEST; error_code is the detailed leaf cause (for example USER_CONTEXT_MISSING or AMBIGUOUS_ALIAS). Never replace error_ref with the leaf error_code. Context errors always use recovery_class=ASK_USER and details.missing_fields must contain every missing field plus a safe details.message for the user. Example: {{\"tool\":\"get_curse_limit\",\"arguments\":{{}}}}."""
 ANSWER_SYSTEM = """Answer the user's PoE question using only the supplied Tool results and knowledge documents. By default, answer in Korean using friendly and clear wording. Distinguish calculated values, applied effects, and calculation evidence. If a result is unavailable or an input is ambiguous, state that plainly and do not guess. Answer Korean questions in Korean."""
 ENVELOPE_FIELDS = frozenset({"status", "version", "snapshotRevision", "side_effect", "operator_message", "facts", "conditions", "trace", "sources", "evidenceGraph", "uncertainty", "error"})
 
@@ -152,6 +166,12 @@ def _validate_arguments(tool, arguments):
     for key in REQUIRED_ARGUMENTS.get(tool, ()):
         if not isinstance(arguments.get(key), str) or not arguments[key].strip():
             raise PlanValidationError("required argument is missing or invalid", details={"argument": key})
+    if tool == "search_external":
+        if arguments.get("source", "both") not in {"poedb", "poewiki", "both"}:
+            raise PlanValidationError("search_external source is not supported", details={"argument": "source", "allowed": ["poedb", "poewiki", "both"]})
+        limit = arguments.get("limit", 3)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 3:
+            raise PlanValidationError("search_external limit must be an integer from 1 to 3", details={"argument": "limit"})
 
 
 def _normalize_skill_argument(tool, arguments):
@@ -218,6 +238,19 @@ def normalize_query(value):
     return result
 
 
+def planner_query_projection(query, *, context=None):
+    """Project a normalized query to the planner's observable input.
+
+    Query interpretation fields belong to the planner output contract.  They
+    must not be echoed back as instructions in the planner input; only the
+    user's text and the current PoB context are supplied.
+    """
+    projected = {"question": query["text"], "text": query["text"]}
+    if context is not None:
+        projected["context"] = context
+    return projected
+
+
 def _validate_completeness(plan, *, enforce_evidence=False):
     requirement = INTENT_REQUIREMENTS.get(plan.get("intent"))
     if not requirement:
@@ -235,7 +268,7 @@ def validate_plan(value):
         raise PlanValidationError("plan.steps must be a list")
     legacy = "schema_version" not in value
     if "schema_version" in value and value["schema_version"] != "1.0":
-        raise PlanValidationError("unsupported plan schema_version")
+        raise PlanValidationError("unsupported plan schema_version", details={"field": "schema_version", "expected": "1.0", "actual": value["schema_version"]})
     if "intent" in value and not isinstance(value["intent"], str):
         raise PlanValidationError("plan.intent must be a string")
     if "intent" in value and not legacy and value["intent"] not in INTENT_ENUM:
@@ -253,7 +286,11 @@ def validate_plan(value):
     value.setdefault("stop_condition", {})
     value.setdefault("ambiguities", [])
     if not legacy and (value["intent"] == "unknown" or value["ambiguities"] or (isinstance(value["stop_condition"], dict) and value["stop_condition"].get("type") == "ask_user")):
-        raise PlanValidationError("planner requires user clarification", code="AMBIGUOUS_ALIAS")
+        raise PlanValidationError(
+            "planner requires user clarification",
+            code="AMBIGUOUS_ALIAS",
+            details={"ambiguities": value["ambiguities"]},
+        )
     if value["operation"] not in OPERATION_ENUM or value["evidenceLevel"] not in EVIDENCE_LEVEL_ENUM:
         raise PlanValidationError("plan operation or evidenceLevel is not a supported enum")
     if not isinstance(value["required_evidence"], list) or any(not isinstance(item, str) for item in value["required_evidence"]):
@@ -306,7 +343,7 @@ class AgentLoop:
             trace_exporter = LangfuseExporter.from_env()
         self.trace_exporter = trace_exporter
 
-    def _chat(self, messages, *, attempts=2, recorder=None, stream=False, on_token=None):
+    def _chat(self, messages, *, attempts=2, recorder=None, stream=False, on_token=None, response_format=None):
         last = None
         for attempt in range(1, attempts + 1):
             started = __import__("time").monotonic()
@@ -326,7 +363,15 @@ class AgentLoop:
                         raise
                     result = "".join(chunks)
                 else:
-                    result = self.model.chat(messages)
+                    if response_format is not None and getattr(self.model, "supports_json_schema", False):
+                        try:
+                            result = self.model.chat(messages, format=response_format)
+                        except Exception as formatted_error:
+                            if getattr(formatted_error, "error", {}).get("code") != "MODEL_REQUEST_FAILED":
+                                raise
+                            result = self.model.chat(messages)
+                    else:
+                        result = self.model.chat(messages)
                 if recorder:
                     recorder.emit("provider_completed", "provider", "ok", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), input_payload=messages, output_payload=result, duration_ms=round((__import__("time").monotonic() - started) * 1000))
                 return result
@@ -335,7 +380,7 @@ class AgentLoop:
                 if recorder:
                     detail = getattr(error, "error", {})
                     timeout = detail.get("code") == "TIMEOUT" or detail.get("details", {}).get("timeout") is True or isinstance(error, TimeoutError)
-                    recorder.emit("provider_failed", "provider", "timeout" if timeout else "failed", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), error_ref="TIMEOUT" if timeout else detail.get("code", type(error).__name__), duration_ms=round((__import__("time").monotonic() - started) * 1000))
+                    recorder.emit("provider_failed", "provider", "timeout" if timeout else "failed", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), error_ref="TIMEOUT" if timeout else detail.get("code", type(error).__name__), error_details=detail.get("details", {}), duration_ms=round((__import__("time").monotonic() - started) * 1000))
                 detail = getattr(error, "error", {})
                 if isinstance(error, TimeoutError):
                     detail = {"retryable": True}
@@ -343,24 +388,32 @@ class AgentLoop:
                     raise
         raise last
 
-    def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None, request_id=None, on_token=None):
+    def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None,
+            tool_definitions=None, request_id=None, on_token=None):
         recorder = self.trace_factory(request_id=request_id, exporter=self.trace_exporter)
         recorder.emit("run_started", "run", "started", provider=recorder.provider_metadata(self.model))
         try:
             query = normalize_query(question)
         except PlanValidationError as error:
             recorder.set_input(question)
-            recorder.emit("run_completed", "run", "rejected", error_ref="INPUT_INVALID")
-            return {"status": "plan_error", "error": {"code": "INPUT_INVALID", "message": str(error), "next_action": "repair_input"}, "trace": recorder.events}
+            recorder.emit("run_completed", "run", "rejected", error_ref="INPUT_INVALID", error_details={"message": str(error)})
+            return {"status": "plan_error", "error": {"code": "INPUT_INVALID", "error_ref": parent_error_ref("INPUT_INVALID"), "recovery_class": "ASK_USER", "message": str(error), "next_action": "ask_user", "details": {"confirmation_type": "repair"}}, "trace": recorder.events}
         question_text = query["text"]
         recorder.set_input({"question": question_text, "query": query})
         recorder.emit("planner_started", "planner", "started", attempt=1, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), provider=recorder.provider_metadata(self.model), input_payload=query)
         if snapshot is None and callable(self.snapshot_provider):
             snapshot = self.snapshot_provider()
         sync = self.snapshot_sync.prepare(snapshot) if snapshot is not None else None
-        planning_payload = {"question": question_text, "query": query}
+        planning_payload = planner_query_projection(query, context=sync)
+        planner_system = PLANNER_SYSTEM
+        if tool_definitions is not None:
+            available = [item for item in tool_definitions if isinstance(item, dict)
+                         and item.get("name") in READ_ONLY_TOOLS]
+            if {item.get("name") for item in available} != set(READ_ONLY_TOOLS):
+                raise PlanValidationError("MCP read-only tool catalog does not match the planner allowlist",
+                                          code="TOOL_CATALOG_MISMATCH")
+            planner_system += "\nMCP tool descriptions and input schemas (source of truth): " + json.dumps(available, ensure_ascii=False, separators=(",", ":"))
         if sync is not None:
-            planning_payload["context"] = sync
             recorder.set_snapshot((sync or {}).get("snapshotRevision"), snapshot.get("buildId") if isinstance(snapshot, dict) else None)
         last_error = None
         repair_feedback = None
@@ -370,34 +423,34 @@ class AgentLoop:
                 if repair_feedback is not None:
                     planner_input["repair_feedback"] = repair_feedback
                 planned = validate_plan(_json_object(self._chat([
-                    {"role": "system", "content": PLANNER_SYSTEM},
+                    {"role": "system", "content": planner_system},
                     {"role": "user", "content": json.dumps(planner_input, ensure_ascii=False)},
-                ], recorder=recorder)))
+                ], recorder=recorder, response_format=PLANNER_JSON_SCHEMA)))
                 recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), plan_ref=recorder.plan_ref(planned), input_payload=query, output_payload=planned)
                 break
             except PlanValidationError as error:
                 repair_feedback = _repair_feedback(error)
-                recorder.emit("planner_failed", "planner", "rejected", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error.code, input_payload=query, output_payload={"error_ref": error.code, "message": str(error)})
+                recorder.emit("planner_failed", "planner", "rejected", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error.code, error_details={**error.details, "message": str(error)}, input_payload=query, output_payload={"error_ref": error.code, "message": str(error)})
                 if error.code == "AMBIGUOUS_ALIAS":
-                    recorder.emit("run_completed", "run", "rejected", error_ref=error.code)
-                    return {"status": "error", "error": {"code": error.code, "recovery_class": "ASK_USER", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": llm_attempt, "message": str(error), "details": error.details, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
+                    recorder.emit("run_completed", "run", "rejected", error_ref=error.code, error_details={**error.details, "message": str(error)})
+                    return {"status": "error", "error": {"code": error.code, "error_ref": parent_error_ref(error.code), "recovery_class": "ASK_USER", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": llm_attempt, "message": str(error), "details": error.details, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
                 if llm_attempt < MAX_PLANNER_ATTEMPTS:
                     continue
-                recorder.emit("run_completed", "run", "rejected", error_ref="REPAIR_INPUT")
-                return {"status": "error", "error": {"code": "REPAIR_INPUT", "recovery_class": "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": repair_feedback, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
+                recorder.emit("run_completed", "run", "rejected", error_ref="REPAIR_INPUT", error_details={**(repair_feedback if isinstance(repair_feedback, dict) else {}), "message": "planner failed after bounded repair attempts"})
+                return {"status": "error", "error": {"code": "REPAIR_INPUT", "recovery_class": "ASK_USER", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": {**(repair_feedback if isinstance(repair_feedback, dict) else {}), "confirmation_type": "repair", "exhausted": True}, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "answer": EXHAUSTED_ANSWER, "trace": recorder.events}
             except Exception as error:
                 last_error = error
                 repair_feedback = _repair_feedback(error)
                 error_code = getattr(error, "error", {}).get("code", type(error).__name__)
-                recorder.emit("planner_failed", "planner", "failed", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error_code, input_payload=query, output_payload={"error_ref": error_code, "message": str(error)})
+                recorder.emit("planner_failed", "planner", "failed", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error_code, error_details={"message": str(error)}, input_payload=query, output_payload={"error_ref": error_code, "message": str(error)})
                 if llm_attempt == MAX_PLANNER_ATTEMPTS:
-                    detail = {"code": "REPAIR_INPUT", "recovery_class": "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": repair_feedback, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}
+                    detail = {"code": "REPAIR_INPUT", "recovery_class": "ASK_USER", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": {**(repair_feedback if isinstance(repair_feedback, dict) else {}), "confirmation_type": "repair", "exhausted": True}, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}
                     detail = dict(detail)
-                    recorder.emit("run_completed", "run", "rejected", error_ref=detail.get("code"))
-                    return {"status": "plan_error", "error": detail, "trace": recorder.events}
+                    recorder.emit("run_completed", "run", "rejected", error_ref=detail.get("code"), error_details=detail.get("details", {}))
+                    return {"status": "plan_error", "error": detail, "answer": EXHAUSTED_ANSWER, "trace": recorder.events}
         if last_error is not None and "planned" not in locals():
-            recorder.emit("run_completed", "run", "rejected", error_ref="REPAIR_INPUT")
-            return {"status": "plan_error", "error": {"code": "REPAIR_INPUT", "recovery_class": "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": MAX_PLANNER_ATTEMPTS, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": repair_feedback or {}, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
+            recorder.emit("run_completed", "run", "rejected", error_ref="REPAIR_INPUT", error_details={**(repair_feedback if isinstance(repair_feedback, dict) else {}), "message": "planner failed after bounded repair attempts"})
+            return {"status": "plan_error", "error": {"code": "REPAIR_INPUT", "recovery_class": "ASK_USER", "stage": "plan_validation", "retryable": False, "attempt": MAX_PLANNER_ATTEMPTS, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": {**(repair_feedback if isinstance(repair_feedback, dict) else {}), "confirmation_type": "repair", "exhausted": True}, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "answer": EXHAUSTED_ANSWER, "trace": recorder.events}
         execution = execute_plan(question_text, planned, search=search, handlers=handlers,
                                  snapshot_revision_value=(sync or {}).get("snapshotRevision"),
                                  current_revision=current_revision)
@@ -415,7 +468,11 @@ class AgentLoop:
                     recorder.emit("tool_completed", "tool", "ok", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, result_ref=recorder.result_refs(step.get("result")))
                 else:
                     status = "timeout" if step.get("status") == "timeout" or (step.get("error") or {}).get("code") == "TIMEOUT" else step.get("status", "failed")
-                    recorder.emit("tool_failed", "tool", status, attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref=(step.get("error") or {}).get("code"))
+                    recorder.emit("tool_failed", "tool", status, attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref=(step.get("error") or {}).get("code"), error_details=(step.get("error") or {}).get("details", {}))
+        exhausted = next((step.get("error") for step in execution.get("steps", []) if is_exhausted(step.get("error"))), None)
+        if exhausted:
+            recorder.emit("run_completed", "run", "partial", error_ref=exhausted.get("code"), error_details=exhausted.get("details", {}))
+            return {"status": "partial", "plan": planned, "execution": execution, "error": exhausted, "answer": EXHAUSTED_ANSWER, "trace": recorder.events}
         evidence_failure = next((
             {"code": "EVIDENCE_INCOMPLETE", "next_action": "reject_request", "message": "required authoritative evidence is missing"}
             for step in execution.get("steps", [])
@@ -435,7 +492,7 @@ class AgentLoop:
             answer = f"PoB에서 값을 가져오지 못했습니다 ({code}). 다음 조치: {next_action}. 근거가 부족하므로 추측하지 않습니다."
             uncertainty = {"code": code, "reason": "authoritative PoB result unavailable", "next_action": next_action}
             recorder.emit("final_completed", "final", "partial", result_ref=recorder.result_refs({"uncertainty": uncertainty}))
-            recorder.emit("run_completed", "run", "partial", error_ref=code)
+            recorder.emit("run_completed", "run", "partial", error_ref=code, error_details=authoritative_failure.get("details", {}))
             return {"status": "partial", "plan": planned, "execution": execution, "answer": answer, "uncertainty": uncertainty, "trace": recorder.events}
         recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned))
         answer_payload = {"question": question_text, "results": _model_safe_execution(execution)}
@@ -450,10 +507,10 @@ class AgentLoop:
             partial = getattr(error, "_partial_text", "")
             if partial:
                 recorder.emit("final_completed", "final", "partial", result_ref=recorder.result_refs({"partial": True}))
-                recorder.emit("run_completed", "run", "partial", error_ref=detail.get("code"))
+                recorder.emit("run_completed", "run", "partial", error_ref=detail.get("code"), error_details=detail.get("details", {}))
                 return {"status": "partial", "plan": planned, "execution": execution, "answer": partial, "error": detail, "trace": recorder.events}
             recorder.emit("final_failed", "final", "failed", error_ref=detail.get("code"))
-            recorder.emit("run_completed", "run", "failed", error_ref=detail.get("code"))
+            recorder.emit("run_completed", "run", "failed", error_ref=detail.get("code"), error_details=detail.get("details", {}))
             return {"status": "error", "plan": planned, "execution": execution, "error": detail, "trace": recorder.events}
         outcome = "ok" if all(step.get("status") == "ok" for step in execution.get("steps", [])) else "partial"
         recorder.emit("final_completed", "final", outcome, result_ref=recorder.result_refs(execution))

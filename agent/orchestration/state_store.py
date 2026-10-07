@@ -20,8 +20,11 @@ ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 class StateStoreError(RuntimeError):
     def __init__(self, message, code="STATE_ERROR", *, details=None, next_action="report_error"):
-        self.error = {"code": code, "recovery_class": "REJECT", "stage": "state_store", "retryable": False,
-                      "attempt": 1, "max_attempts": 1, "message": message, "details": details or {},
+        recovery = "ASK_USER" if code == "INPUT_INVALID" else "REJECT"
+        next_action = "ask_user" if code == "INPUT_INVALID" else next_action
+        details = {**(details or {}), **({"confirmation_type": "repair"} if code == "INPUT_INVALID" else {})}
+        self.error = {"code": code, "recovery_class": recovery, "stage": "state_store", "retryable": False,
+                      "attempt": 1, "max_attempts": 1, "message": message, "details": details,
                       "next_action": next_action, "secondary_causes": [], "side_effect": "none",
                       "operator_message": None}
         super().__init__(message)

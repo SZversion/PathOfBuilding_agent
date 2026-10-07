@@ -5,10 +5,15 @@ local tools = (LoadModule and LoadModule("Modules/AgentTool")) or dofile("src/Mo
 local snapshot = (LoadModule and LoadModule("Modules/AgentSnapshot")) or dofile("src/Modules/AgentSnapshot.lua")
 local context = (LoadModule and LoadModule("Modules/AgentContext")) or dofile("src/Modules/AgentContext.lua")
 
-local function currentBuild()
-	if type(build) ~= "table" then return nil, "current PoB build is unavailable" end
-	if not build.calcsTab or not build.calcsTab.mainEnv then return nil, "current PoB calculation state is unavailable" end
-	return build
+local function currentBuild(main)
+	main = main or _G.main
+	local current = type(build) == "table" and build or nil
+	if not current and type(main) == "table" and type(main.modes) == "table" then
+		current = main.modes["BUILD"]
+	end
+	if type(current) ~= "table" then return nil, "current PoB build is unavailable" end
+	if not current.calcsTab or not current.calcsTab.mainEnv then return nil, "current PoB calculation state is unavailable" end
+	return current
 end
 
 local function currentSkillIndex(current, name)
@@ -28,10 +33,13 @@ local function currentSkillIndex(current, name)
 	return found, found and nil or "skill was not found in current PoB state"
 end
 
-local function dispatch(name, args)
-	local current, err = currentBuild()
-	if not current then return nil, err end
+local function dispatch(name, args, main)
 	args = args or { }
+	if name == "compare_build_states" then
+		return tools.compare_build_states(args.beforeState, args.afterState, args.skillIndex, args.comparisonFields)
+	end
+	local current, err = currentBuild(main)
+	if not current then return nil, err end
 	if args.skillName and not args.skillIndex then
 		args.skillIndex, err = currentSkillIndex(current, args.skillName)
 		if not args.skillIndex then return nil, err end

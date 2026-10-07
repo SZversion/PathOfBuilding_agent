@@ -4,9 +4,12 @@ import json
 import uuid
 from datetime import datetime, timezone
 
+from agent.error_registry import parent_error_ref
 
-SAFE_CONTEXT = ("reason", "missing_fields", "invalid_fields", "candidates", "current_context", "expected_format", "next_action")
+
+SAFE_CONTEXT = ("reason", "missing_fields", "invalid_fields", "candidates", "current_context", "expected_format", "next_action", "confirmation_type")
 DETAIL_FIELDS = (*SAFE_CONTEXT, "examples")
+EXHAUSTED_ANSWER = "재시도 횟수를 초과했습니다. 요청을 다시 시도해 주세요."
 SENSITIVE = {"api_key", "apikey", "authorization", "token", "secret", "rawxml", "xml", "prompt", "notes", "itemtext", "freetext", "password"}
 
 
@@ -59,7 +62,39 @@ def normalized_details(error):
             result[key] = _safe_value(raw[key])
     if "next_action" not in result and isinstance(error, dict) and isinstance(error.get("next_action"), str):
         result["next_action"] = error["next_action"][:128]
+    recovery_class = error.get("recovery_class") if isinstance(error, dict) else None
+    if recovery_class in {"ASK_USER", "REPAIR_INPUT"}:
+        result["confirmation_type"] = result.get("confirmation_type") or ("ask" if recovery_class == "ASK_USER" else "repair")
     return result
+
+
+def standardize_error(result):
+    """Add presentation metadata without removing legacy envelope fields."""
+    if not isinstance(result, dict) or not isinstance(result.get("error"), dict):
+        return result
+    error = result["error"]
+    details = error.get("details") if isinstance(error.get("details"), dict) else {}
+    recovery_class = error.get("recovery_class")
+    if recovery_class not in {"ASK_USER", "REPAIR_INPUT"}:
+        return result
+    confirmation_type = details.get("confirmation_type") or ("ask" if recovery_class == "ASK_USER" else "repair")
+    details = {**details, "confirmation_type": confirmation_type}
+    return {**result, "error": {**error, "recovery_class": "ASK_USER", "next_action": "ask_user", "details": details}}
+
+
+def is_exhausted(error):
+    if not isinstance(error, dict):
+        return False
+    if error.get("exhausted") is True or error.get("code") == "RETRY_EXHAUSTED" or isinstance(error.get("details"), dict) and error["details"].get("exhausted") is True:
+        return True
+    attempt, maximum = error.get("attempt"), error.get("max_attempts")
+    return error.get("retryable") is True and isinstance(attempt, int) and isinstance(maximum, int) and maximum > 0 and attempt >= maximum
+
+
+def exhausted_response(result):
+    if not isinstance(result, dict) or not isinstance(result.get("error"), dict) or result.get("answer") or not is_exhausted(result["error"]):
+        return result
+    return {**result, "answer": EXHAUSTED_ANSWER}
 
 
 def safe_context(error):
@@ -76,11 +111,11 @@ def _template(error):
     examples = context.get("examples") or []
     field_hint = (f"필수 정보: {', '.join(map(str, missing))}. " if missing else "") + (f"잘못된 입력: {', '.join(map(str, invalid))}. " if invalid else "")
     example_hint = f"예: {', '.join(map(str, examples))}." if examples else ""
-    if error.get("recovery_class") == "ASK_USER":
+    if context.get("confirmation_type") == "ask":
         candidates = context.get("candidates") or []
         candidate_hint = f" 후보: {', '.join(candidates)}." if candidates else ""
         return f"추가 정보가 필요합니다. {field_hint}{context.get('reason', '질문의 대상을 더 구체적으로 알려주세요.')}{candidate_hint}"
-    if error.get("recovery_class") == "REPAIR_INPUT":
+    if context.get("confirmation_type") == "repair":
         return f"입력 형식을 수정해 주세요({code}). {field_hint}{context.get('expected_format', '필요한 인자와 형식을 확인해 주세요.')} {example_hint}".strip()
     if error.get("recovery_class") == "REFRESH_CONTEXT":
         return f"최신 PoB 상태를 다시 읽어야 합니다({code}). 다음 조치: {action}."
@@ -94,8 +129,11 @@ def recover_response(result, model=None, *, on_token=None):
     if not isinstance(result, dict) or not isinstance(result.get("error"), dict) or result.get("answer"):
         return result
     error = result["error"]
+    presentation_class = normalized_details(error).get("confirmation_type", "error")
     # ASK_USER must remain one deterministic sentence; it must not be guessed by an LLM.
-    if error.get("recovery_class") == "ASK_USER" or model is None:
+    normalized = standardize_error({"error": error})["error"]
+    error = normalized
+    if model is None:
         answer = _template(error)
         if on_token:
             on_token(answer)
@@ -107,17 +145,22 @@ def recover_response(result, model=None, *, on_token=None):
                 chunks = []
                 for chunk in model.stream_chat(messages):
                     chunks.append(chunk)
-                    on_token(chunk)
                 answer = "".join(chunks)
             else:
                 answer = model.chat(messages)
-            if not isinstance(answer, str) or not answer.strip():
+            if not isinstance(answer, str) or not answer.strip() or answer.lstrip().startswith("{"):
                 answer = _template(error)
+            if on_token:
+                if "chunks" in locals() and answer == "".join(chunks):
+                    for chunk in chunks:
+                        on_token(chunk)
+                else:
+                    on_token(answer)
         except Exception:
             answer = _template(error)
     updated_error = {**error, "details": normalized_details(error)}
     updated = {**result, "error": updated_error, "answer": answer}
     if isinstance(result.get("trace"), list):
         previous = result["trace"][-1] if result["trace"] and isinstance(result["trace"][-1], dict) else {}
-        updated["trace"] = [*result["trace"], {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": previous.get("run_id"), "request_id": previous.get("request_id"), "event": "recovery_response", "stage": "recovery_response", "timestamp_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "duration_ms": None, "status": "completed", "attempt": 1, "max_attempts": 1, "provider": previous.get("provider", {"mode": None, "model": None, "endpoint_ref": None}), "snapshot": previous.get("snapshot", {"revision": None, "build_id": None}), "tool": None, "step_index": None, "tool_call_count": None, "retry_of": None, "plan_ref": None, "query_ref": None, "safe_args_ref": None, "error_ref": error.get("code"), "result_ref": {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": None}]
+        updated["trace"] = [*result["trace"], {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": previous.get("run_id"), "request_id": previous.get("request_id"), "event": "recovery_response", "stage": "recovery_response", "timestamp_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "duration_ms": None, "status": "completed", "attempt": 1, "max_attempts": 1, "provider": previous.get("provider", {"mode": None, "model": None, "endpoint_ref": None}), "snapshot": previous.get("snapshot", {"revision": None, "build_id": None}), "tool": None, "step_index": None, "tool_call_count": None, "retry_of": None, "plan_ref": None, "query_ref": None, "safe_args_ref": None, "error_ref": parent_error_ref(error.get("code")), "error_code": error.get("code"), "error_details": {key: value for key, value in normalized_details(error).items() if key in {"missing_fields", "invalid_fields", "message", "expected_format", "next_action", "candidates", "reason"}}, "presentation_class": presentation_class, "result_ref": {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": None}]
     return updated

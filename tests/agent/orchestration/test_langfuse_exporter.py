@@ -60,6 +60,15 @@ def test_env_always_provides_queue_exporter():
     assert "incomplete" in LangfuseExporter.from_env(env(LANGFUSE_SECRET_KEY=""), sdk_module=sdk_for(FakeClient())).reason
 
 
+def test_docker_service_host_requires_explicit_allowlist():
+    values = env(LANGFUSE_BASE_URL="http://langfuse-web:3000")
+    denied = LangfuseExporter.from_env(values, sdk_module=sdk_for(FakeClient()))
+    allowed = LangfuseExporter.from_env({**values, "POB_AGENT_LANGFUSE_ALLOWED_HOSTS": "langfuse-web"},
+                                        sdk_module=sdk_for(FakeClient()))
+    assert "host must be local" in denied.reason
+    assert allowed.reason == "enabled"
+
+
 def test_no_remote_configuration_still_persists_redacted_trace(tmp_path):
     exporter = LangfuseExporter.from_env({"LANGFUSE_PUBLIC_KEY": "", "LANGFUSE_SECRET_KEY": "", "LANGFUSE_BASE_URL": "", "POB_AGENT_LANGFUSE_QUEUE_PATH": str(tmp_path / "queue.ndjson")})
     assert exporter.enabled is True
@@ -90,6 +99,13 @@ def test_missing_sdk_and_flush_close_failures_are_queued(tmp_path):
     assert "ref-facts" in (tmp_path / "queue.ndjson").read_text(encoding="utf-8")
     close = LangfuseExporter(FakeClient(fail_close=True), enabled=True, reason="enabled", queue_path=tmp_path / "close.ndjson")
     assert close.export(events()).status == "queued"
+
+
+def test_langfuse_safe_event_preserves_presentation_class():
+    event = events()[0]
+    event["presentation_class"] = "ask"
+    safe = LangfuseExporter._safe_event(event)
+    assert safe["presentation_class"] == "ask"
 
 
 def test_localhost_is_required_and_queue_deduplicates_and_caps(tmp_path):

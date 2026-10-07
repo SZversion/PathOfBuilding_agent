@@ -91,7 +91,7 @@ English and Korean inputs must resolve to the same canonical PoB identity when t
 
 ## 6. Exception and recovery tests
 
-Use only leaf codes in agent/EXCEPTION_HANDLING.md. For each failure case, assert the exact registered error.code, its single primary error.recovery_class, that secondary_causes do not override the primary class, that retryable behavior follows the registry, and that an unknown code normalizes to UNCLASSIFIED_FAILURE and FATAL_INTERNAL.
+Use only registered parent/leaf pairs in agent/EXCEPTION_HANDLING.md. For each failure case, assert the exact `error_ref`, `error_code`, and single primary `error.recovery_class`; assert `details.missing_fields` and safe `details.message` for context errors, that Trace/Langfuse record both parent and leaf, and that unknown codes normalize to `UNCLASSIFIED_FAILURE`/`FATAL_INTERNAL`. Legacy `error.code` may be asserted only as a mirror.
 
 Test at least missing JSON, invalid input, Tool not found, timeout, stale revision, grounding missing/conflict, version mismatch/warning, search policy denial, PoB calculation error, and mutation failure using existing registry entries.
 

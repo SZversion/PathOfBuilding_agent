@@ -47,7 +47,7 @@ local function resolve_skill_alias(value)
 	for _, entry in ipairs(aliasEntries) do
 		if normalize_name(entry.korean) == normalized or normalize_name(entry.english) == normalized then matches[#matches + 1] = entry.english end
 	end
-	if #matches > 1 then return nil, { code = "AMBIGUOUS_ALIAS", recovery_class = "ASK_USER", stage = "context_resolution", retryable = false, next_action = "ask_user", message = "skill alias is ambiguous" } end
+	if #matches > 1 then return nil, { code = "AMBIGUOUS_ALIAS", error_ref = "AMBIGUOUS_CONTEXT", recovery_class = "ASK_USER", stage = "context_resolution", retryable = false, next_action = "ask_user", message = "skill alias is ambiguous" } end
 	return matches[1] or value
 end
 

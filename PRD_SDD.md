@@ -233,3 +233,8 @@ endpoint는 로컬 주소만 허용하고 전송 실패 시 요청을 실패시�
 없어도 local queue를 사용한다. 실패한
 redacted trace는 `data/traces/langfuse-queue.ndjson`에 제한된 크기로 임시 보관하며
 동일 run은 중복 저장하지 않는다.
+## 18. Hierarchical error contract
+
+Planner, local Bridge, StateStore, recovery_response, Trace, and Langfuse must emit and consume the same error fields. `error_ref` is the parent classification: `MISSING_CONTEXT`, `AMBIGUOUS_CONTEXT`, `CONFLICTING_CONTEXT`, or `UNSUPPORTED_REQUEST`. `error_code` is the registered leaf diagnosis, and `recovery_class` remains `ASK_USER` for these context errors. `details` must contain `missing_fields` when applicable and a user-safe `message`.
+
+The canonical fields are `error_ref` and `error_code`; legacy `error.code` is accepted and mirrored for compatibility, but is normalized to `error_code` and cannot disagree silently. Success `status` is separate from exception fields. No new error code may be invented outside `agent/EXCEPTION_HANDLING.md`; unknown codes fall back to `UNCLASSIFIED_FAILURE` and `FATAL_INTERNAL`.
