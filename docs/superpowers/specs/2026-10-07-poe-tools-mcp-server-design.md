@@ -22,8 +22,8 @@ The MCP registry must match `ALLOWED_TOOLS` exactly; tests fail on missing, extr
 
 - The MCP server owns local search and alias handlers, external search, snapshot comparison, and handler routing. It reuses the existing `KnowledgeSearch`, `ExternalSearch`, and Python bridge implementations rather than duplicating their algorithms.
 - PoB read-only calls are sent through the existing authenticated `LivePobTransport` to the running PoB process. The Lua `AgentControl` loop dispatches the 24 allowlisted read-only tools through `AgentInProcess` and `AgentBridge`; all execution touching PoB memory stays on PoB's UI thread.
-- Before an LLM turn, the backend captures the current live snapshot through the same transport and sends only the normalized snapshot to the model. Each PoB tool call observes/captures the active context and returns its revision and evidence envelope.
-- `compare_build_states` operates on the supplied local snapshots through its existing Python behavior and does not reload or mutate PoB state.
+- The MCP server exposes the fresh normalized PoB context as resource `pob://current-snapshot`. Before an LLM turn, the backend reads this resource and sends only the normalized snapshot to the model. Each PoB tool call observes/captures the active context and returns its revision and evidence envelope.
+- `compare_build_states` delegates to the existing comparison implementation using the supplied snapshots; it does not load a build file or mutate PoB state.
 - `search_external` remains code-only HTTPS/API access with its current source allowlist and content limits; no browser automation is introduced.
 - Mutation tools remain registered and visible, but the MCP adapter never routes them through the one-shot headless XML adapter. Until the live in-process dispatcher advertises mutation capability, calls return the existing structured `MUTATION_NOT_PERSISTENT` rejection with no side effect. No save or Save As is performed.
 
@@ -37,12 +37,13 @@ The MCP registry must match `ALLOWED_TOOLS` exactly; tests fail on missing, extr
 ## Acceptance criteria
 
 1. A backend can launch the local MCP server over stdio, list all 32 tools, and invoke each supported handler through MCP.
-2. The MCP tool list and AgentLoop allowlist have exact set equality; every registered tool has a schema and description.
-3. The 24 PoB read-only tools can be dispatched through the authenticated local socket without opening/reloading a build file; UI state remains authoritative.
-4. Knowledge search, alias resolution, external search, and snapshot comparison use the existing code paths and preserve their established result contracts.
-5. Mutation tool calls are discoverable but rejected with `MUTATION_NOT_PERSISTENT` until live mutation is supported; they do not modify or save a build.
-6. Stdio framing remains valid, diagnostics never pollute stdout, and process/PoB unavailability produces structured errors.
-7. Existing test suite, catalog lint, Lua checks, and MCP end-to-end smoke tests pass.
+2. The backend can read `pob://current-snapshot` and receives the current normalized live context and revision without reading build files itself.
+3. The MCP tool list and AgentLoop allowlist have exact set equality; every registered tool has a schema and description.
+4. The 24 PoB read-only tools can be dispatched through the authenticated local socket without opening/reloading a build file; UI state remains authoritative.
+5. Knowledge search, alias resolution, external search, and snapshot comparison use the existing code paths and preserve their established result contracts.
+6. Mutation tool calls are discoverable but rejected with `MUTATION_NOT_PERSISTENT` until live mutation is supported; they do not modify or save a build.
+7. Stdio framing remains valid, diagnostics never pollute stdout, and process/PoB unavailability produces structured errors.
+8. Existing test suite, catalog lint, Lua checks, and MCP end-to-end smoke tests pass.
 
 ## Explicit assumptions
 
