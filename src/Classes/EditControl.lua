@@ -267,7 +267,8 @@ function EditClass:Draw(viewPort, noTooltip)
 	end
 	DrawImage(nil, x + 1, y + 1, width - 2, height - 2)
 	local textX = x + 2
-	local textY = y + 2 + (self.textYOffset or 0)
+	local textYOffset = self.textYOffset or 0
+	local textY = y + 2
 	local textHeight = self.lineHeight or (height - 4)
 	if self.prompt then
 		if not enabled then
@@ -290,19 +291,20 @@ function EditClass:Draw(viewPort, noTooltip)
 	local marginR = self.controls.scrollBarV:IsShown() and 14 or 0
 	local marginB = self.controls.scrollBarH:IsShown() and 14 or 0
 	SetViewport(textX, textY, width - 4 - marginL - marginR, height - 4 - marginB)
+	local drawTextY = textYOffset - self.controls.scrollBarV.offset
 	if not self.hasFocus then
 		if self.buf == '' and self.placeholder then
 			SetDrawColor(self.disableCol)
-			DrawString(-self.controls.scrollBarH.offset, -self.controls.scrollBarV.offset, "LEFT", textHeight, self.font, self.placeholder)
+			DrawString(-self.controls.scrollBarH.offset, drawTextY, "LEFT", textHeight, self.font, self.placeholder)
 		else
 			SetDrawColor(self.inactiveCol)
 			if self.inactiveText then
 				local inactiveText = type(inactiveText) == "string" and self.inactiveText or self.inactiveText(self.buf)
-				DrawString(-self.controls.scrollBarH.offset, -self.controls.scrollBarV.offset, "LEFT", textHeight, self.font, inactiveText)
+				DrawString(-self.controls.scrollBarH.offset, drawTextY, "LEFT", textHeight, self.font, inactiveText)
 			elseif self.protected then
-				DrawString(-self.controls.scrollBarH.offset, -self.controls.scrollBarV.offset, "LEFT", textHeight, self.font, string.rep(protected_replace, #self.buf))
+				DrawString(-self.controls.scrollBarH.offset, drawTextY, "LEFT", textHeight, self.font, string.rep(protected_replace, #self.buf))
 			else
-				DrawString(-self.controls.scrollBarH.offset, -self.controls.scrollBarV.offset, "LEFT", textHeight, self.font, self.buf)
+				DrawString(-self.controls.scrollBarH.offset, drawTextY, "LEFT", textHeight, self.font, self.buf)
 			end
 		end
 		SetViewport()
@@ -314,7 +316,7 @@ function EditClass:Draw(viewPort, noTooltip)
 	end
 	if self.drag then
 		local cursorX, cursorY = GetCursorPos()
-		self.caret = DrawStringCursorIndex(textHeight, self.font, self.buf, cursorX - textX + self.controls.scrollBarH.offset, cursorY - textY + self.controls.scrollBarV.offset)
+		self.caret = DrawStringCursorIndex(textHeight, self.font, self.buf, cursorX - textX + self.controls.scrollBarH.offset, cursorY - textY - textYOffset + self.controls.scrollBarV.offset)
 		self.lastUndoState.caret = self.caret
 		self:ScrollCaretIntoView()
 	end
