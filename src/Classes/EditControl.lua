@@ -267,7 +267,7 @@ function EditClass:Draw(viewPort, noTooltip)
 	end
 	DrawImage(nil, x + 1, y + 1, width - 2, height - 2)
 	local textX = x + 2
-	local textY = y + 2
+	local textY = y + 2 + (self.textYOffset or 0)
 	local textHeight = self.lineHeight or (height - 4)
 	if self.prompt then
 		if not enabled then
@@ -319,7 +319,7 @@ function EditClass:Draw(viewPort, noTooltip)
 		self:ScrollCaretIntoView()
 	end
 	textX = -self.controls.scrollBarH.offset
-	textY = -self.controls.scrollBarV.offset
+	textY = -self.controls.scrollBarV.offset + (self.textYOffset or 0)
 	if self.lineHeight then
 		local left = m_min(self.caret, self.sel or self.caret)
 		local right = m_max(self.caret, self.sel or self.caret)
@@ -490,7 +490,7 @@ function EditClass:OnKeyDown(key, doubleClick)
 			local x, y = self:GetPos()
 			local width, height = self:GetSize()
 			local textX = x + 2
-			local textY = y + 2
+			local textY = y + 2 + (self.textYOffset or 0)
 			local textHeight = self.lineHeight or (height - 4)
 			if self.prompt then
 				textX = textX + DrawStringWidth(textHeight, self.font, self.prompt) + textHeight/2

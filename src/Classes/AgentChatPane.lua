@@ -14,6 +14,7 @@ local MIN_WIDTH = 200
 local MIN_HEIGHT = 150
 local HEADER_HEIGHT = 24
 local INPUT_HEIGHT = 28
+local INPUT_FONT_SIZE = 14
 local MESSAGE_FONT_SIZE = 14
 local MESSAGE_LINE_HEIGHT = 16
 
@@ -54,8 +55,9 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.close = new("ButtonControl", {"TOPRIGHT", self, "TOPRIGHT"}, {-4, 3, 16, 16}, "x", function()
 		self:ToggleOverlay(false)
 	end)
-	self.controls.input = new("EditControl", {"BOTTOMLEFT", self, "BOTTOMLEFT"}, {8, -8, 0, INPUT_HEIGHT}, "", nil, "^%C\t\n", 1000, nil, 20, true)
+	self.controls.input = new("EditControl", {"BOTTOMLEFT", self, "BOTTOMLEFT"}, {8, -8, 0, INPUT_HEIGHT}, "", nil, "^%C\t\n", 1000, nil, INPUT_FONT_SIZE, true)
 	self.controls.input.placeholder = "Type a message..."
+	self.controls.input.textYOffset = math.floor((INPUT_HEIGHT - 4 - INPUT_FONT_SIZE) / 2)
 	self.controls.input.width = function()
 		local width = self:GetSize()
 		local sendWidth = self.controls.send and self.controls.send:GetSize() or 48
@@ -64,7 +66,7 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.send = new("ButtonControl", {"BOTTOMRIGHT", self, "BOTTOMRIGHT"}, {-8, -8, 48, INPUT_HEIGHT}, "Send", function()
 		self:SendMessage()
 	end)
-	self.controls.send.overSizeText = -2
+	self.controls.send.overSizeText = (INPUT_FONT_SIZE - (INPUT_HEIGHT - 4)) / 2
 	self.controls.send.width = function()
 		local width = self:GetSize()
 		return m_max(32, m_min(48, width - 70))
