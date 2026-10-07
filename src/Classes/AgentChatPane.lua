@@ -13,7 +13,7 @@ local DEFAULT_HEIGHT = 240
 local MIN_WIDTH = 200
 local MIN_HEIGHT = 150
 local HEADER_HEIGHT = 24
-local INPUT_HEIGHT = 34
+local INPUT_HEIGHT = 28
 local MESSAGE_FONT_SIZE = 14
 local MESSAGE_LINE_HEIGHT = 16
 
@@ -58,18 +58,18 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.input.placeholder = "Type a message..."
 	self.controls.input.width = function()
 		local width = self:GetSize()
-		local sendWidth = self.controls.send and self.controls.send:GetSize() or 54
-		return m_max(24, width - sendWidth - 34)
+		local sendWidth = self.controls.send and self.controls.send:GetSize() or 48
+		return m_max(24, width - sendWidth - 24)
 	end
-	self.controls.send = new("ButtonControl", {"BOTTOMRIGHT", self, "BOTTOMRIGHT"}, {-8, -8, 54, INPUT_HEIGHT}, "Send", function()
+	self.controls.send = new("ButtonControl", {"BOTTOMRIGHT", self, "BOTTOMRIGHT"}, {-8, -8, 48, INPUT_HEIGHT}, "Send", function()
 		self:SendMessage()
 	end)
-	self.controls.send.overSizeText = -5
+	self.controls.send.overSizeText = -2
 	self.controls.send.width = function()
 		local width = self:GetSize()
-		return m_max(32, m_min(54, width - 70))
+		return m_max(32, m_min(48, width - 70))
 	end
-	self.controls.send.x = -18
+	self.controls.send.x = -8
 	self.controls.historyScroll = new("ScrollBarControl", {"TOPRIGHT", self, "TOPRIGHT"}, {-3, HEADER_HEIGHT + 6, 14, 0}, MESSAGE_LINE_HEIGHT * 3, "VERTICAL", true)
 	self.controls.historyScroll.height = function()
 		local _, height = self:GetSize()
