@@ -967,6 +967,9 @@ function buildMode:GetArgs()
 end
 
 function buildMode:CloseBuild()
+	if self.agentChatPane then
+		self.agentChatPane:SetResizeCursorHidden(false)
+	end
 	main:SetWindowTitleSubtext()
 	main:SetMode("LIST", self.dbFileName and self.buildName, self.dbFileSubPath)
 end

@@ -8,8 +8,8 @@ local t_remove = table.remove
 local m_max = math.max
 local m_min = math.min
 
-local DEFAULT_WIDTH = 240
-local DEFAULT_HEIGHT = 180
+local DEFAULT_WIDTH = 320
+local DEFAULT_HEIGHT = 240
 local MIN_WIDTH = 200
 local MIN_HEIGHT = 150
 local HEADER_HEIGHT = 24
@@ -49,6 +49,7 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	}
 	self.scrollToBottom = true
 	self.resizing = false
+	self.resizeCursorHidden = false
 
 	self.controls.close = new("ButtonControl", {"TOPRIGHT", self, "TOPRIGHT"}, {-4, 3, 16, 16}, "x", function()
 		self:ToggleOverlay(false)
@@ -63,6 +64,7 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.send = new("ButtonControl", {"BOTTOMRIGHT", self, "BOTTOMRIGHT"}, {-8, -8, 54, INPUT_HEIGHT}, "Send", function()
 		self:SendMessage()
 	end)
+	self.controls.send.overSizeText = -5
 	self.controls.send.width = function()
 		local width = self:GetSize()
 		return m_max(32, m_min(54, width - 70))
@@ -84,6 +86,7 @@ function AgentChatPaneClass:ToggleOverlay(open)
 	end
 	self.isOverlay = open
 	self.resizing = false
+	self:SetResizeCursorHidden(false)
 	if open then
 		self:RaiseOverlay()
 		self:SelectControl(self.controls.input)
@@ -91,6 +94,14 @@ function AgentChatPaneClass:ToggleOverlay(open)
 	else
 		self:SelectControl()
 	end
+end
+
+function AgentChatPaneClass:SetResizeCursorHidden(hidden)
+	if self.resizeCursorHidden == hidden then
+		return
+	end
+	ShowCursor(not hidden)
+	self.resizeCursorHidden = hidden
 end
 
 function AgentChatPaneClass:RaiseOverlay()
@@ -143,6 +154,16 @@ function AgentChatPaneClass:IsMouseInConversation(cursorX, cursorY)
 		and cursorY >= conversationTop and cursorY < conversationBottom
 end
 
+function AgentChatPaneClass:IsMouseOverResizeGrip(cursorX, cursorY)
+	if not self.isOverlay then
+		return false
+	end
+	local x, y = self.overlayX, self.overlayY
+	local width, height = self:GetSize()
+	return cursorX >= x + width - 14 and cursorY >= y + height - 14
+		and cursorX < x + width and cursorY < y + height
+end
+
 function AgentChatPaneClass:HandleOverlayClick(key, cursorX, cursorY)
 	if key ~= "LEFTBUTTON" or not self.isOverlay then
 		return false
@@ -150,7 +171,7 @@ function AgentChatPaneClass:HandleOverlayClick(key, cursorX, cursorY)
 	self:RaiseOverlay()
 	local x, y = self.overlayX, self.overlayY
 	local width, height = self:GetSize()
-	if cursorX >= x + width - 14 and cursorY >= y + height - 14 then
+	if self:IsMouseOverResizeGrip(cursorX, cursorY) then
 		self.resizing = true
 		self.resizeStartX = cursorX
 		self.resizeStartY = cursorY
@@ -251,9 +272,12 @@ end
 
 function AgentChatPaneClass:DrawOverlay(viewPort)
 	if not self.isOverlay then
+		self:SetResizeCursorHidden(false)
 		return
 	end
 	local cursorX, cursorY = GetCursorPos()
+	local resizeCursor = self.resizing or self:IsMouseOverResizeGrip(cursorX, cursorY)
+	self:SetResizeCursorHidden(resizeCursor)
 	local minWidth = m_min(MIN_WIDTH, viewPort.width)
 	local minHeight = m_min(MIN_HEIGHT, viewPort.height)
 	local maxWidth = m_max(minWidth, viewPort.width)
@@ -311,6 +335,28 @@ function AgentChatPaneClass:DrawOverlay(viewPort)
 	for index = 0, 2 do
 		DrawImage(nil, x + width - 5 - index * 3, y + height - 2, 2, 1)
 		DrawImage(nil, x + width - 2, y + height - 5 - index * 3, 1, 2)
+	end
+	if resizeCursor then
+		local function drawCursorLine(x1, y1, x2, y2, lineWidth)
+			local dx, dy = x2 - x1, y2 - y1
+			local length = math.sqrt(dx * dx + dy * dy)
+			local ox, oy = -dy / length * lineWidth / 2, dx / length * lineWidth / 2
+			DrawImageQuad(nil, x1 + ox, y1 + oy, x2 + ox, y2 + oy, x2 - ox, y2 - oy, x1 - ox, y1 - oy)
+		end
+		local cx, cy = cursorX - 7, cursorY - 7
+		SetDrawLayer(13)
+		SetDrawColor(0, 0, 0)
+		drawCursorLine(cx + 1, cy + 1, cx + 6, cy + 1, 4)
+		drawCursorLine(cx + 1, cy + 1, cx + 1, cy + 6, 4)
+		drawCursorLine(cx + 9, cy + 9, cx + 14, cy + 9, 4)
+		drawCursorLine(cx + 9, cy + 9, cx + 9, cy + 14, 4)
+		drawCursorLine(cx + 3, cy + 3, cx + 12, cy + 12, 5)
+		SetDrawColor(1, 1, 1)
+		drawCursorLine(cx + 1, cy + 1, cx + 6, cy + 1, 2)
+		drawCursorLine(cx + 1, cy + 1, cx + 1, cy + 6, 2)
+		drawCursorLine(cx + 9, cy + 9, cx + 14, cy + 9, 2)
+		drawCursorLine(cx + 9, cy + 9, cx + 9, cy + 14, 2)
+		drawCursorLine(cx + 3, cy + 3, cx + 12, cy + 12, 2)
 	end
 	SetDrawLayer(0)
 end
