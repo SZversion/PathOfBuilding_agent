@@ -72,6 +72,7 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
     stream_group.add_argument("--stream", dest="stream", action="store_true")
     stream_group.add_argument("--no-stream", dest="stream", action="store_false")
     parser.set_defaults(stream=True)
+    parser.add_argument("--stream-json", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("question", nargs="?")
     args = parser.parse_args(argv)
     try:
@@ -82,12 +83,12 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
             previous = cache.load_state(build_id)
         except StateStoreError as error:
             if error.error["code"] != "STATE_NOT_FOUND":
-                return _emit({"status": "error", "error": error.error}, args.json_output)
+                return _emit({"status": "error", "error": error.error}, args.json_output, stream_json=args.stream_json)
             previous = {}
         if args.expected_snapshot_revision is not None:
             actual = (previous.get("snapshot") or {}).get("snapshotRevision")
             if actual != args.expected_snapshot_revision:
-                return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "cached snapshot revision is stale", next_action="recapture_snapshot", details={"expected": args.expected_snapshot_revision, "actual": actual}), args.json_output)
+                return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "cached snapshot revision is stale", next_action="recapture_snapshot", details={"expected": args.expected_snapshot_revision, "actual": actual}), args.json_output, stream_json=args.stream_json)
         question = args.question
         if not question and not args.once:
             while True:
@@ -114,12 +115,12 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
         if args.clarification_answer:
             pending = (previous.get("orchestration") or {}).get("pending")
             if not isinstance(pending, dict):
-                return _emit(_error("USER_CONTEXT_MISSING", "no pending clarification is available", next_action="ask_user"), args.json_output)
+                return _emit(_error("USER_CONTEXT_MISSING", "no pending clarification is available", next_action="ask_user"), args.json_output, stream_json=args.stream_json)
             pending_revision = pending.get("snapshotRevision")
             if args.expected_snapshot_revision is None and pending_revision is not None:
                 actual = (previous.get("snapshot") or {}).get("snapshotRevision")
                 if actual != pending_revision:
-                    return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "pending clarification is stale", next_action="recapture_snapshot", details={"expected": pending_revision, "actual": actual}), args.json_output)
+                    return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "pending clarification is stale", next_action="recapture_snapshot", details={"expected": pending_revision, "actual": actual}), args.json_output, stream_json=args.stream_json)
             question = question + "\nClarification answer: " + args.clarification_answer
         provider = provider_factory(args) if provider_factory else _provider(args)
         search = None
@@ -157,12 +158,15 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
                         if facts.get(key) is not None:
                             snapshot[key] = facts[key]
             except PobBridgeError as error:
-                return _emit(_error(error.error["code"], str(error), next_action=error.error.get("next_action", "reject_request")), args.json_output)
+                return _emit(_error(error.error["code"], str(error), next_action=error.error.get("next_action", "reject_request")), args.json_output, stream_json=args.stream_json)
             external_search = ExternalSearch()
             handlers["search_external"] = lambda arguments: external_search.search(
                 arguments.get("query", ""), source=arguments.get("source", "both"), limit=arguments.get("limit", 3)
             )
-        on_token = (lambda token: print(token, end="", flush=True)) if args.stream and not args.json_output else None
+        if args.stream_json:
+            on_token = lambda token: print(json.dumps({"type": "token", "text": token}, ensure_ascii=False), flush=True)
+        else:
+            on_token = (lambda token: print(token, end="", flush=True)) if args.stream and not args.json_output else None
         try:
             result = AgentLoop(provider).run(question, search=search, handlers=handlers, snapshot=snapshot,
                                            current_revision=current_revision, tool_definitions=discovered_tools,
@@ -180,20 +184,23 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
             "conversation": {"lastStatus": result.get("status")},
             "evidence": {"available": bool(result.get("execution"))},
         }, metadata={"gamePatch": snapshot.get("gamePatch"), "pobVersion": snapshot.get("pobVersion"), "dataRevision": snapshot.get("dataRevision")})
-        return _emit(result, args.json_output, streamed=bool(on_token))
+        return _emit(result, args.json_output, streamed=bool(on_token), stream_json=args.stream_json)
     except StateStoreError as error:
-        return _emit({"status": "error", "error": error.error}, args.json_output)
+        return _emit({"status": "error", "error": error.error}, args.json_output, stream_json=args.stream_json)
     except McpClientError as error:
-        return _emit(_error("BRIDGE_UNAVAILABLE", str(error), next_action="restart_pob_or_bridge"), args.json_output)
+        return _emit(_error("BRIDGE_UNAVAILABLE", str(error), next_action="restart_pob_or_bridge"), args.json_output, stream_json=args.stream_json)
     except (ValueError, RuntimeError) as error:
-        return _emit(_error("INPUT_INVALID" if isinstance(error, ValueError) else "MODEL_PROVIDER_UNAVAILABLE", str(error), next_action="repair_input" if isinstance(error, ValueError) else "configure_provider"), args.json_output)
+        return _emit(_error("INPUT_INVALID" if isinstance(error, ValueError) else "MODEL_PROVIDER_UNAVAILABLE", str(error), next_action="repair_input" if isinstance(error, ValueError) else "configure_provider"), args.json_output, stream_json=args.stream_json)
 
 
-def _emit(value, json_output, streamed=False):
+def _emit(value, json_output, streamed=False, stream_json=False):
     value = standardize_error(value)
     value = exhausted_response(value)
     if not json_output and isinstance(value, dict) and isinstance(value.get("error"), dict) and not value.get("answer"):
         value = recover_response(value)
+    if stream_json:
+        print(json.dumps({"type": "result", "result": value}, ensure_ascii=False), flush=True)
+        return 0 if value.get("status") not in {"error", "plan_error"} else 1
     if streamed and value.get("answer"):
         print()
         return 0 if value.get("status") not in {"error", "plan_error"} else 1

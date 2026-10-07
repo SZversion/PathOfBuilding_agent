@@ -161,7 +161,7 @@ function AgentChatPaneClass:SendMessage()
 		return
 	end
 	t_insert(self.messages, { role = "You", text = message })
-	t_insert(self.messages, { role = "Agent", text = "답변을 기다리는 중..." })
+	t_insert(self.messages, { role = "Agent", text = "" })
 	local responseIndex = #self.messages
 	while #self.messages > 40 do
 		t_remove(self.messages, 1)
@@ -171,16 +171,35 @@ function AgentChatPaneClass:SendMessage()
 	self.controls.input:SetText("", true)
 	self.scrollToBottom = true
 	self:SelectControl(self.controls.input)
+	local streamPath = os.tmpname()
+	local streamFile = io.open(streamPath, "wb")
+	if not streamFile then
+		self.requestPending = false
+		self.messages[responseIndex] = { role = "Agent", text = "실시간 응답용 임시 파일을 만들지 못했습니다." }
+		return
+	end
+	streamFile:close()
+	self.streamFilePath = streamPath
+	self.streamFileOffset = 0
+	self.streamBuffer = ""
+	self.streamMessageIndex = responseIndex
+	self.streamComplete = false
+	self.nextStreamPollAt = 0
 	local requestBody = dkjson.encode({ build_file = buildFile, question = message })
-	local requestHeaders = "Authorization: Bearer " .. config.token .. "\r\nContent-Type: application/json\r\nAccept: application/json"
+	local requestHeaders = "Authorization: Bearer " .. config.token .. "\r\nContent-Type: application/json\r\nAccept: text/event-stream"
 	local scriptId = LaunchSubScript([[
-		local url, requestHeadersText, requestBody = ...
+		local url, requestHeadersText, requestBody, streamPath = ...
 		local curl = require("lcurl.safe")
 		local responseBody = ""
 		local responseTooLarge = false
+		local responseStatus = 0
 		local requestHeaders = { }
 		for header in requestHeadersText:gmatch("[^\r\n]+") do
 			table.insert(requestHeaders, header)
+		end
+		local streamFile = io.open(streamPath, "wb")
+		if not streamFile then
+			return "", 0, "could not open stream output file"
 		end
 		local easy = curl.easy()
 		easy:setopt_url(url)
@@ -189,31 +208,45 @@ function AgentChatPaneClass:SendMessage()
 		easy:setopt(curl.OPT_POSTFIELDS, requestBody)
 		easy:setopt(curl.OPT_CONNECTTIMEOUT, 10)
 		easy:setopt(curl.OPT_TIMEOUT, 310)
+		easy:setopt_headerfunction(function(header)
+			local status = header:match("^HTTP/%S+%s+(%d+)")
+			if status then responseStatus = tonumber(status) end
+			return true
+		end)
 		easy:setopt_writefunction(function(data)
-			if #responseBody + #data > 1048576 then
-				responseTooLarge = true
-				return false
+			if responseStatus == 200 then
+				streamFile:write(data)
+				streamFile:flush()
+			else
+				if #responseBody + #data > 65536 then
+					responseTooLarge = true
+					return false
+				end
+				responseBody = responseBody .. data
 			end
-			responseBody = responseBody .. data
 			return true
 		end)
 		local _, requestError = easy:perform()
 		local status = easy:getinfo(curl.INFO_RESPONSE_CODE)
 		easy:close()
+		streamFile:close()
 		if responseTooLarge then
-			return "", status, "Agent response exceeded 1 MB"
+			return "", status, "Agent error response exceeded 64 KB"
 		end
 		if requestError then
-			return "", status, requestError:msg()
+			return responseBody, status, requestError:msg()
 		end
 		return responseBody, status, ""
-	]], "", "", config.url, requestHeaders, requestBody)
+	]], "", "", config.url, requestHeaders, requestBody, streamPath)
 	if not scriptId then
 		self.requestPending = false
 		self.messages[responseIndex] = { role = "Agent", text = "에이전트 요청을 시작하지 못했습니다." }
+		os.remove(streamPath)
+		self.streamFilePath = nil
 		return
 	end
 	launch:RegisterSubScript(scriptId, function(responseBody, status, requestError)
+		self:UpdateStreamFromFile(true)
 		self.requestPending = false
 		local reply
 		if requestError and requestError ~= "" then
@@ -221,23 +254,80 @@ function AgentChatPaneClass:SendMessage()
 		elseif status ~= 200 then
 			local errorBody = responseBody ~= "" and dkjson.decode(responseBody)
 			reply = type(errorBody) == "table" and (errorBody.detail or errorBody.error) or ("에이전트 서버 응답 오류 (HTTP " .. tostring(status) .. ")")
-		else
-			local result = dkjson.decode(responseBody)
-			if type(result) == "table" and type(result.answer) == "string" and result.answer ~= "" then
-				reply = result.answer
-			elseif type(result) == "table" and type(result.error) == "table" then
-				reply = result.error.message or result.error.code or "요청을 처리하지 못했습니다."
-			else
-				reply = "에이전트 응답을 해석하지 못했습니다."
-			end
+		elseif not self.streamComplete then
+			reply = "에이전트 스트림이 완료 신호 없이 종료되었습니다."
 		end
-		self.messages[responseIndex] = { role = "Agent", text = tostring(reply) }
+		if reply then
+			local current = self.messages[responseIndex]
+			local partial = current and current.text or ""
+			self.messages[responseIndex] = { role = "Agent", text = partial ~= "" and (partial .. "\n\n" .. tostring(reply)) or tostring(reply) }
+		end
 		while #self.messages > 40 do
 			t_remove(self.messages, 1)
 			responseIndex = responseIndex - 1
 		end
 		self.scrollToBottom = true
+		os.remove(streamPath)
+		self.streamFilePath = nil
+		self.streamMessageIndex = nil
 	end)
+end
+
+function AgentChatPaneClass:ProcessStreamBuffer()
+	while true do
+		local boundaryStart, boundaryEnd = self.streamBuffer:find("\n\n", 1, true)
+		if not boundaryStart then
+			return
+		end
+		local block = self.streamBuffer:sub(1, boundaryStart - 1)
+		self.streamBuffer = self.streamBuffer:sub(boundaryEnd + 1)
+		local eventName = "message"
+		local dataLines = { }
+		for line in (block .. "\n"):gmatch("(.-)\n") do
+			line = line:gsub("\r$", "")
+			local eventValue = line:match("^event:%s*(.-)%s*$")
+			if eventValue then
+				eventName = eventValue
+			else
+				local dataValue = line:match("^data:%s?(.*)$")
+				if dataValue then t_insert(dataLines, dataValue) end
+			end
+		end
+		local payload = #dataLines > 0 and dkjson.decode(table.concat(dataLines, "\n"))
+		local messageIndex = self.streamMessageIndex
+		local message = messageIndex and self.messages[messageIndex]
+		if eventName == "token" and type(payload) == "table" and type(payload.text) == "string" and message then
+			message.text = message.text .. payload.text
+			self.scrollToBottom = true
+		elseif eventName == "error" and type(payload) == "table" and message then
+			message.text = payload.message or "에이전트 요청에 실패했습니다."
+			self.scrollToBottom = true
+		elseif eventName == "complete" then
+			self.streamComplete = true
+		end
+	end
+end
+
+function AgentChatPaneClass:UpdateStreamFromFile(force)
+	if not self.streamFilePath then
+		return
+	end
+	if not force and GetTime() < (self.nextStreamPollAt or 0) then
+		return
+	end
+	self.nextStreamPollAt = GetTime() + 50
+	local file = io.open(self.streamFilePath, "rb")
+	if not file then
+		return
+	end
+	file:seek("set", self.streamFileOffset or 0)
+	local chunk = file:read("*a") or ""
+	self.streamFileOffset = self.streamFileOffset + #chunk
+	file:close()
+	if chunk ~= "" then
+		self.streamBuffer = self.streamBuffer .. chunk
+		self:ProcessStreamBuffer()
+	end
 end
 
 function AgentChatPaneClass:IsMouseInOverlay(cursorX, cursorY)
@@ -375,6 +465,9 @@ function AgentChatPaneClass:DrawConversation(x, y, width, height)
 end
 
 function AgentChatPaneClass:DrawOverlay(viewPort)
+	if self.requestPending then
+		self:UpdateStreamFromFile()
+	end
 	if not self.isOverlay then
 		self:SetResizeCursorHidden(false)
 		return
