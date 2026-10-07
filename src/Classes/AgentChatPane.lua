@@ -53,7 +53,8 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.close = new("ButtonControl", {"TOPRIGHT", self, "TOPRIGHT"}, {-4, 3, 16, 16}, "x", function()
 		self:ToggleOverlay(false)
 	end)
-	self.controls.input = new("EditControl", {"BOTTOMLEFT", self, "BOTTOMLEFT"}, {8, -8, 0, INPUT_HEIGHT}, "", "Type a message...", "^%C\t\n", 1000, nil, 14, true)
+	self.controls.input = new("EditControl", {"BOTTOMLEFT", self, "BOTTOMLEFT"}, {8, -8, 0, INPUT_HEIGHT}, "", nil, "^%C\t\n", 1000, nil, 14, true)
+	self.controls.input.placeholder = "Type a message..."
 	self.controls.input.width = function()
 		local width = self:GetSize()
 		local sendWidth = self.controls.send and self.controls.send:GetSize() or 54
@@ -176,7 +177,11 @@ function AgentChatPaneClass:HandleOverlayRelease(key)
 	end
 	local selected = self.selControl
 	if selected and selected.OnKeyUp then
-		self:SelectControl(selected:OnKeyUp(key))
+		local nextSelected = selected:OnKeyUp(key)
+		if selected == self.controls.send then
+			nextSelected = nextSelected or self.controls.input
+		end
+		self:SelectControl(nextSelected)
 		return true
 	end
 	return false
@@ -189,6 +194,8 @@ function AgentChatPaneClass:HandleInputEvent(event, cursorX, cursorY)
 	if event.type == "KeyUp" and (event.key == "WHEELDOWN" or event.key == "WHEELUP") then
 		if self:IsMouseInConversation(cursorX, cursorY) then
 			self.controls.historyScroll:Scroll(event.key == "WHEELDOWN" and 1 or -1)
+		elseif self.controls.input:IsMouseInBounds() then
+			self:SelectControl(self.controls.input:OnKeyUp(event.key))
 		end
 		return self:IsMouseInOverlay(cursorX, cursorY)
 	end
@@ -228,15 +235,15 @@ function AgentChatPaneClass:DrawConversation(x, y, width, height)
 
 	SetViewport(x, y, width, height)
 	for _, block in ipairs(blocks) do
-		local blockY = y + block.y - scroll.offset
+		local blockY = block.y - scroll.offset
 		local userMessage = block.role == "You"
 		SetDrawColor(userMessage and 0.12 or 0.18, userMessage and 0.16 or 0.18, userMessage and 0.22 or 0.18)
-		DrawImage(nil, x + 2, blockY, width - 4, block.height)
+		DrawImage(nil, 2, blockY, width - 4, block.height)
 		SetDrawColor(0.72, 0.72, 0.72)
-		DrawString(x + 7, blockY + 3, "LEFT", MESSAGE_FONT_SIZE, "VAR BOLD", block.role)
+		DrawString(7, blockY + 3, "LEFT", MESSAGE_FONT_SIZE, "VAR BOLD", block.role)
 		SetDrawColor(1, 1, 1)
 		for lineIndex, line in ipairs(block.lines) do
-			DrawString(x + 7, blockY + 18 + (lineIndex - 1) * MESSAGE_LINE_HEIGHT, "LEFT", MESSAGE_FONT_SIZE, "VAR", line)
+			DrawString(7, blockY + 18 + (lineIndex - 1) * MESSAGE_LINE_HEIGHT, "LEFT", MESSAGE_FONT_SIZE, "VAR", line)
 		end
 	end
 	SetViewport()

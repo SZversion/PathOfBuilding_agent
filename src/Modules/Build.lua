@@ -178,19 +178,21 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 		return buildNameConditional() and -196 or 8
 	end
 	self.controls.buildName.y = function()
-		return buildNameConditional() and 32 or 0
+		return 32
 	end
 
 	-- Controls: top bar, right side
 	self.anchorTopBarRight = new("Control", nil, {function() return main.screenW / 2 + 6 end, 4, 0, 20})
-	self.controls.agent = new("ButtonControl", {"LEFT",self.controls.saveAs,"RIGHT"}, {8, 0, 56, 20}, "Agent", function()
+	self.controls.agent = new("ButtonControl", {"TOPLEFT",self.controls.saveAs,"RIGHT"}, {8, 0, 56, 20}, "Agent", function()
 		if self.agentChatPane then
 			self.agentChatPane:ToggleOverlay()
 		end
 	end)
 	self.controls.agent.width = function(control)
 		local x = control:GetPos()
-		return m_max(0, m_min(56, self.anchorTopBarRight:GetPos() - 8 - x))
+		local availableRight = self.anchorTopBarRight:GetPos() - 23
+			- self.controls.pointDisplay:GetSize() - self.controls.levelScalingButton:GetSize() - self.controls.characterLevel:GetSize() - 8
+		return m_max(0, m_min(56, availableRight - x))
 	end
 	self.controls.agent.shown = function(control)
 		return control:GetSize() >= 48
@@ -1248,7 +1250,12 @@ function buildMode:OnFrame(inputEvents)
 			and (breakdown.controls.scrollBar:IsScrollDownKey(event.key) or breakdown.controls.scrollBar:IsScrollUpKey(event.key)) then
 			breakdown:OnKeyUp(event.key)
 			inputEvents[i] = nil
-		elseif self.agentChatPane and self.agentChatPane.isOverlay
+		end
+	end
+	-- Keep text input in chronological order; mouse overlay priority is handled above.
+	for i = 1, #inputEvents do
+		local event = inputEvents[i]
+		if event and self.agentChatPane and self.agentChatPane.isOverlay
 			and (event.type == "Char" or event.type == "KeyDown" or event.type == "KeyUp") then
 			if self.agentChatPane:HandleInputEvent(event, cursorX, cursorY) then
 				inputEvents[i] = nil
