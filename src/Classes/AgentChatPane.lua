@@ -14,6 +14,7 @@ local MIN_WIDTH = 200
 local MIN_HEIGHT = 150
 local HEADER_HEIGHT = 24
 local INPUT_HEIGHT = 20
+local SEND_HEIGHT = 28
 local INPUT_FONT_SIZE = 14
 local MESSAGE_FONT_SIZE = 14
 local MESSAGE_LINE_HEIGHT = 16
@@ -63,10 +64,10 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 		local sendWidth = self.controls.send and self.controls.send:GetSize() or 48
 		return m_max(24, width - sendWidth - 24)
 	end
-	self.controls.send = new("ButtonControl", {"BOTTOMRIGHT", self, "BOTTOMRIGHT"}, {-8, -8, 48, INPUT_HEIGHT}, "Send", function()
+	self.controls.send = new("ButtonControl", {"BOTTOMRIGHT", self, "BOTTOMRIGHT"}, {-8, -8, 48, SEND_HEIGHT}, "Send", function()
 		self:SendMessage()
 	end)
-	self.controls.send.overSizeText = (INPUT_FONT_SIZE - (INPUT_HEIGHT - 4)) / 2
+	self.controls.send.overSizeText = (INPUT_FONT_SIZE - (SEND_HEIGHT - 4)) / 2
 	self.controls.send.width = function()
 		local width = self:GetSize()
 		return m_max(32, m_min(48, width - 70))
@@ -75,7 +76,7 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.historyScroll = new("ScrollBarControl", {"TOPRIGHT", self, "TOPRIGHT"}, {-3, HEADER_HEIGHT + 6, 14, 0}, MESSAGE_LINE_HEIGHT * 3, "VERTICAL", true)
 	self.controls.historyScroll.height = function()
 		local _, height = self:GetSize()
-		return m_max(0, height - HEADER_HEIGHT - INPUT_HEIGHT - 28)
+		return m_max(0, height - HEADER_HEIGHT - SEND_HEIGHT - 28)
 	end
 end)
 
@@ -151,7 +152,7 @@ function AgentChatPaneClass:IsMouseInConversation(cursorX, cursorY)
 	local x, y = self.overlayX, self.overlayY
 	local width, height = self:GetSize()
 	local conversationTop = y + HEADER_HEIGHT + 6
-	local conversationBottom = y + height - INPUT_HEIGHT - 18
+	local conversationBottom = y + height - SEND_HEIGHT - 18
 	return cursorX >= x + 4 and cursorX < x + width - 18
 		and cursorY >= conversationTop and cursorY < conversationBottom
 end
@@ -320,7 +321,7 @@ function AgentChatPaneClass:DrawOverlay(viewPort)
 	local conversationX = x + 4
 	local conversationY = y + HEADER_HEIGHT + 6
 	local conversationWidth = width - 22
-	local conversationHeight = m_max(1, height - HEADER_HEIGHT - INPUT_HEIGHT - 22)
+	local conversationHeight = m_max(1, height - HEADER_HEIGHT - SEND_HEIGHT - 22)
 	SetDrawColor(0.03, 0.03, 0.03)
 	DrawImage(nil, conversationX, conversationY, conversationWidth, conversationHeight)
 	self:DrawConversation(conversationX, conversationY, conversationWidth, conversationHeight)
