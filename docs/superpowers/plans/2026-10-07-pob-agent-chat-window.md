@@ -40,7 +40,7 @@
 
 **Interfaces:**
 - Consumes: PoB's `newClass`, `ControlHost`, `Control`, `EditControl`, and existing drawing/input APIs.
-- Produces: `AgentChatPaneClass` with `ToggleOverlay()`, `IsMouseInOverlay(cursorX, cursorY)`, `HandleOverlayClick(key, cursorX, cursorY)`, `HandleOverlayRelease(key)`, and `DrawOverlay(viewPort, inputEvents)` methods compatible with `buildMode.overlayPanes`.
+- Produces: `AgentChatPaneClass` with `ToggleOverlay(open)`, `ReleaseFocus()`, `IsMouseInOverlay(cursorX, cursorY)`, `HandleOverlayClick(key, cursorX, cursorY)`, `HandleOverlayRelease(key)`, `HandleInputEvent(event, cursorX, cursorY)`, and `DrawOverlay(viewPort, inputEvents)` methods compatible with `buildMode.overlayPanes`.
 
 - [ ] **Step 1: Define the pane and its local state**
 

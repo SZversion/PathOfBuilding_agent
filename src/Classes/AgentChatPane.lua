@@ -84,10 +84,25 @@ function AgentChatPaneClass:ToggleOverlay(open)
 	self.isOverlay = open
 	self.resizing = false
 	if open then
+		self:RaiseOverlay()
 		self:SelectControl(self.controls.input)
 		self.scrollToBottom = true
 	else
 		self:SelectControl()
+	end
+end
+
+function AgentChatPaneClass:RaiseOverlay()
+	local panes = self.build and self.build.overlayPanes
+	if not panes then
+		return
+	end
+	for index, pane in ipairs(panes) do
+		if pane == self then
+			t_remove(panes, index)
+			t_insert(panes, self)
+			return
+		end
 	end
 end
 
@@ -131,6 +146,7 @@ function AgentChatPaneClass:HandleOverlayClick(key, cursorX, cursorY)
 	if key ~= "LEFTBUTTON" or not self.isOverlay then
 		return false
 	end
+	self:RaiseOverlay()
 	local x, y = self.overlayX, self.overlayY
 	local width, height = self:GetSize()
 	if cursorX >= x + width - 14 and cursorY >= y + height - 14 then
@@ -173,9 +189,8 @@ function AgentChatPaneClass:HandleInputEvent(event, cursorX, cursorY)
 	if event.type == "KeyUp" and (event.key == "WHEELDOWN" or event.key == "WHEELUP") then
 		if self:IsMouseInConversation(cursorX, cursorY) then
 			self.controls.historyScroll:Scroll(event.key == "WHEELDOWN" and 1 or -1)
-			return true
 		end
-		return false
+		return self:IsMouseInOverlay(cursorX, cursorY)
 	end
 	if not self.selControl then
 		return false

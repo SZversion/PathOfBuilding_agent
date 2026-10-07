@@ -183,6 +183,19 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 
 	-- Controls: top bar, right side
 	self.anchorTopBarRight = new("Control", nil, {function() return main.screenW / 2 + 6 end, 4, 0, 20})
+	self.controls.agent = new("ButtonControl", {"LEFT",self.controls.saveAs,"RIGHT"}, {8, 0, 56, 20}, "Agent", function()
+		if self.agentChatPane then
+			self.agentChatPane:ToggleOverlay()
+		end
+	end)
+	self.controls.agent.width = function(control)
+		local x = control:GetPos()
+		return m_max(0, m_min(56, self.anchorTopBarRight:GetPos() - 8 - x))
+	end
+	self.controls.agent.shown = function(control)
+		return control:GetSize() >= 48
+	end
+
 
 	local function getPointDisplayX() -- I had it hardcoded to -323 before switching to the control sizing
 		return - (23 + self.controls.pointDisplay:GetSize() + self.controls.levelScalingButton:GetSize() + self.controls.characterLevel:GetSize())
@@ -606,6 +619,8 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 	self.compareTab = new("CompareTab", self)
 	-- Used for pined calcs panes
 	self.overlayPanes = { }
+	self.agentChatPane = new("AgentChatPane", self)
+	t_insert(self.overlayPanes, self.agentChatPane)
 
 	-- Load sections from the build file
 	self.savers = {
@@ -1149,7 +1164,8 @@ function buildMode:OnFrame(inputEvents)
 	end
 
 	for id, event in ipairs(inputEvents) do
-		if event.type == "KeyDown" then
+		local chatHasFocus = self.agentChatPane and self.agentChatPane.isOverlay and self.agentChatPane.selControl
+		if event.type == "KeyDown" and not chatHasFocus then
 			if event.key == "MOUSE4" then
 				if self.unsaved then
 					self:OpenSavePopup("LIST")
@@ -1205,6 +1221,10 @@ function buildMode:OnFrame(inputEvents)
 					break
 				end
 			end
+			if inputEvents[i] and event.key == "LEFTBUTTON" and self.agentChatPane and self.agentChatPane.isOverlay
+				and not self.agentChatPane:IsMouseInOverlay(cursorX, cursorY) then
+				self.agentChatPane:ReleaseFocus()
+			end
 			if inputEvents[i] and overlayBreakdown and breakdown:IsMouseOver() then
 				self.overlayBreakdownControl = breakdown:OnKeyDown(event.key, event.doubleClick)
 				inputEvents[i] = nil
@@ -1212,7 +1232,10 @@ function buildMode:OnFrame(inputEvents)
 		elseif event.type == "KeyUp" and event.key:match("BUTTON") then
 			for _, pane in ipairs(self.overlayPanes) do
 				if pane.isOverlay then
-					pane:HandleOverlayRelease(event.key)
+					if pane:HandleOverlayRelease(event.key) then
+						inputEvents[i] = nil
+						break
+					end
 				end
 			end
 			if self.overlayBreakdownControl then
@@ -1221,9 +1244,15 @@ function buildMode:OnFrame(inputEvents)
 				inputEvents[i] = nil
 			end
 		elseif event.type == "KeyUp" and overlayBreakdown and breakdown:IsMouseOver()
+			and not (self.agentChatPane and self.agentChatPane.isOverlay and self.agentChatPane:IsMouseInOverlay(cursorX, cursorY))
 			and (breakdown.controls.scrollBar:IsScrollDownKey(event.key) or breakdown.controls.scrollBar:IsScrollUpKey(event.key)) then
 			breakdown:OnKeyUp(event.key)
 			inputEvents[i] = nil
+		elseif self.agentChatPane and self.agentChatPane.isOverlay
+			and (event.type == "Char" or event.type == "KeyDown" or event.type == "KeyUp") then
+			if self.agentChatPane:HandleInputEvent(event, cursorX, cursorY) then
+				inputEvents[i] = nil
+			end
 		end
 	end
 
@@ -1296,7 +1325,7 @@ function buildMode:OnFrame(inputEvents)
 	-- Draw overlay panes on top of all tab content (last = topmost)
 	for _, pane in ipairs(self.overlayPanes) do
 		if pane.isOverlay then
-			pane:DrawOverlay(main.viewPort, inputEvents)
+			pane:DrawOverlay(pane == self.agentChatPane and tabViewPort or main.viewPort, inputEvents)
 		end
 	end
 
