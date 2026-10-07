@@ -178,25 +178,24 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 		return buildNameConditional() and -196 or 8
 	end
 	self.controls.buildName.y = function()
-		return 32
+		return buildNameConditional() and 32 or 0
 	end
 
 	-- Controls: top bar, right side
 	self.anchorTopBarRight = new("Control", nil, {function() return main.screenW / 2 + 6 end, 4, 0, 20})
-	self.controls.agent = new("ButtonControl", {"TOPLEFT",self.controls.saveAs,"RIGHT"}, {8, 0, 56, 20}, "Agent", function()
+	-- Place the Agent button at the right edge of the left build pane, beside Current build.
+	self.controls.agent = new("ButtonControl", nil, {
+		function() return 312 - 76 end,
+		function()
+			local _, y = self.controls.buildName:GetPos()
+			return y
+		end,
+		76, 20,
+	}, "Agent", function()
 		if self.agentChatPane then
 			self.agentChatPane:ToggleOverlay()
 		end
 	end)
-	self.controls.agent.width = function(control)
-		local x = control:GetPos()
-		local availableRight = self.anchorTopBarRight:GetPos() - 23
-			- self.controls.pointDisplay:GetSize() - self.controls.levelScalingButton:GetSize() - self.controls.characterLevel:GetSize() - 8
-		return m_max(0, m_min(56, availableRight - x))
-	end
-	self.controls.agent.shown = function(control)
-		return control:GetSize() >= 48
-	end
 
 
 	local function getPointDisplayX() -- I had it hardcoded to -323 before switching to the control sizing
