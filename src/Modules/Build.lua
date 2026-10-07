@@ -185,7 +185,7 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 	self.anchorTopBarRight = new("Control", nil, {function() return main.screenW / 2 + 6 end, 4, 0, 20})
 	-- Place the Agent button at the right edge of the left build pane, beside Current build.
 	self.controls.agent = new("ButtonControl", nil, {
-		function() return 312 - 4 - 76 end,
+		function() return 312 - 4 - 4 - 76 end,
 		function()
 			local _, y = self.controls.buildName:GetPos()
 			return y
