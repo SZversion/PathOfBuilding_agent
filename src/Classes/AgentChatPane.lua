@@ -7,6 +7,7 @@ local t_insert = table.insert
 local t_remove = table.remove
 local m_max = math.max
 local m_min = math.min
+local dkjson = require "dkjson"
 
 local DEFAULT_WIDTH = 320
 local DEFAULT_HEIGHT = 240
@@ -47,8 +48,9 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.x = self.overlayX
 	self.y = self.overlayY
 	self.messages = {
-		{ role = "Preview", text = "This chat is a UI preview. Agent replies are not connected yet." },
+		{ role = "Agent", text = "PoB Agent에 연결되었습니다. 현재 빌드에 대해 질문해 보세요." },
 	}
+	self.requestPending = false
 	self.scrollToBottom = true
 	self.resizing = false
 	self.resizeCursorHidden = false
@@ -126,17 +128,116 @@ function AgentChatPaneClass:ReleaseFocus()
 end
 
 function AgentChatPaneClass:SendMessage()
+	if self.requestPending then
+		return
+	end
 	local message = (self.controls.input.buf or ""):match("^%s*(.-)%s*$")
 	if message == "" then
 		return
 	end
+	local build = self.build
+	local buildPath = build and build.dbFileName
+	local buildRoot = main and main.buildPath
+	local normalizedPath = type(buildPath) == "string" and buildPath:gsub("\\", "/")
+	local normalizedRoot = type(buildRoot) == "string" and buildRoot:gsub("\\", "/")
+	if not normalizedPath or not normalizedRoot or normalizedPath:sub(1, #normalizedRoot):lower() ~= normalizedRoot:lower() then
+		t_insert(self.messages, { role = "Agent", text = "먼저 현재 빌드를 PoB의 Builds 폴더에 저장한 뒤 다시 질문해 주세요." })
+		self.scrollToBottom = true
+		return
+	end
+	local buildFile = normalizedPath:sub(#normalizedRoot + 1)
+	if buildFile == "" then
+		t_insert(self.messages, { role = "Agent", text = "저장된 현재 빌드 파일을 찾을 수 없습니다. 빌드를 저장한 뒤 다시 질문해 주세요." })
+		self.scrollToBottom = true
+		return
+	end
+	local configPath = GetScriptPath():gsub("[\\/]+$", "") .. "/AgentChatConfig.json"
+	local configFile = io.open(configPath, "r")
+	local config = configFile and dkjson.decode(configFile:read("*a"))
+	if configFile then configFile:close() end
+	if type(config) ~= "table" or type(config.url) ~= "string" or type(config.token) ~= "string" then
+		t_insert(self.messages, { role = "Agent", text = "에이전트 접속 설정을 읽지 못했습니다. 설치 폴더의 AgentChatConfig.json을 확인해 주세요." })
+		self.scrollToBottom = true
+		return
+	end
 	t_insert(self.messages, { role = "You", text = message })
+	t_insert(self.messages, { role = "Agent", text = "답변을 기다리는 중..." })
+	local responseIndex = #self.messages
 	while #self.messages > 40 do
 		t_remove(self.messages, 1)
+		responseIndex = responseIndex - 1
 	end
+	self.requestPending = true
 	self.controls.input:SetText("", true)
 	self.scrollToBottom = true
 	self:SelectControl(self.controls.input)
+	local requestBody = dkjson.encode({ build_file = buildFile, question = message })
+	local requestHeaders = "Authorization: Bearer " .. config.token .. "\r\nContent-Type: application/json\r\nAccept: application/json"
+	local scriptId = LaunchSubScript([[
+		local url, requestHeadersText, requestBody = ...
+		local curl = require("lcurl.safe")
+		local responseBody = ""
+		local responseTooLarge = false
+		local requestHeaders = { }
+		for header in requestHeadersText:gmatch("[^\r\n]+") do
+			table.insert(requestHeaders, header)
+		end
+		local easy = curl.easy()
+		easy:setopt_url(url)
+		easy:setopt(curl.OPT_HTTPHEADER, requestHeaders)
+		easy:setopt(curl.OPT_POST, true)
+		easy:setopt(curl.OPT_POSTFIELDS, requestBody)
+		easy:setopt(curl.OPT_CONNECTTIMEOUT, 10)
+		easy:setopt(curl.OPT_TIMEOUT, 310)
+		easy:setopt_writefunction(function(data)
+			if #responseBody + #data > 1048576 then
+				responseTooLarge = true
+				return false
+			end
+			responseBody = responseBody .. data
+			return true
+		end)
+		local _, requestError = easy:perform()
+		local status = easy:getinfo(curl.INFO_RESPONSE_CODE)
+		easy:close()
+		if responseTooLarge then
+			return "", status, "Agent response exceeded 1 MB"
+		end
+		if requestError then
+			return "", status, requestError:msg()
+		end
+		return responseBody, status, ""
+	]], "", "", config.url, requestHeaders, requestBody)
+	if not scriptId then
+		self.requestPending = false
+		self.messages[responseIndex] = { role = "Agent", text = "에이전트 요청을 시작하지 못했습니다." }
+		return
+	end
+	launch:RegisterSubScript(scriptId, function(responseBody, status, requestError)
+		self.requestPending = false
+		local reply
+		if requestError and requestError ~= "" then
+			reply = "에이전트 연결 오류: " .. requestError
+		elseif status ~= 200 then
+			local errorBody = responseBody ~= "" and dkjson.decode(responseBody)
+			reply = type(errorBody) == "table" and (errorBody.detail or errorBody.error) or ("에이전트 서버 응답 오류 (HTTP " .. tostring(status) .. ")")
+		else
+			local result = dkjson.decode(responseBody)
+			if type(result) == "table" and type(result.answer) == "string" and result.answer ~= "" then
+				reply = result.answer
+			elseif type(result) == "table" and type(result.error) == "table" then
+				reply = result.error.message or result.error.code or "요청을 처리하지 못했습니다."
+			else
+				reply = "에이전트 응답을 해석하지 못했습니다."
+			end
+		end
+		self.messages[responseIndex] = { role = "Agent", text = tostring(reply) }
+		while #self.messages > 40 do
+			t_remove(self.messages, 1)
+			responseIndex = responseIndex - 1
+		end
+		self.scrollToBottom = true
+	end)
 end
 
 function AgentChatPaneClass:IsMouseInOverlay(cursorX, cursorY)
@@ -314,7 +415,7 @@ function AgentChatPaneClass:DrawOverlay(viewPort)
 	SetDrawColor(0.18, 0.18, 0.18)
 	DrawImage(nil, x + 1, y + 1, width - 2, HEADER_HEIGHT - 1)
 	SetDrawColor(0.85, 0.85, 0.85)
-	DrawString(x + 8, y + 5, "LEFT", 14, "VAR BOLD", "PoB Agent — preview")
+	DrawString(x + 8, y + 5, "LEFT", 14, "VAR BOLD", self.requestPending and "PoB Agent — 답변 중" or "PoB Agent")
 	SetDrawColor(0.5, 0.5, 0.5)
 	DrawImage(nil, x + 3, y + HEADER_HEIGHT, width - 6, 1)
 
