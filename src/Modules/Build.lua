@@ -15,6 +15,13 @@ local m_floor = math.floor
 local m_abs = math.abs
 local s_format = string.format
 
+local sideBarWidth = 312
+local buildNameSmallLeft = 4
+local buildNameRowOffsetY = 32
+local buildNameControlExtraWidth = 98
+local agentButtonWidth = 76
+local agentButtonGap = 4
+
 local buildMode = new("ControlHost")
 
 local function InsertIfNew(t, val)
@@ -140,12 +147,17 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 	local function buildNameConditional()
 		return self.anchorTopBarRight:GetPos() < 800
 	end
-	self.controls.buildName = new("Control", {"LEFT",self.controls.saveAs,"RIGHT"}, {4, 36, 0, 20})
+	self.controls.buildName = new("Control", {"LEFT",self.controls.saveAs,"RIGHT"}, {buildNameSmallLeft, 36, 0, 20})
 	self.controls.buildName.width = function(control)
-		local limit = buildNameConditional() and 203 or
-			(self.anchorTopBarRight:GetPos() - 98 - 62
+		local limit
+		if buildNameConditional() then
+			limit = m_min(203, sideBarWidth - 4 - 3 - buildNameSmallLeft - buildNameControlExtraWidth - agentButtonGap - agentButtonWidth)
+		else
+			limit = self.anchorTopBarRight:GetPos() - buildNameControlExtraWidth - 62
 			- self.controls.pointDisplay:GetSize() - self.controls.levelScalingButton:GetSize() - self.controls.characterLevel:GetSize()
-			- self.controls.back:GetSize() - self.controls.save:GetSize() - self.controls.saveAs:GetSize())
+			- self.controls.back:GetSize() - self.controls.save:GetSize() - self.controls.saveAs:GetSize()
+			- agentButtonGap - agentButtonWidth
+		end
 		local bnw = DrawStringWidth(16, "VAR", self.buildName)
 		self.strWidth = m_min(bnw, limit)
 		self.strLimited = bnw > limit
@@ -175,16 +187,21 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 		end
 	end
 	self.controls.buildName.x = function()
-		return buildNameConditional() and -196 or 8
+		if buildNameConditional() then
+			local saveAsX = self.controls.saveAs:GetPos()
+			local saveAsWidth = self.controls.saveAs:GetSize()
+			return buildNameSmallLeft - (saveAsX + saveAsWidth)
+		end
+		return 8
 	end
 	self.controls.buildName.y = function()
-		return buildNameConditional() and 32 or 0
+		return buildNameConditional() and buildNameRowOffsetY or 0
 	end
 
 	-- Controls: top bar, right side
 	self.anchorTopBarRight = new("Control", nil, {function() return main.screenW / 2 + 6 end, 4, 0, 20})
-	-- Keep Agent in the top-bar flow so it follows the preceding buttons when the layout changes.
-	self.controls.agent = new("ButtonControl", {"LEFT",self.controls.saveAs,"RIGHT"}, {8, 0, 76, 20}, "Agent", function()
+	-- Keep Agent attached to the current build field across the top-bar and compact layouts.
+	self.controls.agent = new("ButtonControl", {"LEFT",self.controls.buildName,"RIGHT"}, {agentButtonGap, 0, agentButtonWidth, 20}, "Agent", function()
 		if self.agentChatPane then
 			self.agentChatPane:ToggleOverlay()
 		end
@@ -1297,7 +1314,6 @@ function buildMode:OnFrame(inputEvents)
 	-- Update contents of main skill dropdowns
 	self:RefreshSkillSelectControls(self.controls, self.mainSocketGroup, "")
 	-- Draw contents of current tab
-	local sideBarWidth = 312
 	local tabViewPort = {
 		x = sideBarWidth,
 		y = 32,
