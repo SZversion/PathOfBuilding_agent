@@ -183,15 +183,8 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 
 	-- Controls: top bar, right side
 	self.anchorTopBarRight = new("Control", nil, {function() return main.screenW / 2 + 6 end, 4, 0, 20})
-	-- Place the Agent button at the right edge of the left build pane, beside Current build.
-	self.controls.agent = new("ButtonControl", nil, {
-		function() return 312 - 4 - 4 - 76 end,
-		function()
-			local _, y = self.controls.buildName:GetPos()
-			return y
-		end,
-		76, 20,
-	}, "Agent", function()
+	-- Keep Agent in the top-bar flow so it follows the preceding buttons when the layout changes.
+	self.controls.agent = new("ButtonControl", {"LEFT",self.controls.saveAs,"RIGHT"}, {8, 0, 76, 20}, "Agent", function()
 		if self.agentChatPane then
 			self.agentChatPane:ToggleOverlay()
 		end
