@@ -1,0 +1,743 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b992d62..d1e438f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -50,6 +50,8 @@ set(SIMPLEGRAPHIC_SOURCES
+     "engine/core/core_video.h"
+     "engine/render/r_font.cpp"
+     "engine/render/r_font.h"
++    "engine/render/r_unicode_font.cpp"
++    "engine/render/r_unicode_font.h"
+     "engine/render/r_main.cpp"
+     "engine/render/r_main.h"
+     "engine/render/r_texture.cpp"
+@@ -211,6 +213,7 @@ if (WIN32)
+     target_link_libraries(SimpleGraphic
+         PRIVATE
+         "winmm.lib"
++        "gdi32.lib"
+     )
+ endif ()
+ 
+diff --git a/engine/render/r_font.cpp b/engine/render/r_font.cpp
+index 90375b3..f5fde07 100644
+--- a/engine/render/r_font.cpp
++++ b/engine/render/r_font.cpp
+@@ -4,7 +4,8 @@
+ // Module: Render Font
+ //
+ 
+-#include "r_local.h"
++#include "r_local.h"
++#include "r_unicode_font.h"
+ 
+ #include <fmt/format.h>
+ #include <iostream>
+@@ -47,9 +48,10 @@ struct f_fontHeight_s {
+ // Font Loader
+ // ===========
+ 
+-r_font_c::r_font_c(r_renderer_c* renderer, const char* fontName)
+-	: renderer(renderer)
+-{
++r_font_c::r_font_c(r_renderer_c* renderer, const char* fontName)
++	: renderer(renderer)
++{
++	unicodeBold = std::string_view(fontName).find("Bold") != std::string_view::npos;
+ 	numFontHeight = 0;
+ 	fontHeightMap = NULL;
+ 
+@@ -157,12 +159,18 @@ int r_font_c::StringWidthInternal(f_fontHeight_s* fh, std::u32string_view str, i
+ 		if (escLen) {
+ 			idx += escLen;
+ 		}
+-		else if (ch >= (unsigned)fh->numGlyph) {
+-			auto tofu = BuildTofuString(ch);
+-			for (auto cp : tofu) {
+-				width += measureCodepoint(tofuFont.fh, cp);
+-				width = std::ceil(width);
+-			}
++		else if (ch >= (unsigned)fh->numGlyph) {
++			r_unicode_glyph_s unicodeGlyph;
++			if (renderer->unicodeFontCache && renderer->unicodeFontCache->GetGlyph(ch, height, unicodeBold, unicodeGlyph)) {
++				width += unicodeGlyph.width + unicodeGlyph.spLeft + unicodeGlyph.spRight;
++				width = std::ceil(width);
++			} else {
++				auto tofu = BuildTofuString(ch);
++				for (auto cp : tofu) {
++					width += measureCodepoint(tofuFont.fh, cp);
++					width = std::ceil(width);
++				}
++			}
+ 			++idx;
+ 		}
+ 		else if (ch == U'\t') {
+@@ -221,15 +229,22 @@ size_t r_font_c::StringCursorInternal(f_fontHeight_s* fh, std::u32string_view st
+ 		if (escLen) {
+ 			I += escLen;
+ 		}
+-		else if (*I >= (unsigned)fh->numGlyph) {
+-			auto tofu = BuildTofuString(*I);
+-			for (auto cp : tofu) {
+-				x += measureCodepoint(tofuFont.fh, cp);
+-				x = std::ceil(x);
+-				if (curX <= x) {
+-					return std::distance(str.begin(), I);
+-				}
+-			}
++		else if (*I >= (unsigned)fh->numGlyph) {
++			r_unicode_glyph_s unicodeGlyph;
++			if (renderer->unicodeFontCache && renderer->unicodeFontCache->GetGlyph(*I, height, unicodeBold, unicodeGlyph)) {
++				x += unicodeGlyph.width + unicodeGlyph.spLeft + unicodeGlyph.spRight;
++				x = std::ceil(x);
++				if (curX <= x) return std::distance(str.begin(), I);
++			} else {
++				auto tofu = BuildTofuString(*I);
++				for (auto cp : tofu) {
++					x += measureCodepoint(tofuFont.fh, cp);
++					x = std::ceil(x);
++					if (curX <= x) {
++						return std::distance(str.begin(), I);
++					}
++				}
++			}
+ 			++I;
+ 		}
+ 		else if (*I == U'\t') {
+@@ -389,20 +404,49 @@ void r_font_c::DrawTextLine(scp_t pos, int align, int height, col4_t col, std::u
+ 				);
+ 			}
+ 			x += w;
+-		}
+-		x += glyph.spRight * scale;
+-		x = std::ceil(x);
+-	};
++		}
++		x += glyph.spRight * scale;
++		x = std::ceil(x);
++	};
++
++	auto drawUnicodeCodepoint = [this, &curTex, &x, y](r_unicode_glyph_s const& glyph) {
++		x += glyph.spLeft;
++		if (glyph.tex && glyph.width > 0 && glyph.height > 0) {
++			if (curTex != glyph.tex) {
++				curTex = glyph.tex;
++				renderer->curLayer->Bind(glyph.tex);
++			}
++			float const glyphY = y + glyph.yOffset;
++			float const glyphWidth = (float)glyph.width;
++			float const glyphHeight = (float)glyph.height;
++			if (x + glyphWidth >= 0 && x < renderer->VirtualScreenWidth()) {
++				renderer->curLayer->Quad(
++					glyph.tcLeft, glyph.tcTop, x, glyphY,
++					glyph.tcRight, glyph.tcTop, x + glyphWidth, glyphY,
++					glyph.tcRight, glyph.tcBottom, x + glyphWidth, glyphY + glyphHeight,
++					glyph.tcLeft, glyph.tcBottom, x, glyphY + glyphHeight
++				);
++			}
++			x += glyphWidth;
++		}
++		x += glyph.spRight;
++		x = std::ceil(x);
++	};
+ 
+ 	// Render the string
+ 	for (auto tail = str; !tail.empty();) {
+-		// Draw unprintable characters as tofu placeholders
+-		auto ch = tail[0];
+-		if (ch >= (unsigned)fh->numGlyph) {
+-			auto tofu = BuildTofuString(ch);
+-			for (auto ch : tofu) {
+-				drawCodepoint(tofuFont.fh, tofuFont.fh->height, 1.0f, tofuFont.yPad, ch);
+-			}
++		// Draw unprintable characters as tofu placeholders
++		auto ch = tail[0];
++		if (ch >= (unsigned)fh->numGlyph) {
++			r_unicode_glyph_s unicodeGlyph;
++			if (renderer->unicodeFontCache && renderer->unicodeFontCache->GetGlyph(ch, height, unicodeBold, unicodeGlyph)) {
++				drawUnicodeCodepoint(unicodeGlyph);
++			} else {
++				auto tofu = BuildTofuString(ch);
++				for (auto tofuCodepoint : tofu) {
++					drawCodepoint(tofuFont.fh, tofuFont.fh->height, 1.0f, tofuFont.yPad, tofuCodepoint);
++				}
++			}
+ 			tail = tail.substr(1);
+ 			continue;
+ 		}
+diff --git a/engine/render/r_font.h b/engine/render/r_font.h
+index cbae830..5269794 100644
+--- a/engine/render/r_font.h
++++ b/engine/render/r_font.h
+@@ -42,6 +42,7 @@ private:
+ 	class r_renderer_c* renderer = nullptr;
+ 	int		numFontHeight = 0;
+ 	struct f_fontHeight_s *fontHeights[32] = {};
+-	int		maxHeight = 0;
++	int		maxHeight = 0;
++	bool	unicodeBold = false;
+ 	int*	fontHeightMap = nullptr;
+ };
+diff --git a/engine/render/r_main.cpp b/engine/render/r_main.cpp
+index 1d46715..ddf5fa9 100644
+--- a/engine/render/r_main.cpp
++++ b/engine/render/r_main.cpp
+@@ -8,7 +8,8 @@
+ #define IMGUI_DEFINE_MATH_OPERATORS
+ #include "r_local.h"
+ 
+-#include "common/base64.h"
++#include "common/base64.h"
++#include "r_unicode_font.h"
+ 
+ #include <algorithm>
+ #include <array>
+@@ -1091,8 +1092,9 @@ void r_renderer_c::Init(r_featureFlag_e features)
+ 	fonts[F_VAR_BOLD] = new r_font_c(this, "Liberation Sans Bold");
+ 	fonts[F_FONTIN_SC] = new r_font_c(this, "Fontin SmallCaps");
+ 	fonts[F_FONTIN_SC_ITALIC] = new r_font_c(this, "Fontin SmallCaps Italic");
+-	fonts[F_FONTIN] = new r_font_c(this, "Fontin");
+-	fonts[F_FONTIN_ITALIC] = new r_font_c(this, "Fontin Italic");
++	fonts[F_FONTIN] = new r_font_c(this, "Fontin");
++	fonts[F_FONTIN_ITALIC] = new r_font_c(this, "Fontin Italic");
++	unicodeFontCache = new r_unicode_font_cache_c(this);
+ 
+ 	sys->con->Printf("Renderer initialised in %d msec.\n", timer.Get());
+ }
+@@ -1109,9 +1111,11 @@ void r_renderer_c::Shutdown()
+ 
+ 	delete whiteImage;
+ 
+-	for (int f = 0; f < F_NUMFONTS; f++) {
+-		delete fonts[f];
+-	}
++	for (int f = 0; f < F_NUMFONTS; f++) {
++		delete fonts[f];
++	}
++	delete unicodeFontCache;
++	unicodeFontCache = nullptr;
+ 
+ 	for (int s = 0; s < numShader; s++) {
+ 		delete shaderList[s];
+@@ -1158,9 +1162,10 @@ void r_renderer_c::PumpShaders()
+ 			}
+ }
+ 
+-void r_renderer_c::BeginFrame()
+-{
+-	ImGui_ImplOpenGL3_NewFrame();
++void r_renderer_c::BeginFrame()
++{
++	if (unicodeFontCache) unicodeFontCache->BeginFrame();
++	ImGui_ImplOpenGL3_NewFrame();
+ 	ImGui_ImplGlfw_NewFrame();
+ 	ImGui::NewFrame();
+ 	{
+diff --git a/engine/render/r_main.h b/engine/render/r_main.h
+index f7072fb..a320a44 100644
+--- a/engine/render/r_main.h
++++ b/engine/render/r_main.h
+@@ -64,7 +64,7 @@ private:
+ };
+ 
+ // Renderer Main Class
+-class r_renderer_c: public r_IRenderer, public conCmdHandler_c {
++class r_renderer_c: public r_IRenderer, public conCmdHandler_c {
+ public:
+ 	// Interface
+ 	void	Init(r_featureFlag_e features);
+@@ -143,7 +143,8 @@ public:
+ 
+ 	ImGuiContext* imguiCtx = nullptr;
+ 
+-	r_font_c* fonts[F_NUMFONTS] = {}; // Font objects
++	r_font_c* fonts[F_NUMFONTS] = {}; // Font objects
++	class r_unicode_font_cache_c* unicodeFontCache = nullptr;
+ 
+ 	col4_t	drawColor = {};		// Current draw color
+ 
+diff --git a/engine/render/r_texture.cpp b/engine/render/r_texture.cpp
+index 07fdda8..65eb0a6 100644
+--- a/engine/render/r_texture.cpp
++++ b/engine/render/r_texture.cpp
+@@ -311,7 +311,7 @@ r_tex_c::r_tex_c(r_ITexManager* manager, std::unique_ptr<image_c> img, int flags
+ 	Init(manager, {}, flags);
+ 
+ 	// Direct upload
+-	img = BuildMipSet(std::move(img));
++	this->img = BuildMipSet(std::move(img));
+ 	PerformUpload(this);
+ }
+ 
+@@ -550,8 +550,8 @@ static gli::texture2d_array TranscodeTexture(gli::texture2d_array src, gli::form
+ 	return dst;
+ }
+ 
+-void r_tex_c::LoadFile()
+-{
++void r_tex_c::LoadFile()
++{
+ 	if (_stricmp(fileName.c_str(), "@white") == 0) {
+ 		// Upload an 8x8 white image
+ 		auto raw = std::make_unique<image_c>();
+@@ -587,7 +587,7 @@ void r_tex_c::LoadFile()
+ 			}
+ 			stackLayers = img->tex.layers();
+ 			const bool is_async = !!(flags & TF_ASYNC);
+-			img = BuildMipSet(std::move(img));
++			this->img = BuildMipSet(std::move(img));
+ 
+ 			status = PENDING_UPLOAD;
+ 			if (is_async) {
+@@ -605,7 +605,26 @@ void r_tex_c::LoadFile()
+ 	raw->CopyRaw(IMGTYPE_GRAY, 8, 8, t_defaultTexture);
+ 	Upload(*raw, TF_NOMIPMAP);
+ 	status = DONE;
+-}
++}
++
++bool r_tex_c::UpdateSubImage(int x, int y, int width, int height, const byte* rgba)
++{
++	if (status != DONE || target != GL_TEXTURE_2D_ARRAY || !rgba || width <= 0 || height <= 0
++		|| x < 0 || y < 0 || x + width > (int)fileWidth || y + height > (int)fileHeight) {
++		return false;
++	}
++
++	GLint previousTexture = 0;
++	glGetIntegerv(GL_TEXTURE_BINDING_2D_ARRAY, &previousTexture);
++	glBindTexture(target, texId);
++	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
++	while (glGetError() != GL_NO_ERROR) {}
++	glTexSubImage3D(target, 0, x, y, 0, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
++	glBindTexture(target, previousTexture);
++	const bool success = glGetError() == GL_NO_ERROR;
++	if (success) renderer->lastFrameHash.clear();
++	return success;
++}
+ 
+ void r_tex_c::PerformUpload(r_tex_c* tex)
+ {
+@@ -672,9 +691,11 @@ void r_tex_c::Upload(image_c& img, int flags)
+ 		glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+ 	}
+ 
+-	const int layers = (int)tex.layers();
+-	const auto extent = tex.extent();
+-	const bool isTextureArray = target == GL_TEXTURE_2D_ARRAY;
++	const int layers = (int)tex.layers();
++	const auto extent = tex.extent();
++	fileWidth = extent.x;
++	fileHeight = extent.y;
++	const bool isTextureArray = target == GL_TEXTURE_2D_ARRAY;
+ 
+ 	if (isTextureArray)
+ 		glTexStorage3D(target, miplevels, format.Internal, extent.x, extent.y, layers);
+diff --git a/engine/render/r_texture.h b/engine/render/r_texture.h
+index c20c8bf..dbdf2b5 100644
+--- a/engine/render/r_texture.h
++++ b/engine/render/r_texture.h
+@@ -49,8 +49,9 @@ public:
+ 	void	Disable();
+ 	void	StartLoad();
+ 	void	AbortLoad();
+-	void	ForceLoad();
+-	void	LoadFile();
++	void	ForceLoad();
++	void	LoadFile();
++	bool	UpdateSubImage(int x, int y, int width, int height, const byte* rgba);
+ 
+ 	static void PerformUpload(r_tex_c*);
+ 
+diff --git a/engine/render/r_unicode_font.cpp b/engine/render/r_unicode_font.cpp
+new file mode 100644
+index 0000000..2db48ff
+--- /dev/null
++++ b/engine/render/r_unicode_font.cpp
+@@ -0,0 +1,346 @@
++// SimpleGraphic Engine
++// Runtime bitmap atlas for Unicode glyphs missing from the PoB ASCII atlases.
++
++#include "r_local.h"
++#include "r_unicode_font.h"
++
++#ifdef _WIN32
++#include <windows.h>
++#include <algorithm>
++#include <cstdint>
++#include <fstream>
++#include <iterator>
++#include <unordered_map>
++#include <vector>
++
++namespace {
++constexpr int atlasSize = 1024;
++constexpr size_t maxAtlasBytes = 64 * 1024 * 1024;
++constexpr int atlasBytes = atlasSize * atlasSize * 4;
++
++bool IsKoreanCodepoint(char32_t cp)
++{
++	return (cp >= 0x1100 && cp <= 0x11FF)
++		|| (cp >= 0x3130 && cp <= 0x318F)
++		|| (cp >= 0xA960 && cp <= 0xA97F)
++		|| (cp >= 0xAC00 && cp <= 0xD7A3)
++		|| (cp >= 0xD7B0 && cp <= 0xD7FF)
++		|| (cp >= 0x2000 && cp <= 0x206F)
++		|| (cp >= 0x3000 && cp <= 0x303F)
++		|| (cp >= 0xFF00 && cp <= 0xFFEF)
++		|| cp == 0x20A9;
++}
++
++uint64_t MakeKey(char32_t cp, int height, bool bold)
++{
++	return ((uint64_t)cp << 16) | ((uint64_t)height << 1) | (bold ? 1 : 0);
++}
++}
++
++struct r_unicode_font_cache_c::impl {
++	explicit impl(r_renderer_c* renderer)
++		: renderer(renderer)
++	{
++		std::ifstream font(CFG_DATAPATH "Fonts/NotoSansKR-Regular.ttf", std::ios::binary);
++		if (!font) {
++			renderer->sys->con->Warning("Korean bitmap font not found");
++			return;
++		}
++		fontData.assign(std::istreambuf_iterator<char>(font), std::istreambuf_iterator<char>());
++		if (fontData.empty() || fontData.size() > UINT32_MAX) {
++			renderer->sys->con->Warning("Korean bitmap font is empty or too large");
++			fontData.clear();
++			return;
++		}
++		DWORD fontCount = 0;
++		fontResource = AddFontMemResourceEx(fontData.data(), (DWORD)fontData.size(), nullptr, &fontCount);
++		if (!fontResource || fontCount == 0) {
++			renderer->sys->con->Warning("Could not load bundled Korean bitmap font");
++			fontResource = nullptr;
++			fontData.clear();
++		}
++	}
++
++	~impl()
++	{
++		for (auto& context : contexts) {
++			SelectObject(context.second.dc, context.second.previousFont);
++			DeleteObject(context.second.font);
++			DeleteDC(context.second.dc);
++		}
++		pages.clear();
++		if (fontResource) {
++			RemoveFontMemResourceEx(fontResource);
++		}
++	}
++
++	struct font_context_s {
++		HDC dc = nullptr;
++		HFONT font = nullptr;
++		HGDIOBJ previousFont = nullptr;
++		TEXTMETRICW metrics{};
++	};
++
++	struct atlas_page_s {
++		std::unique_ptr<r_tex_c> texture;
++		int x = 1;
++		int y = 1;
++		int rowHeight = 0;
++		uint64_t lastUsedFrame = 0;
++		std::vector<uint64_t> keys;
++	};
++
++	struct cached_glyph_s {
++		r_unicode_glyph_s glyph;
++		size_t pageIndex = 0;
++	};
++
++	struct glyph_bitmap_s {
++		std::vector<byte> rgba;
++		int width = 0;
++		int height = 0;
++		int spLeft = 0;
++		int spRight = 0;
++		int yOffset = 0;
++		int advance = 0;
++	};
++
++	font_context_s* GetFontContext(int height, bool bold)
++	{
++		const uint64_t key = ((uint64_t)height << 1) | (bold ? 1 : 0);
++		auto found = contexts.find(key);
++		if (found != contexts.end()) {
++			return &found->second;
++		}
++
++		font_context_s context;
++		context.dc = CreateCompatibleDC(nullptr);
++		if (!context.dc) return nullptr;
++		context.font = CreateFontW(-height, 0, 0, 0, bold ? FW_BOLD : FW_NORMAL, FALSE, FALSE, FALSE,
++			DEFAULT_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
++			DEFAULT_PITCH | FF_DONTCARE, L"Noto Sans KR");
++		if (!context.font) {
++			DeleteDC(context.dc);
++			return nullptr;
++		}
++		context.previousFont = SelectObject(context.dc, context.font);
++		if (!context.previousFont || context.previousFont == HGDI_ERROR || !GetTextMetricsW(context.dc, &context.metrics)) {
++			if (context.previousFont && context.previousFont != HGDI_ERROR) SelectObject(context.dc, context.previousFont);
++			DeleteObject(context.font);
++			DeleteDC(context.dc);
++			return nullptr;
++		}
++		return &contexts.emplace(key, context).first->second;
++	}
++
++	bool Rasterize(char32_t cp, int height, bool bold, glyph_bitmap_s& result)
++	{
++		auto* context = GetFontContext(height, bold);
++		if (!context) return false;
++		WCHAR character = (WCHAR)cp;
++		WORD glyphIndex = 0xFFFF;
++		if (GetGlyphIndicesW(context->dc, &character, 1, &glyphIndex, GGI_MARK_NONEXISTING_GLYPHS) == GDI_ERROR || glyphIndex == 0xFFFF) return false;
++		const MAT2 identity = { 0, 1, 0, 0, 0, 0, 0, 1 };
++		GLYPHMETRICS metrics{};
++		const DWORD format = GGO_GRAY8_BITMAP | GGO_GLYPH_INDEX;
++		const DWORD size = GetGlyphOutlineW(context->dc, glyphIndex, format, &metrics, 0, nullptr, &identity);
++		if (size == GDI_ERROR) return false;
++
++		result.width = (int)metrics.gmBlackBoxX;
++		result.height = (int)metrics.gmBlackBoxY;
++		result.spLeft = metrics.gmptGlyphOrigin.x;
++		result.advance = metrics.gmCellIncX;
++		result.spRight = result.advance - result.spLeft - result.width;
++		result.yOffset = context->metrics.tmAscent - metrics.gmptGlyphOrigin.y;
++		if (result.width <= 0 || result.height <= 0 || size == 0) {
++			result.width = 0;
++			result.height = 0;
++			return true;
++		}
++
++		std::vector<byte> gray(size);
++		if (GetGlyphOutlineW(context->dc, glyphIndex, format, &metrics, size, gray.data(), &identity) == GDI_ERROR) return false;
++		const int grayStride = (int)(size / result.height);
++		const int sourceHeight = result.height;
++		result.height = (std::min)(result.height, height);
++		result.yOffset = (std::clamp)(result.yOffset, 0, height - result.height);
++		result.rgba.resize((size_t)result.width * result.height * 4);
++		for (int y = 0; y < result.height; ++y) {
++			const int sourceY = (int)((int64_t)y * sourceHeight / result.height);
++			for (int x = 0; x < result.width; ++x) {
++				const size_t dst = ((size_t)y * result.width + x) * 4;
++				const byte coverage = (std::min)(gray[(size_t)sourceY * grayStride + x], (byte)64);
++				const byte alpha = (byte)((unsigned)coverage * 255 / 64);
++				result.rgba[dst] = 255;
++				result.rgba[dst + 1] = 255;
++				result.rgba[dst + 2] = 255;
++				result.rgba[dst + 3] = alpha;
++			}
++		}
++		return true;
++	}
++
++	bool CreatePage(atlas_page_s& page)
++	{
++		std::vector<byte> blank(atlasBytes, 255);
++		for (size_t alpha = 3; alpha < blank.size(); alpha += 4) blank[alpha] = 0;
++		auto image = std::make_unique<image_c>();
++		if (!image->CopyRaw(IMGTYPE_RGBA, atlasSize, atlasSize, blank.data())) return false;
++		page.texture = std::make_unique<r_tex_c>(renderer->texMan, std::move(image), TF_NOMIPMAP | TF_CLAMP);
++		return page.texture && page.texture->status == r_tex_c::DONE;
++	}
++
++	bool ResetPage(size_t index)
++	{
++		auto& page = pages[index];
++		for (uint64_t key : page.keys) glyphs.erase(key);
++		page.keys.clear();
++		std::vector<byte> blank(atlasBytes, 255);
++		for (size_t alpha = 3; alpha < blank.size(); alpha += 4) blank[alpha] = 0;
++		if (!page.texture->UpdateSubImage(0, 0, atlasSize, atlasSize, blank.data())) return false;
++		page.x = page.y = 1;
++		page.rowHeight = 0;
++		page.lastUsedFrame = frame;
++		return true;
++	}
++
++	bool Place(int width, int height, size_t& pageIndex, int& x, int& y)
++	{
++		const int cellWidth = width + 2;
++		const int cellHeight = height + 2;
++		if (cellWidth > atlasSize || cellHeight > atlasSize) return false;
++		auto fits = [=](atlas_page_s const& page) {
++			int rowX = page.x;
++			int rowY = page.y;
++			if (rowX + cellWidth > atlasSize) {
++				rowX = 1;
++				rowY += page.rowHeight;
++			}
++			return rowY + cellHeight <= atlasSize;
++		};
++		for (size_t i = 0; i < pages.size(); ++i) {
++			if (fits(pages[i])) {
++				pageIndex = i;
++				auto& page = pages[i];
++				if (page.x + cellWidth > atlasSize) {
++					page.x = 1;
++					page.y += page.rowHeight;
++					page.rowHeight = 0;
++				}
++				x = page.x + 1;
++				y = page.y + 1;
++				page.x += cellWidth;
++				page.rowHeight = (std::max)(page.rowHeight, cellHeight);
++				return true;
++			}
++		}
++
++		if (pages.size() * (size_t)atlasBytes < maxAtlasBytes) {
++			atlas_page_s page;
++			if (!CreatePage(page)) return false;
++			pages.push_back(std::move(page));
++			pageIndex = pages.size() - 1;
++			auto& created = pages.back();
++			x = created.x + 1;
++			y = created.y + 1;
++			created.x += cellWidth;
++			created.rowHeight = cellHeight;
++			return true;
++		}
++
++		size_t oldest = pages.size();
++		for (size_t i = 0; i < pages.size(); ++i) {
++			if (pages[i].lastUsedFrame < frame && (oldest == pages.size() || pages[i].lastUsedFrame < pages[oldest].lastUsedFrame)) {
++				oldest = i;
++			}
++		}
++		if (oldest == pages.size() || !ResetPage(oldest)) return false;
++		pageIndex = oldest;
++		auto& page = pages[oldest];
++		x = page.x + 1;
++		y = page.y + 1;
++		page.x += cellWidth;
++		page.rowHeight = cellHeight;
++		return true;
++	}
++
++	bool GetGlyph(char32_t cp, int height, bool bold, r_unicode_glyph_s& output)
++	{
++		if (!fontResource || !IsKoreanCodepoint(cp) || height <= 0 || height > 256) return false;
++		const uint64_t key = MakeKey(cp, height, bold);
++		auto found = glyphs.find(key);
++		if (found != glyphs.end()) {
++			pages[found->second.pageIndex].lastUsedFrame = frame;
++			output = found->second.glyph;
++			return true;
++		}
++
++		glyph_bitmap_s bitmap;
++		if (!Rasterize(cp, height, bold, bitmap)) return false;
++		if (bitmap.width == 0) {
++			output = {};
++			output.width = 0;
++			output.spLeft = bitmap.spLeft;
++			output.spRight = bitmap.spRight;
++			output.yOffset = bitmap.yOffset;
++			return true;
++		}
++
++		size_t pageIndex;
++		int x, y;
++		if (!Place(bitmap.width, bitmap.height, pageIndex, x, y)) return false;
++		auto& page = pages[pageIndex];
++		if (!page.texture->UpdateSubImage(x, y, bitmap.width, bitmap.height, bitmap.rgba.data())) return false;
++		page.lastUsedFrame = frame;
++		r_unicode_glyph_s glyph;
++		glyph.tex = page.texture.get();
++		glyph.tcLeft = (float)x / atlasSize;
++		glyph.tcRight = (float)(x + bitmap.width) / atlasSize;
++		glyph.tcTop = (float)y / atlasSize;
++		glyph.tcBottom = (float)(y + bitmap.height) / atlasSize;
++		glyph.width = bitmap.width;
++		glyph.height = bitmap.height;
++		glyph.spLeft = bitmap.spLeft;
++		glyph.spRight = bitmap.spRight;
++		glyph.yOffset = bitmap.yOffset;
++		page.keys.push_back(key);
++		glyphs.emplace(key, cached_glyph_s{ glyph, pageIndex });
++		output = glyph;
++		return true;
++	}
++
++	r_renderer_c* renderer;
++	std::vector<char> fontData;
++	HANDLE fontResource = nullptr;
++	std::unordered_map<uint64_t, font_context_s> contexts;
++	std::vector<atlas_page_s> pages;
++	std::unordered_map<uint64_t, cached_glyph_s> glyphs;
++	uint64_t frame = 1;
++};
++
++r_unicode_font_cache_c::r_unicode_font_cache_c(r_renderer_c* renderer)
++	: data(std::make_unique<impl>(renderer))
++{}
++
++r_unicode_font_cache_c::~r_unicode_font_cache_c() = default;
++
++bool r_unicode_font_cache_c::GetGlyph(char32_t codepoint, int height, bool bold, r_unicode_glyph_s& glyph)
++{
++	return data->GetGlyph(codepoint, height, bold, glyph);
++}
++
++void r_unicode_font_cache_c::BeginFrame()
++{
++	++data->frame;
++}
++
++#else
++
++struct r_unicode_font_cache_c::impl {};
++
++r_unicode_font_cache_c::r_unicode_font_cache_c(r_renderer_c*) : data(std::make_unique<impl>()) {}
++r_unicode_font_cache_c::~r_unicode_font_cache_c() = default;
++bool r_unicode_font_cache_c::GetGlyph(char32_t, int, bool, r_unicode_glyph_s&) { return false; }
++void r_unicode_font_cache_c::BeginFrame() {}
++
++#endif
+diff --git a/engine/render/r_unicode_font.h b/engine/render/r_unicode_font.h
+new file mode 100644
+index 0000000..02b3c01
+--- /dev/null
++++ b/engine/render/r_unicode_font.h
+@@ -0,0 +1,35 @@
++// SimpleGraphic Engine
++// Unicode glyphs rasterized into a runtime bitmap atlas from the bundled Korean font.
++
++#pragma once
++
++#include <memory>
++
++class r_renderer_c;
++class r_tex_c;
++
++struct r_unicode_glyph_s {
++	r_tex_c* tex = nullptr;
++	float tcLeft = 0.0f;
++	float tcRight = 0.0f;
++	float tcTop = 0.0f;
++	float tcBottom = 0.0f;
++	int width = 0;
++	int height = 0;
++	int spLeft = 0;
++	int spRight = 0;
++	int yOffset = 0;
++};
++
++class r_unicode_font_cache_c {
++public:
++	explicit r_unicode_font_cache_c(r_renderer_c* renderer);
++	~r_unicode_font_cache_c();
++
++	bool GetGlyph(char32_t codepoint, int height, bool bold, r_unicode_glyph_s& glyph);
++	void BeginFrame();
++
++private:
++	struct impl;
++	std::unique_ptr<impl> data;
++};
