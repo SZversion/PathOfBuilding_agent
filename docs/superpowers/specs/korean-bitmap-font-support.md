@@ -18,7 +18,7 @@ Render Korean text throughout the Path of Building Community UI using bitmap gly
 - Keep the existing PoB bitmap fonts for characters they already contain. Resolve missing glyphs through the bundled Korean bitmap cache.
 - Cover the full Hangul syllable block, modern Hangul jamo, and standard Korean punctuation. Unsupported scripts such as Hanja keep the existing visible `U+XXXX` placeholder behavior.
 - Share the Korean bitmap cache across existing PoB font faces while preserving their existing ASCII appearance. The Korean fallback face uses regular and bold weights where available.
-- Update the SimpleGraphic renderer and the font metadata/generation path, build the Windows runtime DLL, add the bundled font/license and required runtime data, and update the PoB manifest hashes.
+- Update the SimpleGraphic renderer to rasterize missing Hangul glyphs from the bundled font into bounded bitmap atlas pages at runtime; the existing static ASCII `.tgf` atlases remain unchanged. Build the Windows runtime DLL, add the bundled font/license and required runtime data, and update the PoB manifest hashes.
 - Preserve UTF-8 input, drawing, width measurement, wrapping, and cursor-index behavior across the UI.
 
 ## Compatibility and resource constraints
