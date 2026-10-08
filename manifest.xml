@@ -439,7 +439,7 @@
 	<File name="msvcp140_codecvt_ids.dll" part="runtime" runtime="win32" sha1="91b19dd0db24a5cbd944eca9c67fad3b53f9c154" />
 	<File name="Path{space}of{space}Building.exe" part="runtime" runtime="win32" sha1="8dcd46aac0b70d0a4d5eac5c7244302c9b805f85" />
 	<File name="re2.dll" part="runtime" runtime="win32" sha1="0fd062fe4c82ddabe97b640f4a3da173e4bae886" />
-	<File name="SimpleGraphic.dll" part="runtime" runtime="win32" sha1="00248efe6208e0d268bbf737a0bf2e6332428077" />
+	<File name="SimpleGraphic.dll" part="runtime" runtime="win32" sha1="ecca99ac430638d421e7441095bc214c88341f6c" />
 	<File name="SimpleGraphic/Fonts/Bitstream Vera Sans Mono.10.tga" part="runtime" sha1="12e59115634000273611ef08b0d1b130ea95d4a7" />
 	<File name="SimpleGraphic/Fonts/Bitstream Vera Sans Mono.12.tga" part="runtime" sha1="325378beb3e4944f1504b402bdd809c99b240c1d" />
 	<File name="SimpleGraphic/Fonts/Bitstream Vera Sans Mono.14.tga" part="runtime" sha1="0df6084dca4762df282cc4ab1ad5ddc21e9c6e12" />
