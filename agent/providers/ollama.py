@@ -30,7 +30,8 @@ class OllamaDevelopmentProvider(OpenAICompatibleClient):
         return f"{parsed.scheme}://{parsed.netloc}/api/chat"
 
     def _native_request(self, messages, *, format=None, stream=False):
-        body = {"model": self.model, "messages": messages, "stream": stream}
+        body = {"model": self.model, "messages": messages, "stream": stream,
+                "options": {"temperature": 0}}
         if format is not None:
             body["format"] = format
         request = urllib.request.Request(self._native_url(), data=json.dumps(body).encode("utf-8"), headers={"Content-Type": "application/json"})

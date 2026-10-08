@@ -193,7 +193,7 @@ _TOOL_RECORDS = [{'name': 'search_knowledge',
                 'durationType': 'string'},
   'required': ('durationType',)},
  {'name': 'explain_stat',
-  'description': 'Read a stat value and the PoB modifier trace supporting it.',
+  'description': 'Read a named stat value and its PoB modifier trace, optionally scoped to a skill.',
   'group': 'pob_live',
   'arguments': {'stat': 'string',
                 'skillIndex': 'integer',
@@ -260,7 +260,8 @@ def _schema(record: dict) -> dict:
         props["source"]["default"] = "both"
     result = {"type":"object", "properties":props, "additionalProperties":False}
     if record["required"]: result["required"] = list(record["required"])
-    if "skillIndex" in props and "skillName" in props: result["anyOf"] = [{"required":["skillIndex"]},{"required":["skillName"]}]
+    if name != "explain_stat" and "skillIndex" in props and "skillName" in props:
+        result["anyOf"] = [{"required":["skillIndex"]},{"required":["skillName"]}]
     return result
 
 @dataclass(frozen=True)

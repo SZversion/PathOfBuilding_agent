@@ -12,7 +12,7 @@ from .orchestration.recovery import exhausted_response, recover_response, standa
 from .orchestration.state_store import OrchestrationStateStore, StateStoreError
 from .pob.bridge import PobBridgeError, make_pob_handlers
 from .search.external_search import ExternalSearch
-from .providers.ollama import DEFAULT_OLLAMA_MODEL, OllamaDevelopmentProvider
+from .providers.ollama import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, OllamaDevelopmentProvider
 from .providers.openai_compatible import OpenAICompatibleClient
 from .mcp.client import McpClientError, McpSearchFacade, McpToolClient
 
@@ -48,8 +48,14 @@ def _cache_id(build):
 
 
 def _provider(args):
-    if args.local_ollama:
-        return OllamaDevelopmentProvider(model=args.model or DEFAULT_OLLAMA_MODEL)
+    provider_mode = os.getenv("POB_AGENT_MODEL_PROVIDER", "openai_compatible").strip().casefold()
+    if args.local_ollama or provider_mode == "ollama":
+        return OllamaDevelopmentProvider(
+            endpoint=os.getenv("POB_AGENT_MODEL_ENDPOINT", DEFAULT_OLLAMA_ENDPOINT),
+            model=args.model or os.getenv("POB_AGENT_MODEL", DEFAULT_OLLAMA_MODEL),
+        )
+    if provider_mode not in {"openai_compatible", "openai"}:
+        raise ValueError("POB_AGENT_MODEL_PROVIDER must be ollama or openai_compatible")
     if args.model:
         raise ValueError("--model requires --local-ollama")
     endpoint = os.getenv("POB_AGENT_MODEL_ENDPOINT")
