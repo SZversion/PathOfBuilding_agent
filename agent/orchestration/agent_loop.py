@@ -507,6 +507,14 @@ class AgentLoop:
     def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None,
             tool_definitions=None, request_id=None, on_token=None):
         recorder = self.trace_factory(request_id=request_id, exporter=self.trace_exporter)
+        recorder.defer_export = True
+        result = self._run(question, search, handlers, snapshot=snapshot, current_revision=current_revision,
+                           tool_definitions=tool_definitions, on_token=on_token, recorder=recorder)
+        recorder.complete_output(result)
+        return result
+
+    def _run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None,
+             tool_definitions=None, on_token=None, recorder):
         recorder.emit("run_started", "run", "started", provider=recorder.provider_metadata(self.model))
         try:
             query = normalize_query(question)
