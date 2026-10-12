@@ -75,6 +75,11 @@ services:
     command: ["python", "-m", "agent.mcp.server"]
     restart: unless-stopped
     environment:
+      LANGFUSE_BASE_URL: http://langfuse-web:3000
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:?set LANGFUSE_PUBLIC_KEY in .env.docker}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:?set LANGFUSE_SECRET_KEY in .env.docker}
+      POB_AGENT_LANGFUSE_ALLOWED_HOSTS: langfuse-web
+      POB_AGENT_LANGFUSE_SAMPLE_RATE: ${POB_AGENT_LANGFUSE_SAMPLE_RATE:-1}
       POB_AGENT_MCP_TRANSPORT: streamable-http
       POB_AGENT_MCP_HOST: 0.0.0.0
       POB_AGENT_MCP_PORT: 8000
