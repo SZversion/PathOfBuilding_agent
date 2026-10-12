@@ -274,11 +274,16 @@ class FunctionTrace:
         return False
 
 
-def trace_pipeline(function):
+def trace_pipeline(function=None, *, context_provider=None):
+    if function is None:
+        return lambda target: trace_pipeline(target, context_provider=context_provider)
     name = function.__module__ + "." + function.__qualname__
 
     def session_for(args, kwargs):
-        return FunctionTrace(name, inspect.signature(function).bind(*args, **kwargs).arguments)
+        headers = context_provider() if context_provider else {}
+        return FunctionTrace(name, inspect.signature(function).bind(*args, **kwargs).arguments,
+                             run_id=headers.get("x-pob-trace-run-id") or headers.get("X-PoB-Trace-Run-Id"),
+                             parent_id=headers.get("x-pob-trace-parent-id") or headers.get("X-PoB-Trace-Parent-Id"))
 
     if inspect.iscoroutinefunction(function):
         @functools.wraps(function)
