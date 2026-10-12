@@ -21,6 +21,13 @@ def create_server(*, endpoint_dir=None, knowledge_search=None, external_search=N
     server = Server("path-of-building-agent", version="1.0.0")
     handlers = create_handlers(endpoint_dir, knowledge_search, external_search, transport=transport)
 
+    def request_trace_headers():
+        try:
+            request = server.request_context.request
+        except LookupError:
+            return {}
+        return request.headers if request is not None else {}
+
     @server.list_tools()
     async def list_tools():
         return [Tool(name=spec.name, description=spec.description, inputSchema=spec.input_schema,
@@ -28,7 +35,7 @@ def create_server(*, endpoint_dir=None, knowledge_search=None, external_search=N
                 for spec in TOOL_CATALOG.values()]
 
     @server.call_tool()
-    @trace_pipeline
+    @trace_pipeline(context_provider=request_trace_headers)
     async def call_tool(name: str, arguments: dict):
         spec = TOOL_CATALOG.get(name)
         if spec is None or name not in handlers:
@@ -50,7 +57,7 @@ def create_server(*, endpoint_dir=None, knowledge_search=None, external_search=N
                          mimeType="application/json")]
 
     @server.read_resource()
-    @trace_pipeline
+    @trace_pipeline(context_provider=request_trace_headers)
     async def read_resource(uri):
         if str(uri) != "pob://current-snapshot":
             raise ValueError("unknown MCP resource")
