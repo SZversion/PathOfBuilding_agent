@@ -312,7 +312,7 @@ class AgentLoop:
             started = __import__("time").monotonic()
             provider = recorder.provider_metadata(self.model) if recorder else None
             if recorder:
-                recorder.emit("provider_started", "provider", "started", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages))
+                recorder.emit("provider_started", "provider", "started", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), input_payload=messages)
             try:
                 if stream and hasattr(self.model, "stream_chat"):
                     chunks = []
@@ -328,7 +328,7 @@ class AgentLoop:
                 else:
                     result = self.model.chat(messages)
                 if recorder:
-                    recorder.emit("provider_completed", "provider", "ok", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), duration_ms=round((__import__("time").monotonic() - started) * 1000))
+                    recorder.emit("provider_completed", "provider", "ok", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), input_payload=messages, output_payload=result, duration_ms=round((__import__("time").monotonic() - started) * 1000))
                 return result
             except Exception as error:
                 last = error
@@ -349,10 +349,12 @@ class AgentLoop:
         try:
             query = normalize_query(question)
         except PlanValidationError as error:
+            recorder.set_input(question)
             recorder.emit("run_completed", "run", "rejected", error_ref="INPUT_INVALID")
             return {"status": "plan_error", "error": {"code": "INPUT_INVALID", "message": str(error), "next_action": "repair_input"}, "trace": recorder.events}
         question_text = query["text"]
-        recorder.emit("planner_started", "planner", "started", attempt=1, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), provider=recorder.provider_metadata(self.model))
+        recorder.set_input({"question": question_text, "query": query})
+        recorder.emit("planner_started", "planner", "started", attempt=1, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), provider=recorder.provider_metadata(self.model), input_payload=query)
         if snapshot is None and callable(self.snapshot_provider):
             snapshot = self.snapshot_provider()
         sync = self.snapshot_sync.prepare(snapshot) if snapshot is not None else None
@@ -371,11 +373,11 @@ class AgentLoop:
                     {"role": "system", "content": PLANNER_SYSTEM},
                     {"role": "user", "content": json.dumps(planner_input, ensure_ascii=False)},
                 ], recorder=recorder)))
-                recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), plan_ref=recorder.plan_ref(planned))
+                recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), plan_ref=recorder.plan_ref(planned), input_payload=query, output_payload=planned)
                 break
             except PlanValidationError as error:
                 repair_feedback = _repair_feedback(error)
-                recorder.emit("planner_failed", "planner", "rejected", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error.code)
+                recorder.emit("planner_failed", "planner", "rejected", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error.code, input_payload=query, output_payload={"error_ref": error.code, "message": str(error)})
                 if error.code == "AMBIGUOUS_ALIAS":
                     recorder.emit("run_completed", "run", "rejected", error_ref=error.code)
                     return {"status": "error", "error": {"code": error.code, "recovery_class": "ASK_USER", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": llm_attempt, "message": str(error), "details": error.details, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
@@ -386,7 +388,8 @@ class AgentLoop:
             except Exception as error:
                 last_error = error
                 repair_feedback = _repair_feedback(error)
-                recorder.emit("planner_failed", "planner", "failed", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=getattr(error, "error", {}).get("code", type(error).__name__))
+                error_code = getattr(error, "error", {}).get("code", type(error).__name__)
+                recorder.emit("planner_failed", "planner", "failed", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, error_ref=error_code, input_payload=query, output_payload={"error_ref": error_code, "message": str(error)})
                 if llm_attempt == MAX_PLANNER_ATTEMPTS:
                     detail = {"code": "REPAIR_INPUT", "recovery_class": "REPAIR_INPUT", "stage": "plan_validation", "retryable": False, "attempt": llm_attempt, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": repair_feedback, "next_action": "human_review", "side_effect": "none", "operator_message": None, "secondary_causes": []}
                     detail = dict(detail)
@@ -441,6 +444,7 @@ class AgentLoop:
             {"role": "system", "content": ANSWER_SYSTEM},
             {"role": "user", "content": json.dumps(answer_payload, ensure_ascii=False)},
             ], recorder=recorder, stream=True, attempts=1, on_token=on_token)
+            recorder.set_output(answer)
         except Exception as error:
             detail = getattr(error, "error", None) or {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_answer", "retryable": True, "attempt": 1, "max_attempts": 2, "message": str(error), "details": {}, "next_action": "retry_llm", "side_effect": "none", "operator_message": None, "secondary_causes": []}
             partial = getattr(error, "_partial_text", "")

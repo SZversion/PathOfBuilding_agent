@@ -137,15 +137,17 @@ class LangfuseExporter:
             "error_ref": event.get("error_ref"), "provider": {"mode": provider.get("mode"), "model": provider.get("model"), "endpoint_ref": provider.get("endpoint_ref")},
             "snapshot": {"revision": snapshot.get("revision"), "build_id": snapshot.get("build_id")},
             "result_ref": {key: result.get(key) for key in ("facts_ref", "trace_ref", "sources_ref", "evidence_graph_ref")},
+            "input": event.get("input_payload"),
+            "output": event.get("output_payload"),
         }
 
     def _record_event(self, trace, event):
         safe = self._safe_event(event)
-        metadata = {key: value for key, value in safe.items() if key not in {"event_id", "event", "timestamp_utc", "duration_ms"}}
+        metadata = {key: value for key, value in safe.items() if key not in {"event_id", "event", "timestamp_utc", "duration_ms", "input", "output"}}
         # Langfuse 4.x creates child observations from the current observation.
         # Keep the fallback for injected test clients that expose a simple span.
         if hasattr(trace, "start_as_current_observation"):
-            return trace.start_as_current_observation(name=safe["event"] or "event", as_type="span", input=None, output=None, metadata=metadata)
+            return trace.start_as_current_observation(name=safe["event"] or "event", as_type="span", input=safe.get("input"), output=safe.get("output"), metadata=metadata)
         if hasattr(trace, "span"):
             trace.span(name=safe["event"], metadata=metadata)
             return nullcontext()
@@ -203,7 +205,7 @@ class LangfuseExporter:
         except Exception:
             return None
 
-    def export(self, events):
+    def export(self, events, *, input_payload=None, output_payload=None):
         try:
             if not self.enabled or not events:
                 return ExportResult("disabled", self.reason)
@@ -215,12 +217,15 @@ class LangfuseExporter:
                 return self._queue(events, self.reason)
             request_id = events[0].get("request_id")
             metadata = {"run_id": run_id, "request_id": request_id}
+            if output_payload is None:
+                terminal = next((event for event in reversed(events) if event.get("event") in {"run_completed", "final_failed"}), events[-1])
+                output_payload = {"status": terminal.get("status"), "error_ref": terminal.get("error_ref")}
             trace_context = self._trace_context(run_id)
             root_kwargs = {
                 "name": "pob-agent",
                 "as_type": "chain",
-                "input": None,
-                "output": None,
+                "input": input_payload,
+                "output": output_payload,
                 "metadata": metadata,
             }
             if trace_context is not None:
