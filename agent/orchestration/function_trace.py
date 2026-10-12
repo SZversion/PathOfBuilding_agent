@@ -180,7 +180,10 @@ class FunctionTrace:
             frame.f_trace_lines = False
             arguments = inspect.getargvalues(frame)
             names = arguments.args + [v for v in (arguments.varargs, arguments.keywords) if v]
-            payload = {name: _value(arguments.locals[name]) for name in names}
+            payload = {name: ({"type": type(arguments.locals[name]).__name__,
+                               "object_id": f"{id(arguments.locals[name]):016x}"}
+                              if name in {"self", "cls"} else _value(arguments.locals[name]))
+                       for name in names}
             parent = self.parent_span(frame.f_back)
             parent_id = _span_ids(parent)[1] if parent else None
             name = frame.f_globals["__name__"] + "." + frame.f_code.co_qualname
