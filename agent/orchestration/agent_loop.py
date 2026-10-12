@@ -306,7 +306,7 @@ class AgentLoop:
             trace_exporter = LangfuseExporter.from_env()
         self.trace_exporter = trace_exporter
 
-    def _chat(self, messages, *, attempts=2, recorder=None):
+    def _chat(self, messages, *, attempts=2, recorder=None, stream=False, on_token=None):
         last = None
         for attempt in range(1, attempts + 1):
             started = __import__("time").monotonic()
@@ -314,7 +314,19 @@ class AgentLoop:
             if recorder:
                 recorder.emit("provider_started", "provider", "started", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages))
             try:
-                result = self.model.chat(messages)
+                if stream and hasattr(self.model, "stream_chat"):
+                    chunks = []
+                    try:
+                        for chunk in self.model.stream_chat(messages):
+                            chunks.append(chunk)
+                            if on_token:
+                                on_token(chunk)
+                    except Exception as stream_error:
+                        stream_error._partial_text = "".join(chunks)
+                        raise
+                    result = "".join(chunks)
+                else:
+                    result = self.model.chat(messages)
                 if recorder:
                     recorder.emit("provider_completed", "provider", "ok", attempt=attempt, provider=provider, prompt_ref=recorder.prompt_ref(messages), duration_ms=round((__import__("time").monotonic() - started) * 1000))
                 return result
@@ -331,7 +343,7 @@ class AgentLoop:
                     raise
         raise last
 
-    def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None, request_id=None):
+    def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None, request_id=None, on_token=None):
         recorder = self.trace_factory(request_id=request_id, exporter=self.trace_exporter)
         recorder.emit("run_started", "run", "started", provider=recorder.provider_metadata(self.model))
         try:
@@ -428,9 +440,14 @@ class AgentLoop:
             answer = self._chat([
             {"role": "system", "content": ANSWER_SYSTEM},
             {"role": "user", "content": json.dumps(answer_payload, ensure_ascii=False)},
-            ], recorder=recorder)
+            ], recorder=recorder, stream=True, attempts=1, on_token=on_token)
         except Exception as error:
             detail = getattr(error, "error", None) or {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_answer", "retryable": True, "attempt": 1, "max_attempts": 2, "message": str(error), "details": {}, "next_action": "retry_llm", "side_effect": "none", "operator_message": None, "secondary_causes": []}
+            partial = getattr(error, "_partial_text", "")
+            if partial:
+                recorder.emit("final_completed", "final", "partial", result_ref=recorder.result_refs({"partial": True}))
+                recorder.emit("run_completed", "run", "partial", error_ref=detail.get("code"))
+                return {"status": "partial", "plan": planned, "execution": execution, "answer": partial, "error": detail, "trace": recorder.events}
             recorder.emit("final_failed", "final", "failed", error_ref=detail.get("code"))
             recorder.emit("run_completed", "run", "failed", error_ref=detail.get("code"))
             return {"status": "error", "plan": planned, "execution": execution, "error": detail, "trace": recorder.events}

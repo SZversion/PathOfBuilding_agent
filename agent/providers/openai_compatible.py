@@ -1,3 +1,4 @@
+import codecs
 import json
 import urllib.error
 import urllib.parse
@@ -32,6 +33,63 @@ class OpenAICompatibleClient:
         self.model = model.strip()
         self.api_key = api_key
         self.timeout = timeout
+
+    @staticmethod
+    def _sse_events(response):
+        decoder = codecs.getincrementaldecoder("utf-8")()
+        event = []
+        buffer = ""
+        for chunk in response:
+            buffer += chunk if isinstance(chunk, str) else decoder.decode(chunk)
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                line = line.rstrip("\r")
+                if not line:
+                    if event:
+                        yield "\n".join(event)
+                        event = []
+                elif line.startswith("data:"):
+                    event.append(line[5:].lstrip())
+        tail = decoder.decode(b"", final=True)
+        buffer += tail
+        if buffer:
+            line = buffer.rstrip("\r")
+            if line.startswith("data:"):
+                event.append(line[5:].lstrip())
+        if event:
+            yield "\n".join(event)
+
+    def stream_chat(self, messages):
+        payload = json.dumps({"model": self.model, "messages": messages, "temperature": 0, "stream": True}).encode("utf-8")
+        request = urllib.request.Request(self.endpoint + "/chat/completions", data=payload, headers={"Content-Type": "application/json"})
+        if self.api_key:
+            request.add_header("Authorization", "Bearer " + self.api_key)
+        try:
+            response = urllib.request.urlopen(request, timeout=self.timeout)
+        except TimeoutError:
+            raise ExternalModelError("external model stream timed out", code="TIMEOUT", retryable=False, details={"timeout": True}) from None
+        except urllib.error.HTTPError as error:
+            raise ExternalModelError("external model HTTP request failed", code="MODEL_REQUEST_FAILED", retryable=False, details={"http_status": error.code}) from error
+        except urllib.error.URLError:
+            raise ExternalModelError("external model stream failed", code="MODEL_TRANSIENT", retryable=True) from None
+        try:
+            for payload in self._sse_events(response):
+                if payload == "[DONE]":
+                    return
+                try:
+                    data = json.loads(payload)
+                except json.JSONDecodeError as error:
+                    raise ExternalModelError("stream event is not valid JSON", code="MODEL_SCHEMA_INVALID", retryable=False) from error
+                if data.get("error"):
+                    raise ExternalModelError("external model stream returned an error", code="MODEL_REQUEST_FAILED", retryable=False, details={"provider_error": "present"})
+                try:
+                    token = data["choices"][0].get("delta", {}).get("content", "")
+                except (KeyError, IndexError, TypeError) as error:
+                    raise ExternalModelError("stream event has no delta content", code="MODEL_SCHEMA_INVALID", retryable=False) from error
+                if token:
+                    yield token
+        finally:
+            response.close()
 
     def chat(self, messages):
         payload = json.dumps({"model": self.model, "messages": messages, "temperature": 0}).encode("utf-8")
