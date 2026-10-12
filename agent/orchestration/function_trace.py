@@ -4,6 +4,7 @@ from contextlib import contextmanager, nullcontext
 import contextvars
 import dis
 import functools
+from dataclasses import asdict, is_dataclass
 import hashlib
 import inspect
 from datetime import datetime, timezone
@@ -71,6 +72,10 @@ def _value(value, seen=None):
             return LangfuseExporter._payload({str(k): _value(v, seen) for k, v in value.items()})
         if isinstance(value, (list, tuple, set, frozenset)):
             return [_value(v, seen) for v in value]
+        if isinstance(value, type):
+            return {"type": value.__module__ + "." + value.__qualname__}
+        if is_dataclass(value):
+            return _value(asdict(value), seen)
         if hasattr(value, "model_dump"):
             return _value(value.model_dump(mode="json"), seen)
         if isinstance(value, BaseException):
@@ -78,7 +83,10 @@ def _value(value, seen=None):
                     "arguments": _value(value.args, seen), "details": _value(vars(value), seen),
                     "cause": _value(value.__cause__, seen)}
         if type(value).__module__.startswith(("agent.", "argparse", "types", "starlette")):
-            return {"type": type(value).__name__, "attributes": _value(vars(value), seen)}
+            attributes = (vars(value) if hasattr(value, "__dict__") else
+                          {slot: getattr(value, slot) for slot in getattr(type(value), "__slots__", ())
+                           if hasattr(value, slot)})
+            return {"type": type(value).__name__, "attributes": _value(attributes, seen)}
         if callable(value):
             return {"callable": getattr(value, "__qualname__", type(value).__name__)}
         if hasattr(value, "__dict__"):
@@ -118,7 +126,7 @@ def _trace(frame, event, value):
     try:
         session.record(frame, event, value)
     except Exception as error:
-        session.warnings.append(type(error).__name__)
+        session.warnings.append(module + "." + frame.f_code.co_qualname + ": " + type(error).__name__ + ": " + str(_value(str(error))))
     return _trace
 
 
