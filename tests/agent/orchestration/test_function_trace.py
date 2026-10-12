@@ -85,3 +85,35 @@ def test_tracing_failure_never_changes_function_result(monkeypatch):
                         lambda: types.SimpleNamespace(client=Broken()))
     fixture = project_function("def run(value): return value")
     assert trace_pipeline(fixture.run)({"answer": 42}) == {"answer": 42}
+
+
+def test_response_objects_preserve_body_and_redact_cookies():
+    from starlette.responses import JSONResponse
+    from agent.orchestration.function_trace import _value
+    response = JSONResponse({"nested": {"all": [None, {}, []]}, "answer": "complete"})
+    response.set_cookie("session", "private-session")
+    recorded = _value(response)
+    assert recorded["attributes"]["body"] == {"nested": {"all": [None, {}, []]}, "answer": "complete"}
+    assert ["set-cookie", "[REDACTED]"] in recorded["attributes"]["raw_headers"]
+
+
+def test_async_calls_and_worker_threads_keep_function_returns(monkeypatch):
+    import asyncio
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    fixture = project_function("""
+from agent.orchestration.function_trace import trace_pipeline
+@trace_pipeline
+def worker(value): return {'value': value}
+async def run(value):
+    import asyncio
+    result = await asyncio.to_thread(worker, value)
+    await asyncio.sleep(0)
+    return result
+""")
+    assert asyncio.run(trace_pipeline(fixture.run)(42)) == {"value": 42}
+    worker = next(s for s in client.spans if s["name"].endswith(".worker"))
+    assert worker["input"]["value"] == 42
+    assert worker["output"]["return"] == {"value": 42}
+    assert all(s.get("ended") for s in client.spans)
