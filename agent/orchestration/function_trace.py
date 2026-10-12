@@ -6,6 +6,8 @@ import dis
 import functools
 import hashlib
 import inspect
+from datetime import datetime, timezone
+import time
 import os
 from pathlib import Path
 import sys
@@ -17,6 +19,30 @@ from .langfuse_exporter import LangfuseExporter, ExportResult, _bounded_call
 _ACTIVE = contextvars.ContextVar("pob_function_trace", default=None)
 _LOCAL = threading.local()
 _EXCLUDED = {__name__, "agent.orchestration.trace", "agent.orchestration.langfuse_exporter"}
+
+
+class _QueuedSpan:
+    def __init__(self, session, name, arguments, parent):
+        self.session = session
+        self.id = uuid.uuid4().hex[:16]
+        self.started = time.monotonic()
+        self.event = {"event_id": self.id, "run_id": session.run_id, "event": name,
+                      "stage": "function", "status": "started", "input_payload": _value(arguments),
+                      "parent_event_id": parent}
+
+    def get_trace_id(self): return self.session.trace_id
+    def get_observation_id(self): return self.id
+
+    def update(self, **values):
+        if "output" in values:
+            self.event["output_payload"] = values["output"]
+        if values.get("level") == "ERROR":
+            self.event["status"] = "failed"
+
+    def end(self):
+        self.event["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
+        self.event["duration_ms"] = round((time.monotonic() - self.started) * 1000)
+        self.session.queue_records.append(self.event)
 
 
 def current_trace():
@@ -118,12 +144,15 @@ class FunctionTrace:
         self.root = None
         self.frames = {}
         self.events = []
+        self.queue_records = []
         self.output = None
         self.warnings = []
         self.closed = False
 
     def _start(self, name, arguments, parent=None):
         client = self.exporter.client
+        if client is None:
+            return _QueuedSpan(self, name, arguments, parent or self.parent_id)
         trace_context = {"trace_id": self.trace_id, "parent_span_id": parent or self.parent_id}
         if hasattr(client, "_otel_tracer"):
             from opentelemetry import trace
@@ -180,8 +209,14 @@ class FunctionTrace:
         self.token = _ACTIVE.set(self)
         try:
             self.exporter = LangfuseExporter.from_env()
-            if self.exporter.client is not None:
+            try:
                 self.root = self._start("pipeline:" + self.name, self.arguments)
+            except Exception as error:
+                self.warnings.append(type(error).__name__)
+                if hasattr(self.exporter, "_queue"):
+                    self.exporter.client = None
+                    self.root = self._start("pipeline:" + self.name, self.arguments)
+            if self.root is not None:
                 if getattr(_LOCAL, "users", 0) == 0:
                     _LOCAL.previous = sys.gettrace()
                     sys.settrace(_trace)
@@ -209,14 +244,17 @@ class FunctionTrace:
                 self.root.update(output=_value(self.output), level="ERROR" if error else "DEFAULT",
                                  metadata={"run_id": self.run_id, "exception": _value(error),
                                            "tracing_warnings": self.warnings})
-                if self.events:
+                if self.events and self.exporter.client is not None:
                     from opentelemetry import trace
                     with (trace.use_span(self.root._otel_span) if hasattr(self.root, "_otel_span") else nullcontext()):
                         for event in self.events:
                             with self.exporter._record_event(self.exporter.client, event):
                                 pass
                 self.root.end()
-                _bounded_call(self.exporter.client.flush, 2.0)
+                if self.exporter.client is None:
+                    self.exporter._queue(self.queue_records + self.events, self.exporter.reason)
+                else:
+                    _bounded_call(self.exporter.client.flush, 2.0)
             except Exception as failure:
                 self.warnings.append(type(failure).__name__)
         _ACTIVE.reset(self.token)
