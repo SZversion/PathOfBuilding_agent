@@ -44,7 +44,11 @@ boundary. Function locals are not collected.
 
 Functions are traced during execution, with actual call nesting and elapsed
 time; coroutine awaits and generator yields do not end the function span.
-MCP worker calls retain the request context. LLM provider function returns and
+MCP worker calls retain the request context. Detached protocol callbacks
+restore it from the authenticated request headers; closed inherited contexts
+are not reused. Functions started with `python -m` retain their canonical
+package names. CLI stream callback text is also exposed as `stream_fragment`
+to distinguish it from authentication tokens. LLM provider function returns and
 `provider_completed` both expose model output; model output is recorded even
 when later JSON validation or Tool execution rejects the request. Tool and
 final lifecycle events also retain their full result or error payload.
