@@ -35,8 +35,9 @@ its qualified name. Input contains the complete bound arguments, including
 keyword/default arguments. Output contains `return`, all `exceptions`
 (including handled failures), and generator `yields` when applicable. Nested
 JSON fields, arrays, empty values, and long strings are preserved. Objects
-are serialized through their model data or attributes; cycles and native
-runtime handles are represented explicitly. Tracing infrastructure is excluded
+are serialized through their model data or attributes; bound receivers
+(`self`/`cls`), cycles, and native runtime handles are represented by identifiers
+and types, without copying unrelated receiver state. Tracing infrastructure is excluded
 to avoid tracing itself. Third-party library internals and Lua function locals
 are not instrumented; the Python transport records the PoB request/response
 boundary. Function locals are not collected.
@@ -50,6 +51,7 @@ final lifecycle events also retain their full result or error payload.
 
 Authentication fields, configured credentials, and authentication/cookie
 headers are redacted. A trace failure must not change the function result or
-exception. An unfinished function at request termination is marked
+exception. When the SDK/configuration is unavailable, full function payloads
+use the existing bounded local queue. An unfinished function at request termination is marked
 `incomplete`; tracing warnings remain on the pipeline span. Earlier traces
 are not rewritten.
