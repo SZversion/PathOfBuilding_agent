@@ -163,3 +163,19 @@ def test_server_callback_restores_trace_context_from_request_headers(monkeypatch
     context = client.spans[0]["trace_context"]
     assert context["trace_id"] == hashlib.sha256(("pob-agent:" + run_id).encode()).hexdigest()[:32]
     assert context["parent_span_id"] == "1234567890abcdef"
+
+
+def test_detached_callback_does_not_reuse_a_closed_request_trace(monkeypatch):
+    import contextvars
+    from agent.orchestration.function_trace import FunctionTrace
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    with FunctionTrace("request"):
+        detached = contextvars.copy_context()
+    fixture = project_function("def callback(value): return value")
+    wrapped = trace_pipeline(fixture.callback, context_provider=lambda: {"x-pob-trace-run-id": "run-detached"})
+    assert detached.run(wrapped, 42) == 42
+    callback = next(s for s in client.spans if s["name"] == "agent.trace_fixture.callback")
+    assert callback["output"]["return"] == 42
+    assert callback["ended"]
