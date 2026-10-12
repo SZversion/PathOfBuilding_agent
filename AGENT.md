@@ -106,9 +106,14 @@ Agent 변경을 적용하기 전에 Bridge가 기대한 revision과 현재 revis
 - 외부 검색 결과의 자동 KB 승격
 - 기존 PoB 기능·UI·저장 흐름의 회귀를 허용하는 변경
 
-Langfuse 추적은 AgentLoop에 기본 연결되고 sampling 기본값은 1이다. endpoint는
-localhost/127.0.0.1/::1만 허용하며, 전송 실패는
-요청 결과를 중단시키지 않고 redacted event를 제한된 NDJSON queue에 남긴다.
+Langfuse 추적은 AgentLoop에 기본 연결되고 sampling 기본값은 1이다. 별도 개발
+활성화 플래그는 필요하지 않다. 호스트에서 현재 접속 주소는 `http://localhost:13000`이며
+`.env.docker`의 `LANGFUSE_PORT=13000`으로 지정한다. endpoint는 기본적으로
+localhost/127.0.0.1/::1을 허용한다. Docker 백엔드는 Compose 내부 주소
+`http://langfuse-web:3000`을 사용하며 `POB_AGENT_LANGFUSE_ALLOWED_HOSTS=langfuse-web`로
+로컬 서비스 호스트를 명시적으로 허용한다. 이 예외는 외부 원격 Langfuse 사용을
+허용하는 정책이 아니다. 전송 실패는 요청 결과를 중단시키지 않고 redacted event를
+제한된 NDJSON queue에 남긴다.
 
 ## 9. 검증 기준
 
