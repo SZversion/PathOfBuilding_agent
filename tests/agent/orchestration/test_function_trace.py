@@ -117,3 +117,18 @@ async def run(value):
     assert worker["input"]["value"] == 42
     assert worker["output"]["return"] == {"value": 42}
     assert all(s.get("ended") for s in client.spans)
+
+
+def test_offline_function_traces_keep_full_values_in_existing_queue(monkeypatch, tmp_path):
+    import json
+    from agent.orchestration.langfuse_exporter import LangfuseExporter
+    queue = tmp_path / "queue.ndjson"
+    exporter = LangfuseExporter(enabled=True, queue_path=queue)
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env", lambda: exporter)
+    fixture = project_function("def run(value): return {'all': value, 'empty': []}")
+    result = trace_pipeline(fixture.run)({"value": 42, "token": "private"})
+    assert result["all"]["token"] == "private"
+    saved = json.loads(queue.read_text())
+    function = next(e for e in saved["events"] if e["event"] == "agent.trace_fixture.run")
+    assert function["input"]["value"] == {"value": 42, "token": "[REDACTED]"}
+    assert function["output"]["return"]["empty"] == []
