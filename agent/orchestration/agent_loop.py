@@ -4,6 +4,7 @@ import re
 from .runtime import SnapshotSync, execute_plan
 from .recovery import EXHAUSTED_ANSWER, is_exhausted
 from .trace import TraceRecorder
+from .function_trace import current_trace
 from agent.error_registry import parent_error_ref
 from agent.tool_catalog import ALLOWED_TOOLS
 
@@ -456,7 +457,7 @@ class AgentLoop:
         self.trace_factory = trace_factory
         if trace_exporter is None:
             from .langfuse_exporter import LangfuseExporter
-            trace_exporter = LangfuseExporter.from_env()
+            trace_exporter = current_trace() or LangfuseExporter.from_env()
         self.trace_exporter = trace_exporter
 
     def _chat(self, messages, *, attempts=2, recorder=None, stream=False, on_token=None, response_format=None):
@@ -507,6 +508,9 @@ class AgentLoop:
     def run(self, question, search=None, handlers=None, *, snapshot=None, current_revision=None,
             tool_definitions=None, request_id=None, on_token=None):
         recorder = self.trace_factory(request_id=request_id, exporter=self.trace_exporter)
+        session = current_trace()
+        if session is not None:
+            recorder.run_id = session.run_id
         recorder.defer_export = True
         result = self._run(question, search, handlers, snapshot=snapshot, current_revision=current_revision,
                            tool_definitions=tool_definitions, on_token=on_token, recorder=recorder)
@@ -603,14 +607,14 @@ class AgentLoop:
             for attempt in range(1, final_attempt + 1):
                 count = max(1, final_count - final_attempt + attempt) if isinstance(final_count, int) else final_count
                 retry_of = f"tool:{index}:attempt:{attempt - 1}" if attempt > 1 else None
-                recorder.emit("tool_started", "tool", "started", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, plan_ref=recorder.plan_ref(planned), safe_args_ref=safe_args)
+                recorder.emit("tool_started", "tool", "started", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, plan_ref=recorder.plan_ref(planned), safe_args_ref=safe_args, input_payload=planned.get("steps", [])[index].get("arguments", {}) if index < len(planned.get("steps", [])) else {})
                 if attempt < final_attempt:
                     recorder.emit("tool_failed", "tool", "failed", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref="RETRY_TOOL")
                 elif step.get("status") == "ok":
-                    recorder.emit("tool_completed", "tool", "ok", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, result_ref=recorder.result_refs(step.get("result")))
+                    recorder.emit("tool_completed", "tool", "ok", attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, result_ref=recorder.result_refs(step.get("result")), output_payload=step.get("result"))
                 else:
                     status = "timeout" if step.get("status") == "timeout" or (step.get("error") or {}).get("code") == "TIMEOUT" else step.get("status", "failed")
-                    recorder.emit("tool_failed", "tool", status, attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref=(step.get("error") or {}).get("code"), error_details=(step.get("error") or {}).get("details", {}))
+                    recorder.emit("tool_failed", "tool", status, attempt=attempt, retry_of=retry_of, step_index=index, tool=step.get("tool"), tool_call_count=count, error_ref=(step.get("error") or {}).get("code"), error_details=(step.get("error") or {}).get("details", {}), output_payload=step.get("error"))
         exhausted = next((step.get("error") for step in execution.get("steps", []) if is_exhausted(step.get("error"))), None)
         if exhausted:
             recorder.emit("run_completed", "run", "partial", error_ref=exhausted.get("code"), error_details=exhausted.get("details", {}))
@@ -628,15 +632,15 @@ class AgentLoop:
                                           "AMBIGUOUS_ALIAS", "SNAPSHOT_REVISION_CONFLICT",
                                       }), None) or evidence_failure
         if authoritative_failure:
-            recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned))
+            recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned), input_payload={"question": question_text, "execution": execution})
             code = authoritative_failure.get("code")
             next_action = authoritative_failure.get("next_action", "reject_request")
             answer = f"PoB에서 값을 가져오지 못했습니다 ({code}). 다음 조치: {next_action}. 근거가 부족하므로 추측하지 않습니다."
             uncertainty = {"code": code, "reason": "authoritative PoB result unavailable", "next_action": next_action}
-            recorder.emit("final_completed", "final", "partial", result_ref=recorder.result_refs({"uncertainty": uncertainty}))
+            recorder.emit("final_completed", "final", "partial", result_ref=recorder.result_refs({"uncertainty": uncertainty}), output_payload={"answer": answer, "uncertainty": uncertainty})
             recorder.emit("run_completed", "run", "partial", error_ref=code, error_details=authoritative_failure.get("details", {}))
             return {"status": "partial", "plan": planned, "execution": execution, "answer": answer, "uncertainty": uncertainty, "trace": recorder.events}
-        recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned))
+        recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned), input_payload={"question": question_text, "execution": execution})
         answer_payload = {"question": question_text, "results": _model_safe_execution(execution)}
         try:
             answer = self._chat([
@@ -655,6 +659,6 @@ class AgentLoop:
             recorder.emit("run_completed", "run", "failed", error_ref=detail.get("code"), error_details=detail.get("details", {}))
             return {"status": "error", "plan": planned, "execution": execution, "error": detail, "trace": recorder.events}
         outcome = "ok" if all(step.get("status") == "ok" for step in execution.get("steps", [])) else "partial"
-        recorder.emit("final_completed", "final", outcome, result_ref=recorder.result_refs(execution))
+        recorder.emit("final_completed", "final", outcome, result_ref=recorder.result_refs(execution), output_payload=answer)
         recorder.emit("run_completed", "run", outcome)
         return {"status": "ok" if outcome == "ok" else "partial", "plan": planned, "execution": execution, "answer": answer, "trace": recorder.events}
