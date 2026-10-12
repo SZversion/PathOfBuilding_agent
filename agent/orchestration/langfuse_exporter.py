@@ -161,7 +161,7 @@ class LangfuseExporter:
             # to preserve historical timestamps instead of export-time latency.
             from opentelemetry import trace
             trace_context = kwargs.pop("trace_context", None)
-            parent = (trace.use_span(client._create_remote_parent_span(**trace_context))
+            parent = (trace.use_span(client._create_remote_parent_span(trace_id=trace_context["trace_id"], parent_span_id=trace_context.get("parent_span_id")))
                       if trace_context else nullcontext())
             with parent:
                 span = client._otel_tracer.start_span(name=kwargs.pop("name"),
