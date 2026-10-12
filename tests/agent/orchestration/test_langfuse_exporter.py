@@ -152,12 +152,13 @@ def test_agent_loop_exports_root_and_provider_input_output():
     assert result["status"] == "ok"
     root = next(item for item in client.observations if item["name"] == "pob-agent")
     assert root["input"]["question"] == "입출력 확인"
-    assert root["output"] == "최종 답변"
+    assert root["output"]["response"] == result
+    assert root["output"]["llm_outputs"][-1] == "최종 답변"
     planner = next(item for item in client.observations if item["name"] == "planner_started")
     assert planner["input"]["text"] == "입출력 확인"
     completed = next(item for item in client.observations if item["name"] == "run_completed")
     assert completed["input"]["question"] == "입출력 확인"
-    assert completed["output"] == "최종 답변"
+    assert completed["output"] == root["output"]
     provider_outputs = [item for item in client.observations if item["name"] == "provider_completed"]
     assert any(item["output"] == "최종 답변" for item in provider_outputs)
 
@@ -171,3 +172,56 @@ def test_real_langfuse_sdk_4_smoke_when_explicitly_configured():
         pytest.skip("Langfuse local service credentials are unavailable")
     assert exporter.enabled is True
     assert exporter.export(events()).status in {"sent", "queued"}
+
+
+def test_rejected_run_preserves_all_llm_json_and_response_fields():
+    raw = {"schema_version": "1.0", "intent": "unknown", "operation": "answer",
+           "evidenceLevel": "authoritative", "required_evidence": [],
+           "stop_condition": {"type": "ask_user"}, "steps": [],
+           "ambiguities": ["skill"], "metadata": {"nested": [None, {}, []]}}
+
+    class Model:
+        def chat(self, messages):
+            return json.dumps(raw)
+
+    client = FakeClient()
+    result = AgentLoop(Model(), trace_exporter=LangfuseExporter(client, enabled=True)).run("질문")
+    root = next(item for item in client.observations if item["name"] == "pob-agent")
+    assert root["output"]["llm_outputs"] == [raw]
+    assert root["output"]["response"] == result
+    assert result["error"]["details"]
+    provider = next(item for item in client.observations if item["name"] == "provider_completed")
+    assert provider["output"] == raw
+
+
+def test_export_payload_redacts_credentials_without_truncating_fields(tmp_path):
+    payload = {"items": list(range(40)), "text": "x" * 300,
+               "nested": {"authorization": "Bearer private", "api_key": "private", "value": None}}
+    client = FakeClient()
+    exporter = LangfuseExporter(client, enabled=True, queue_path=tmp_path / "queue.ndjson")
+    assert exporter.export(events(), output_payload=payload).status == "sent"
+    root = next(item for item in client.observations if item["name"] == "pob-agent")
+    assert root["output"]["items"] == list(range(40))
+    assert root["output"]["text"] == "x" * 300
+    assert root["output"]["nested"] == {"authorization": "[REDACTED]", "api_key": "[REDACTED]", "value": None}
+
+
+def test_export_uses_original_span_timestamps():
+    import datetime
+
+    class TimedExporter(LangfuseExporter):
+        @contextlib.contextmanager
+        def _observation(self, client, *, start_time=None, end_time=None, **kwargs):
+            client.observations.append({**kwargs, "start_time": start_time, "end_time": end_time})
+            yield client
+
+    trace_events = events()
+    for index, event in enumerate(trace_events):
+        event["timestamp_utc"] = f"2026-10-12T07:00:0{index * 2}Z"
+    trace_events[1]["duration_ms"] = 1500
+    client = FakeClient()
+    assert TimedExporter(client, enabled=True).export(trace_events).status == "sent"
+    root = next(item for item in client.observations if item["name"] == "pob-agent")
+    assert (root["end_time"] - root["start_time"]).total_seconds() == 4
+    tool = next(item for item in client.observations if item["name"] == "tool_completed")
+    assert (tool["end_time"] - tool["start_time"]).total_seconds() == 1.5
