@@ -46,7 +46,7 @@ Feature requests are always welcome. Note that not all requests will receive an 
   If you are interested in joining, send a private message to **localidentity** or **wires77** and we'll send you an invitation.
 
 ### When submitting a pull request:
-* **Pull requests must be created against the `dev` branch**, as all changes to the code are staged there before merging to `master`.
+* **Create a working branch from the latest `main` branch**, make and test your changes there, then create a pull request targeting `main`. After review and successful validation, merge the working branch into `main`.
 * Make sure that the changes have been thoroughly tested!
 * If you're updating mod parsing logic, make sure to reload PoB with `Ctrl` + `F5` to regenerate `./src/Data/ModCache.lua`. This is a very large, automatically generated file that can be used to verify your changes didn't affect any other mods inadvertently. Make sure to commit `./src/Data/ModCache.lua` if your changes cause it to differ.
 * There are many more files in the `./src/Data` directory that are automatically generated. This is indicated by the header 
