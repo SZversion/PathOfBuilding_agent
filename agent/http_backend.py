@@ -12,6 +12,8 @@ import sys
 import threading
 import time
 
+from agent.orchestration.function_trace import trace_pipeline, trace_environment
+
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
@@ -35,13 +37,14 @@ def _authorize(request: Request):
         raise HTTPException(status_code=401, detail="invalid bearer token")
 
 
+@trace_pipeline
 def _execute(build: Path, question: str):
     cache = os.environ.get("POB_AGENT_CACHE_DIR", "/data/cache")
     command = [sys.executable, "-m", "agent.cli", "--build", str(build), "--cache-root", cache,
                "--once", "--json", "--no-stream", question]
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=300,
-                                   cwd=Path(__file__).resolve().parents[1], check=False)
+                                   cwd=Path(__file__).resolve().parents[1], check=False, env=trace_environment())
     except subprocess.TimeoutExpired as error:
         raise HTTPException(status_code=504, detail="agent run timed out") from error
     output = completed.stdout.strip().splitlines()
@@ -57,6 +60,7 @@ def _sse_event(name: str, payload: dict) -> str:
     return f"event: {name}\ndata: {json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}\n\n"
 
 
+@trace_pipeline
 def _stream_execute(build: Path, question: str):
     cache = os.environ.get("POB_AGENT_CACHE_DIR", "/data/cache")
     command = [sys.executable, "-m", "agent.cli", "--build", str(build), "--cache-root", cache,
@@ -64,7 +68,7 @@ def _stream_execute(build: Path, question: str):
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                    text=True, encoding="utf-8", errors="replace", bufsize=1,
-                                   cwd=Path(__file__).resolve().parents[1])
+                                   cwd=Path(__file__).resolve().parents[1], env=trace_environment())
     except OSError:
         yield _sse_event("error", {"message": "agent process could not be started"})
         yield _sse_event("complete", {"status": "error"})
@@ -143,6 +147,7 @@ async def health(_request):
     return JSONResponse({"status": "ok"})
 
 
+@trace_pipeline
 async def run_agent(request: Request):
     _authorize(request)
     try:
