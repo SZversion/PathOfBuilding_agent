@@ -4,7 +4,7 @@ from contextlib import contextmanager, nullcontext
 import contextvars
 import dis
 import functools
-from dataclasses import asdict, is_dataclass
+from dataclasses import fields, is_dataclass
 import hashlib
 import inspect
 from datetime import datetime, timezone
@@ -75,7 +75,7 @@ def _value(value, seen=None):
         if isinstance(value, type):
             return {"type": value.__module__ + "." + value.__qualname__}
         if is_dataclass(value):
-            return _value(asdict(value), seen)
+            return _value({field.name: getattr(value, field.name) for field in fields(value)}, seen)
         if hasattr(value, "model_dump"):
             return _value(value.model_dump(mode="json"), seen)
         if isinstance(value, BaseException):
