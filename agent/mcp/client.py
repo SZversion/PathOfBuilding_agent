@@ -12,6 +12,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamablehttp_client
 
+from agent.orchestration.function_trace import trace_headers, trace_environment
 from agent.mcp.errors import ToolCallError
 from agent.tool_catalog import ALLOWED_TOOLS, TOOL_CATALOG
 
@@ -29,6 +30,7 @@ class McpToolClient:
         self.url = url or os.environ.get("POB_AGENT_MCP_URL")
         self.token = token if token is not None else os.environ.get("POB_AGENT_MCP_TOKEN")
         self.timeout = timeout
+        self.trace_context = trace_headers()
         self._thread = None
         self._loop = None
         self._ready = threading.Event()
@@ -60,12 +62,12 @@ class McpToolClient:
         try:
             async with AsyncExitStack() as stack:
                 if self.url:
-                    headers = {"Authorization": "Bearer " + self.token} if self.token else None
+                    headers = {**({"Authorization": "Bearer " + self.token} if self.token else {}), **self.trace_context} or None
                     http_timeout = max(self.timeout, max(spec.timeout_seconds for spec in TOOL_CATALOG.values()) + 5)
                     streams = await stack.enter_async_context(streamablehttp_client(
                         self.url, headers=headers, timeout=http_timeout))
                 else:
-                    params = StdioServerParameters(command=self.command, args=self.args, cwd=self.cwd, env=self.env)
+                    params = StdioServerParameters(command=self.command, args=self.args, cwd=self.cwd, env=self.env or trace_environment())
                     streams = await stack.enter_async_context(stdio_client(params))
                 session = await stack.enter_async_context(ClientSession(*streams[:2]))
                 self._session = session
