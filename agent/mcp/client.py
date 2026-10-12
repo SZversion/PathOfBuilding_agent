@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextvars import copy_context
 from contextlib import AsyncExitStack
 import json
 import os
@@ -12,7 +13,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamablehttp_client
 
-from agent.orchestration.function_trace import trace_headers, trace_environment
+from agent.orchestration.function_trace import trace_headers, trace_environment, trace_pipeline
 from agent.mcp.errors import ToolCallError
 from agent.tool_catalog import ALLOWED_TOOLS, TOOL_CATALOG
 
@@ -43,7 +44,7 @@ class McpToolClient:
             return self
         self._ready.clear()
         self._failure = None
-        self._thread = threading.Thread(target=self._run_loop, name="poe-mcp-client", daemon=True)
+        self._thread = threading.Thread(target=copy_context().run, args=(self._run_loop,), name="poe-mcp-client", daemon=True)
         self._thread.start()
         if not self._ready.wait(self.timeout):
             raise McpClientError("MCP server startup timed out")
@@ -51,6 +52,7 @@ class McpToolClient:
             raise McpClientError("MCP server startup failed: " + str(self._failure)) from self._failure
         return self
 
+    @trace_pipeline
     def _run_loop(self):
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
