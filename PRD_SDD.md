@@ -228,8 +228,13 @@ Tool 실행 직전 Bridge는 revision을 확인한다. 기대 revision과 현재
 
 현재 저장소에는 PoB 내부 snapshot/trace, Bridge, Agent orchestration, 지식 검색의 기반이 있다. 문서에 정의된 전체 MVP 기능은 각 단계에서 실제 PoB 상태와 연결해 검증해야 한다. 새 기능을 추가할 때도 PoB 계산을 복제하기보다 기존 계산 결과와 출처를 노출하는 최소 계층을 우선한다.
 
-개발 추적은 AgentLoop에 기본 wiring하고 sampling 기본값은 1로 한다. Langfuse
-endpoint는 로컬 주소만 허용하고 전송 실패 시 요청을 실패시키지 않는다. 키·SDK·서비스가
+개발 추적은 AgentLoop에 기본 wiring하고 sampling 기본값은 1로 한다. 별도 개발
+활성화 플래그는 필요하지 않다. Langfuse의 현재 호스트 접속 주소는
+`http://localhost:13000`(`.env.docker`의 `LANGFUSE_PORT=13000`)이다. endpoint는
+loopback 주소를 기본 허용하며 Docker 백엔드는 명시적
+`POB_AGENT_LANGFUSE_ALLOWED_HOSTS=langfuse-web` 설정으로 Compose 내부 주소
+`http://langfuse-web:3000`을 사용한다. 외부 원격 Langfuse는 허용하지 않으며
+전송 실패 시 요청을 실패시키지 않는다. 키·SDK·서비스가
 없어도 local queue를 사용한다. 실패한
 redacted trace는 `data/traces/langfuse-queue.ndjson`에 제한된 크기로 임시 보관하며
 동일 run은 중복 저장하지 않는다.
