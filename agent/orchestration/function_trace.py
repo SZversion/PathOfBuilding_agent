@@ -47,7 +47,8 @@ class _QueuedSpan:
 
 
 def current_trace():
-    return _ACTIVE.get()
+    session = _ACTIVE.get()
+    return session if session is not None and not session.closed else None
 
 
 def _value(value, seen=None):
