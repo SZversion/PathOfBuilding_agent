@@ -82,6 +82,7 @@ class TraceRecorder:
         self.snapshot = {"revision": None, "build_id": None}
         self.exporter = exporter
         self.export_result = None
+        self.defer_export = False
         self.input_payload = None
         self.output_payload = None
         self._payloads = {}
@@ -128,25 +129,39 @@ class TraceRecorder:
             if kwargs.get("duration_ms") is None and status != "started":
                 kwargs["duration_ms"] = round((time.monotonic() - self._started) * 1000)
             self._append(self._event(event, stage, status, **kwargs))
-            if event == "run_completed" and self.exporter is not None and self.export_result is None:
-                try:
-                    try:
-                        export_events = []
-                        for event in self.events:
-                            enriched = dict(event)
-                            enriched.update(self._payloads.get(event.get("event_id"), {}))
-                            export_events.append(enriched)
-                        self.export_result = self.exporter.export(export_events, input_payload=getattr(self, "input_payload", None), output_payload=getattr(self, "output_payload", None))
-                    except TypeError as error:
-                        # Preserve compatibility with small injected exporters used by callers/tests.
-                        if "input_payload" not in str(error) and "output_payload" not in str(error):
-                            raise
-                        self.export_result = self.exporter.export(list(self.events))
-                except Exception as error:
-                    self._warning = self._warning or "exporter_failure:" + type(error).__name__
+            if event == "run_completed" and not self.defer_export:
+                self.export()
         except Exception as error:
             # Trace must never interrupt PoB calculation or final response.
             self._warning = self._warning or "recorder_failure:" + type(error).__name__
+
+    def export(self):
+        if self.exporter is None or self.export_result is not None:
+            return
+        try:
+            export_events = []
+            for event in self.events:
+                enriched = dict(event)
+                enriched.update(self._payloads.get(event.get("event_id"), {}))
+                export_events.append(enriched)
+            try:
+                self.export_result = self.exporter.export(export_events, input_payload=self.input_payload, output_payload=self.output_payload)
+            except TypeError as error:
+                if "input_payload" not in str(error) and "output_payload" not in str(error):
+                    raise
+                self.export_result = self.exporter.export(list(self.events))
+        except Exception as error:
+            self._warning = self._warning or "exporter_failure:" + type(error).__name__
+
+    def complete_output(self, response):
+        llm_outputs = [self._payloads[event["event_id"]].get("output_payload")
+                       for event in self.events if event["event"] == "provider_completed"
+                       and event["event_id"] in self._payloads]
+        self.output_payload = {"llm_outputs": llm_outputs, "response": response}
+        for event in self.events:
+            if event["event"] == "run_completed":
+                self._payloads.setdefault(event["event_id"], {})["output_payload"] = self.output_payload
+        self.export()
 
     def safe_args_ref(self, arguments):
         safe = _safe_args(arguments)
