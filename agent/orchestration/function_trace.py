@@ -33,14 +33,16 @@ def _value(value, seen=None):
         return str(value)
     if id(value) in seen:
         return {"type": type(value).__name__, "reference": "cyclic"}
+    if isinstance(value, (tuple, list)) and len(value) == 2 and isinstance(value[0], (str, bytes)):
+        header = value[0].decode("latin1") if isinstance(value[0], bytes) else value[0]
+        if header.lower() in {"authorization", "cookie", "set-cookie"}:
+            return [header, "[REDACTED]"]
     seen.add(id(value))
     try:
         if isinstance(value, dict):
             return LangfuseExporter._payload({str(k): _value(v, seen) for k, v in value.items()})
         if isinstance(value, (list, tuple, set, frozenset)):
             return [_value(v, seen) for v in value]
-        if callable(value):
-            return {"callable": getattr(value, "__qualname__", type(value).__name__)}
         if hasattr(value, "model_dump"):
             return _value(value.model_dump(mode="json"), seen)
         if isinstance(value, BaseException):
@@ -48,6 +50,10 @@ def _value(value, seen=None):
                     "arguments": _value(value.args, seen), "details": _value(vars(value), seen),
                     "cause": _value(value.__cause__, seen)}
         if type(value).__module__.startswith(("agent.", "argparse", "types", "starlette")):
+            return {"type": type(value).__name__, "attributes": _value(vars(value), seen)}
+        if callable(value):
+            return {"callable": getattr(value, "__qualname__", type(value).__name__)}
+        if hasattr(value, "__dict__"):
             return {"type": type(value).__name__, "attributes": _value(vars(value), seen)}
         return {"type": type(value).__module__ + "." + type(value).__name__}
     finally:
@@ -79,7 +85,7 @@ def trace_environment():
 def _trace(frame, event, value):
     session = current_trace()
     module = frame.f_globals.get("__name__", "")
-    if session is None or session.root is None or not module.startswith("agent.") or module in _EXCLUDED:
+    if session is None or session.root is None or session.closed or not module.startswith("agent.") or module in _EXCLUDED:
         return None
     try:
         session.record(frame, event, value)
@@ -112,6 +118,7 @@ class FunctionTrace:
         self.events = []
         self.output = None
         self.warnings = []
+        self.closed = False
 
     def _start(self, name, arguments, parent=None):
         client = self.exporter.client
@@ -139,6 +146,7 @@ class FunctionTrace:
     def record(self, frame, event, value):
         key = id(frame)
         if event == "call" and key not in self.frames:
+            frame.f_trace_lines = False
             arguments = inspect.getargvalues(frame)
             names = arguments.args + [v for v in (arguments.varargs, arguments.keywords) if v]
             payload = {name: _value(arguments.locals[name]) for name in names}
@@ -171,7 +179,7 @@ class FunctionTrace:
         try:
             self.exporter = LangfuseExporter.from_env()
             if self.exporter.client is not None:
-                self.root = self._start(self.name, self.arguments)
+                self.root = self._start("pipeline:" + self.name, self.arguments)
                 if getattr(_LOCAL, "users", 0) == 0:
                     _LOCAL.previous = sys.gettrace()
                     sys.settrace(_trace)
@@ -186,12 +194,13 @@ class FunctionTrace:
         return ExportResult("buffered")
 
     def __exit__(self, error_type, error, traceback):
+        self.closed = True
         if self.root is not None:
             _LOCAL.users -= 1
             if not _LOCAL.users:
                 sys.settrace(_LOCAL.previous)
             try:
-                for entry in self.frames.values():
+                for entry in list(self.frames.values()):
                     entry["span"].update(output={"exceptions": entry["exceptions"], "yields": entry["yields"],
                                                  "incomplete": True})
                     entry["span"].end()
@@ -200,7 +209,7 @@ class FunctionTrace:
                                            "tracing_warnings": self.warnings})
                 if self.events:
                     from opentelemetry import trace
-                    with trace.use_span(self.root._otel_span):
+                    with (trace.use_span(self.root._otel_span) if hasattr(self.root, "_otel_span") else contextmanager(lambda: iter([None]))()):
                         for event in self.events:
                             with self.exporter._record_event(self.exporter.client, event):
                                 pass
