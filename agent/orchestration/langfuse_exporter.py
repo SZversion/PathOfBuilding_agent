@@ -2,9 +2,12 @@
 
 import hashlib
 import importlib
+import json
+import re
 import os
 import threading
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
+from datetime import datetime, timedelta
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -124,6 +127,58 @@ class LangfuseExporter:
         digest = int(hashlib.sha256(run_id.encode("utf-8")).hexdigest()[:12], 16) / float(16 ** 12)
         return digest < rate
 
+    @classmethod
+    def _payload(cls, value):
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except (ValueError, TypeError):
+                parsed = value
+            if isinstance(parsed, (dict, list)):
+                return cls._payload(parsed)
+            for key, secret in os.environ.items():
+                if any(part in key.upper() for part in ("KEY", "TOKEN", "PASSWORD", "SECRET")) and len(secret) >= 8:
+                    value = value.replace(secret, "[REDACTED]")
+            return re.sub(r"(?i)Bearer\s+[A-Za-z0-9._~+/-]+", "Bearer [REDACTED]", value)
+        if isinstance(value, dict):
+            credentials = {"apikey", "authorization", "token", "accesstoken", "refreshtoken",
+                           "password", "secret", "secretkey", "publickey"}
+            return {key: ("[REDACTED]" if str(key).lower().replace("_", "").replace("-", "") in credentials
+                          else cls._payload(item)) for key, item in value.items()}
+        if isinstance(value, list):
+            return [cls._payload(item) for item in value]
+        return value
+
+    @staticmethod
+    def _timestamp(event):
+        value = event.get("timestamp_utc")
+        return datetime.fromisoformat(value.replace("Z", "+00:00")) if value else None
+
+    @contextmanager
+    def _observation(self, client, *, start_time=None, end_time=None, **kwargs):
+        if hasattr(client, "_otel_tracer") and start_time is not None:
+            # SDK 4.x has no start_time argument; use its OpenTelemetry tracer
+            # to preserve historical timestamps instead of export-time latency.
+            from opentelemetry import trace
+            trace_context = kwargs.pop("trace_context", None)
+            parent = (trace.use_span(client._create_remote_parent_span(**trace_context))
+                      if trace_context else nullcontext())
+            with parent:
+                span = client._otel_tracer.start_span(name=kwargs.pop("name"),
+                                                     start_time=int(start_time.timestamp() * 1_000_000_000))
+            if trace_context:
+                from langfuse._client.attributes import LangfuseOtelSpanAttributes
+                span.set_attribute(LangfuseOtelSpanAttributes.AS_ROOT, True)
+            try:
+                observation = client._create_observation_from_otel_span(otel_span=span, **kwargs)
+                with trace.use_span(span, end_on_exit=False):
+                    yield observation
+            finally:
+                span.end(end_time=int(end_time.timestamp() * 1_000_000_000) if end_time else None)
+        else:
+            with client.start_as_current_observation(**kwargs) as observation:
+                yield observation
+
     @staticmethod
     def _safe_event(event):
         provider = event.get("provider") if isinstance(event.get("provider"), dict) else {}
@@ -140,8 +195,8 @@ class LangfuseExporter:
             "presentation_class": event.get("presentation_class"),
             "snapshot": {"revision": snapshot.get("revision"), "build_id": snapshot.get("build_id")},
             "result_ref": {key: result.get(key) for key in ("facts_ref", "trace_ref", "sources_ref", "evidence_graph_ref")},
-            "input": event.get("input_payload"),
-            "output": event.get("output_payload"),
+            "input": LangfuseExporter._payload(event.get("input_payload")),
+            "output": LangfuseExporter._payload(event.get("output_payload")),
         }
 
     def _record_event(self, trace, event):
@@ -150,7 +205,10 @@ class LangfuseExporter:
         # Langfuse 4.x creates child observations from the current observation.
         # Keep the fallback for injected test clients that expose a simple span.
         if hasattr(trace, "start_as_current_observation"):
-            return trace.start_as_current_observation(name=safe["event"] or "event", as_type="span", input=safe.get("input"), output=safe.get("output"), metadata=metadata)
+            end_time = self._timestamp(event)
+            duration = event.get("duration_ms") or 0
+            start_time = end_time - timedelta(milliseconds=duration) if end_time else None
+            return self._observation(trace, name=safe["event"] or "event", as_type="span", input=safe.get("input"), output=safe.get("output"), metadata=metadata, start_time=start_time, end_time=end_time)
         if hasattr(trace, "span"):
             trace.span(name=safe["event"], metadata=metadata)
             return nullcontext()
@@ -227,8 +285,8 @@ class LangfuseExporter:
             root_kwargs = {
                 "name": "pob-agent",
                 "as_type": "chain",
-                "input": input_payload,
-                "output": output_payload,
+                "input": self._payload(input_payload),
+                "output": self._payload(output_payload),
                 "metadata": metadata,
             }
             if trace_context is not None:
@@ -237,11 +295,11 @@ class LangfuseExporter:
             if start is None:
                 return self._queue(events, "observation_api_unavailable")
             try:
-                root = start(**root_kwargs)
+                root = self._observation(self.client, start_time=self._timestamp(events[0]), end_time=self._timestamp(events[-1]), **root_kwargs)
             except TypeError:
                 # Test doubles or minor SDK variants may not expose trace_context.
                 root_kwargs.pop("trace_context", None)
-                root = start(**root_kwargs)
+                root = self._observation(self.client, start_time=self._timestamp(events[0]), end_time=self._timestamp(events[-1]), **root_kwargs)
             with root:
                 for event in events:
                     observation = self._record_event(self.client, event)
