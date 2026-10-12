@@ -35,17 +35,18 @@ User question → external LLM → structured Tool/RAG plan → PoB Bridge → P
 
 Current status:
 
-- 28 Tool contracts are registered in the catalog. Registration does not mean every Tool is live-ready or that every PoE mechanism is supported.
+- All 32 implemented tool contracts are exposed by a separate Streamable HTTP MCP container. The backend container connects to it over the private Compose network. Names, schemas, purpose/usage descriptions, side effects, timeouts, retries, and error codes are declared in `agent/tool_catalog.py`; regenerate the catalog section with `python tools/render_mcp_tool_catalog.py`.
 - A read-only in-process Dispatcher can capture the current PoB context, including active Spec, Skill Set, Item Set, Config, gems, links, conditions, and a `snapshotRevision`.
-- A headless XML/fixture adapter remains available for read-only development and verification.
-- Mutation Tools are currently disabled for the live PoB screen. The one-shot headless adapter must not be interpreted as persistent mutation of the user's open PoB window.
+- PoB tool calls use the authenticated live Lua endpoint on the Windows host; the MCP container reaches it through `host.docker.internal`. Knowledge, alias, external search, and snapshot comparison tools run in the MCP container.
+- Mutation Tools remain discoverable but return `MUTATION_NOT_PERSISTENT`; the production MCP path never falls back to the headless XML adapter.
 - Evidence-bearing results use PoB paths, trace data, version metadata, uncertainty, and an Evidence Graph where available.
+
+Copy `.env.docker.example` to `.env.docker`, replace its `CHANGE_ME` values, put PoB build XML files in the configured build folder, and set `POB_ENDPOINT_HOST_PATH` to PoB's endpoint folder. Install/update the Lua modules with `powershell -ExecutionPolicy Bypass -File tools/install_live_control.ps1`. Launch PoB from a PowerShell session where `$env:POB_AGENT_BIND_HOST = '0.0.0.0'` is set; keep the Windows firewall restricted to Docker traffic because the authenticated endpoint then listens beyond loopback. Start the stack with `docker compose --env-file .env.docker up -d --build`. The backend API is at `http://localhost:8080`; Langfuse is at `http://localhost:3000`. See the Korean request example below. The catalog and Lua handler extension points are documented in [Tool Catalog](docs/tools/catalog.md).
 
 The project does not claim complete support for every game mechanism. When PoB does not expose a value or source, the extension must report that limitation instead of guessing.
 
 Planned next capabilities:
 
-- A persistent in-process live session that keeps the current PoB state authoritative across requests.
 - Validated live mutation with transaction, rollback, idempotency, stale-revision protection, and PoB recalculation.
 - Applying approved changes to the current PoB screen while leaving Save and Save As under the user's control.
 
@@ -104,17 +105,25 @@ PoB Agent Extension은 실행 중인 PoB 메모리의 기준 계산값을 사용
 
 현재 상태:
 
-- 카탈로그에 Tool 계약이 등록되어 있습니다. 등록은 모든 Tool이 실사용 가능하거나 모든 PoE 메커니즘을 지원한다는 뜻이 아닙니다.
+- 구현된 32개 도구 계약은 별도 Streamable HTTP MCP 컨테이너가 제공합니다. 백엔드 컨테이너는 Compose 내부 네트워크로 MCP 서버에 연결합니다. 이름, 스키마, 목적/사용 조건, 부작용, 타임아웃, 재시도, 오류 코드는 `agent/tool_catalog.py`에서 관리하며 `python tools/render_mcp_tool_catalog.py`로 카탈로그 계약 섹션을 갱신합니다.
 - 현재 PoB 컨텍스트의 활성 Spec, Skill Set, Item Set, Config, 젬, 링크, 조건과 `snapshotRevision`을 캡처할 수 있는 읽기 전용 in-process Dispatcher가 있습니다.
-- 읽기 전용 개발·검증을 위해 headless XML/fixture adapter도 유지됩니다.
-- mutation Tool은 현재 실행 중인 PoB 화면에 대해 비활성화되어 있습니다. 일회성 headless adapter를 사용자의 PoB 창에 지속적으로 mutation이 적용되는 것으로 해석해서는 안 됩니다.
+- PoB 도구 호출은 Windows 호스트의 인증된 Lua endpoint를 사용하며 MCP 컨테이너는 `host.docker.internal`을 통해 접근합니다. 지식·별칭·외부검색·스냅샷 비교는 MCP 컨테이너에서 실행됩니다.
+- mutation Tool은 목록에는 표시되지만 `MUTATION_NOT_PERSISTENT`를 반환하고, 프로덕션 MCP 경로는 headless XML adapter로 대체 실행하지 않습니다.
 - 근거를 포함하는 결과는 가능한 경우 PoB 경로, trace 데이터, 버전 메타데이터, 불확실성, Evidence Graph를 포함합니다.
+
+`.env.docker.example`을 `.env.docker`로 복사해 `CHANGE_ME` 값을 교체하고, 설정된 빌드 폴더에 PoB XML을 둔 뒤 `POB_ENDPOINT_HOST_PATH`를 PoB endpoint 폴더로 설정하세요. `powershell -ExecutionPolicy Bypass -File tools/install_live_control.ps1`로 Lua 모듈을 설치/갱신합니다. PowerShell에서 `$env:POB_AGENT_BIND_HOST = '0.0.0.0'`을 설정한 세션에서 PoB를 실행해야 Docker가 endpoint에 접근할 수 있습니다. 인증 endpoint가 loopback 밖에서 대기하므로 Windows 방화벽은 Docker 트래픽만 허용하도록 제한하세요. `docker compose --env-file .env.docker up -d --build`로 전체 스택을 시작합니다. backend API는 `http://localhost:8080`, Langfuse는 `http://localhost:3000`입니다. 요청 예시는 아래와 같습니다. 도구 추가 방법은 [도구 카탈로그](docs/tools/catalog.md)를 참고하세요.
+
+```powershell
+$token = (Select-String -Path .env.docker -Pattern '^POB_AGENT_API_TOKEN=').Line.Split('=', 2)[1]
+$headers = @{ Authorization = "Bearer $token" }
+$body = @{ build_file = "my-build.xml"; question = "현재 가장 높은 DPS 스킬은 뭐야?" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/v1/run -Headers $headers -ContentType "application/json" -Body $body
+```
 
 이 프로젝트는 모든 게임 메커니즘을 완전히 지원한다고 주장하지 않습니다. PoB가 값이나 출처를 노출하지 않으면 추측하지 않고 해당 제한을 보고해야 합니다.
 
 다음 목표:
 
-- 요청 사이에 현재 PoB 상태를 기준 상태로 유지하는 지속형 in-process live session.
 - transaction, rollback, idempotency, stale revision 보호, PoB 재계산을 포함한 검증된 live mutation.
 - 사용자의 Save와 Save As 제어는 유지하면서 현재 PoB 화면에 승인된 변경을 반영.
 

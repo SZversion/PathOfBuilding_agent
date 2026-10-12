@@ -6,6 +6,21 @@ sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 
 from agent.orchestration.agent_loop import AgentLoop
 from agent.orchestration.trace import TraceRecorder
+
+
+def test_run_completed_preserves_safe_error_details():
+    recorder = TraceRecorder()
+    recorder.emit("run_completed", "run", "rejected", error_ref="USER_CONTEXT_MISSING", error_details={
+        "missing_fields": ["skill", "skillSet", "config"],
+        "message": "Select a skill and skill set.",
+        "prompt": "must not be recorded",
+    })
+    event = recorder.events[-1]
+    assert event["error_ref"] == "MISSING_CONTEXT"
+    assert event["error_code"] == "USER_CONTEXT_MISSING"
+    assert event["error_details"]["missing_fields"] == ["skill", "skillSet", "config"]
+    assert event["error_details"]["message"] == "Select a skill and skill set."
+    assert "prompt" not in event["error_details"]
 from agent.providers.openai_compatible import ExternalModelError
 from agent.pob.bridge import PobBridgeError, PobTimeoutError
 

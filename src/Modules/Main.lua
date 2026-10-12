@@ -96,6 +96,20 @@ function main:Init()
 		end
 	end
 
+	-- The live Agent control channel is optional. Failure to initialize it must
+	-- never prevent the normal PoB UI from starting.
+	local controlModuleOk, controlModule = pcall(LoadModule, "Modules/AgentControl")
+	if controlModuleOk and controlModule and type(controlModule.new) == "function" then
+		local controlOk, control, controlErr = pcall(controlModule.new, self)
+		if controlOk and control then
+			self.agentControl = control
+		else
+			ConPrintf("PoB Agent control channel is unavailable: %s", tostring(controlOk and controlErr or control))
+		end
+	else
+		ConPrintf("PoB Agent control module is unavailable: %s", tostring(controlModule))
+	end
+
 	self.buildSortMode = "NAME"
 	self.connectionProtocol = 0
 	self.nodePowerTheme = "RED/BLUE"
@@ -266,6 +280,11 @@ the "Releases" section of the GitHub page.]])
 			ConPrintf("Startup time: %d ms", GetTime() - launch.startTime)
 		end
 	}
+	if self.agentControl then
+		self.onFrameFuncs["AgentControl"] = function()
+			self.agentControl:OnFrame()
+		end
+	end
 
 	if not self.saveNewModCache then
 		local itemsCoroutine = coroutine.create(loadItemDBs)
@@ -335,6 +354,10 @@ function main:CanExit()
 end
 
 function main:Shutdown()
+	if self.agentControl then
+		self.agentControl:Shutdown()
+		self.agentControl = nil
+	end
 	self:CallMode("Shutdown")
 	self:SaveSettings()
 end

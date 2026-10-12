@@ -1,3 +1,4 @@
+import json
 import pathlib
 import sys
 
@@ -5,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 
-from agent.orchestration.agent_loop import AgentLoop, PlanValidationError, normalize_query, validate_plan
+from agent.orchestration.agent_loop import AgentLoop, PLANNER_JSON_SCHEMA, PlanValidationError, normalize_query, planner_query_projection, resolve_active_context, validate_plan
 
 
 def test_query_schema_normalizes_legacy_and_validates_enums():
@@ -16,6 +17,90 @@ def test_query_schema_normalizes_legacy_and_validates_enums():
     assert normalize_query({"text": "Arc", "confidence": 0.8, "requires": ["skill"]})["confidence"] == 0.8
     with pytest.raises(PlanValidationError):
         normalize_query({"text": "Arc", "operation": "not-an-operation"})
+
+
+def test_planner_projection_excludes_query_inference_fields():
+    query = normalize_query("dps가 가장 높은 스킬이 뭐야?")
+    projected = planner_query_projection(query, context={"snapshotRevision": "rev-1", "activeSkillSet": "Default"})
+    assert projected["question"] == "dps가 가장 높은 스킬이 뭐야?"
+    assert projected["text"] == projected["question"]
+    assert projected["context"]["snapshotRevision"] == "rev-1"
+    assert not ({"intent", "operation", "evidenceLevel", "required_evidence", "subject", "ambiguities", "confidence", "requires"} & set(projected))
+
+
+def test_active_context_selection_prefers_pob_state_and_unique_candidates():
+    context = {
+        "activeSkillSet": {"id": "b", "title": "Endgame"},
+        "skillSets": {"a": {"title": "Leveling"}, "b": {"title": "Endgame"}},
+        "itemSets": [{"id": "items-1", "title": "Mapping"}],
+        "specs": {"spec-1": {"title": "Default"}, "spec-2": {"title": "Boss"}},
+        "activeSpec": {"id": "spec-2", "title": "Boss"},
+    }
+    selection = resolve_active_context(context)
+    assert selection["selected"]["skillSet"]["id"] == "b"
+    assert selection["selected"]["itemSet"]["id"] == "items-1"
+    assert selection["selected"]["treeSpec"]["id"] == "spec-2"
+    assert selection["conflicts"] == []
+    projected = planner_query_projection(normalize_query("DPS"), context=context)
+    assert projected["contextSelection"] == selection
+
+
+def test_context_selection_conflict_stops_before_planner():
+    class MustNotRun:
+        def __init__(self): self.calls = 0
+        def chat(self, messages, **kwargs):
+            self.calls += 1
+            raise AssertionError("planner must not run for conflicting context")
+
+    model = MustNotRun()
+    result = AgentLoop(model).run("dps?", snapshot={
+        "activeSkillSet": None,
+        "skillSets": {"a": {"title": "One"}, "b": {"title": "Two"}},
+    })
+    assert model.calls == 0
+    assert result["error"]["error_ref"] == "AMBIGUOUS_CONTEXT"
+    assert result["error"]["recovery_class"] == "ASK_USER"
+    assert result["error"]["details"]["missing_fields"] == ["skillSet"]
+
+
+def test_request_local_item_set_override_preserves_unmentioned_active_context():
+    context = {
+        "activeSkillSet": {"id": "skill-active", "title": "Mapping"},
+        "skillSets": {"skill-active": {"title": "Mapping"}, "skill-other": {"title": "Boss"}},
+        "activeItemSet": {"id": "items-active", "title": "Mapping"},
+        "itemSets": [{"id": "items-active", "title": "Mapping"}, {"id": "items-boss", "title": "Boss"}],
+        "activeSpec": {"id": "spec-active", "title": "Mapping"},
+        "specs": {"spec-active": {"title": "Mapping"}, "spec-boss": {"title": "Boss"}},
+    }
+    projected = planner_query_projection(normalize_query("2번 장비셋으로 DPS 비교"), context=context)
+    selection = projected["contextSelection"]["selected"]
+    assert selection["itemSet"]["id"] == "items-boss"
+    assert selection["itemSet"]["source"] == "사용자 질문"
+    assert selection["skillSet"]["id"] == "skill-active"
+    assert selection["treeSpec"]["id"] == "spec-active"
+    assert projected["contextSelection"]["conflicts"] == []
+
+
+def test_request_local_unsupported_item_set_is_marked_for_user_clarification():
+    context = {"itemSets": [{"id": "items-active", "title": "Mapping"}, {"id": "items-boss", "title": "Boss"}], "activeItemSet": {"id": "items-active"}}
+    projected = planner_query_projection(normalize_query("99번 장비셋으로 계산"), context=context)
+    assert "itemSet" in projected["contextSelection"]["conflicts"]
+
+
+def test_dps_question_planner_payload_has_no_inferred_defaults():
+    captured = []
+
+    class Model:
+        def chat(self, messages, **kwargs):
+            if messages[0]["role"] == "system" and "planner" in messages[0]["content"]:
+                captured.append(json.loads(messages[1]["content"]))
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}'
+            return "결과"
+
+    result = AgentLoop(Model()).run("dps가 가장 높은 스킬이 뭐야?", handlers={"get_highest_dps_skill": lambda args: {"facts": {"skill": "Arc"}, "evidenceGraph": {"nodes": []}}})
+    assert captured and captured[0]["question"] == "dps가 가장 높은 스킬이 뭐야?"
+    assert "query" not in captured[0]
+    assert not {"intent", "operation", "evidenceLevel", "required_evidence", "subject", "ambiguities", "confidence", "requires"} & set(captured[0])
 
 
 def test_plan_schema_defaults_and_completeness_registry():
@@ -31,6 +116,13 @@ def test_plan_schema_defaults_and_completeness_registry():
     assert evidence.value.code == "PLAN_INCOMPLETE"
     legacy_mechanism = validate_plan({"intent": "mechanism", "steps": [{"tool": "resolve_skill_context", "arguments": {}}]})
     assert legacy_mechanism["intent"] == "mechanism"
+
+
+def test_planner_schema_version_is_exact_and_validator_reports_details():
+    assert PLANNER_JSON_SCHEMA["properties"]["schema_version"] == {"type": "string", "const": "1.0"}
+    with pytest.raises(PlanValidationError) as invalid:
+        validate_plan({"schema_version": "2.0", "intent": "stat", "steps": []})
+    assert invalid.value.details == {"field": "schema_version", "expected": "1.0", "actual": "2.0"}
 
 
 def test_two_layer_query_and_plan_refs_and_evidence_gate():
@@ -62,7 +154,10 @@ def test_ambiguity_is_terminal_and_planner_is_bounded_to_five_attempts():
 
     ambiguous = AgentLoop(Ambiguous()).run("Arc")
     assert ambiguous["error"]["code"] == "AMBIGUOUS_ALIAS"
+    assert ambiguous["error"]["error_ref"] == "AMBIGUOUS_CONTEXT"
     assert ambiguous["error"]["next_action"] == "ask_user"
+    terminal = next(event for event in ambiguous["trace"] if event["event"] == "run_completed")
+    assert terminal["error_ref"] == "AMBIGUOUS_CONTEXT" and terminal["error_code"] == "AMBIGUOUS_ALIAS"
 
     class Broken:
         def __init__(self):

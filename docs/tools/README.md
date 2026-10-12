@@ -6,4 +6,5 @@ Tools expose PoB's calculated state and controlled in-memory changes. They do no
 - [skill-context.md](skill-context.md): Skill Set, skill, socket-group, and variant resolution
 - [mechanism-tools.md](mechanism-tools.md): mechanism and provenance Tools
 - [comparison-tools.md](comparison-tools.md): mutation and before/after comparison
+- [external-search.md](external-search.md): direct HTTPS search against PoE Wiki and PoEDB, with session-only citations
 - [response-envelope.md](response-envelope.md): result, source, status, and uncertainty contract

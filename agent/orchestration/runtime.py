@@ -4,15 +4,19 @@ import json
 from .planner import plan
 from agent.pob.bridge import MAX_TOOL_ATTEMPTS, PobBridgeError, PobTimeoutError, PobUnavailableError
 from agent.pob.bridge import project_snapshot, serialize_snapshot
+from agent.error_registry import parent_error_ref
+from agent.mcp.errors import ToolCallError
+from agent.tool_catalog import TOOL_CATALOG
 
 
 def _bridge_error(error):
-    return getattr(error, "error", {"code": "UNCLASSIFIED_FAILURE", "recovery_class": "FATAL_INTERNAL", "stage": "tool_execution", "retryable": False, "attempt": 1, "max_attempts": 1, "message": str(error), "details": {}, "next_action": "stop", "secondary_causes": [], "side_effect": "none", "operator_message": None})
+    return getattr(error, "error", {"code": "UNCLASSIFIED_FAILURE", "error_ref": "UNCLASSIFIED_FAILURE", "recovery_class": "FATAL_INTERNAL", "stage": "tool_execution", "retryable": False, "attempt": 1, "max_attempts": 1, "message": str(error), "details": {}, "next_action": "stop", "secondary_causes": [], "side_effect": "none", "operator_message": None})
 
 
 def _retryable_tool_error(error):
     detail = _bridge_error(error)
-    return isinstance(error, PobBridgeError) and detail.get("retryable") is True and detail.get("recovery_class") == "RETRY_TOOL"
+    return (isinstance(error, (PobBridgeError, ToolCallError)) and detail.get("retryable") is True
+            and detail.get("recovery_class") == "RETRY_TOOL")
 
 
 def _set_attempt(error, attempt):
@@ -27,7 +31,10 @@ MUTATION_TOOLS = frozenset({"replace_item", "replace_gem", "change_passive"})
 
 
 def _error_envelope(code, recovery, stage, message, *, retryable=False, next_action="stop", attempt=1, max_attempts=1, details=None):
-    return {"code": code, "recovery_class": recovery, "stage": stage, "retryable": retryable,
+    if recovery == "REPAIR_INPUT":
+        recovery, next_action = "ASK_USER", "ask_user"
+        details = {**(details or {}), "confirmation_type": "repair"}
+    return {"code": code, "error_ref": parent_error_ref(code), "error_code": code, "recovery_class": recovery, "stage": stage, "retryable": retryable,
             "attempt": attempt, "max_attempts": max_attempts, "message": message,
             "details": details or {}, "next_action": next_action, "secondary_causes": [],
             "side_effect": "none", "operator_message": None}
@@ -39,6 +46,40 @@ def _budget_error(count):
             "message": "Tool/RAG/search call budget exhausted", "details": {"tool_call_count": count},
             "next_action": "human_review", "secondary_causes": [], "side_effect": "none",
             "operator_message": "Tool call budget requires operator review"}
+
+
+def _execute_search_call(tool, callback, output):
+    """Execute a local/MCP search through the same bounded error policy as other tools."""
+    spec = TOOL_CATALOG.get(tool)
+    for attempt in range(1, MAX_TOOL_ATTEMPTS + 1):
+        if output["tool_call_count"] >= MAX_TOOL_CALLS:
+            return None, _budget_error(output["tool_call_count"]), True, attempt
+        output["tool_call_count"] += 1
+        try:
+            return callback(), None, False, attempt
+        except ToolCallError as error:
+            detail = _set_attempt(error, attempt)
+            can_retry = (spec is not None and spec.side_effect == "read_only" and spec.idempotent
+                         and spec.retry_policy == "transient_read_only" and _retryable_tool_error(error))
+            max_attempts = min(MAX_TOOL_ATTEMPTS, detail.get("max_attempts", MAX_TOOL_ATTEMPTS))
+            if can_retry and attempt < max_attempts:
+                continue
+            return None, detail, False, attempt
+        except ValueError as error:
+            ambiguous = "ambiguous" in str(error).casefold()
+            code = "AMBIGUOUS_ALIAS" if ambiguous else "INPUT_INVALID"
+            recovery = "ASK_USER" if ambiguous else "REJECT"
+            action = "ask_user" if ambiguous else "reject_request"
+            detail = _error_envelope(code, recovery, "knowledge_search", str(error)[:500], next_action=action)
+            return None, detail, False, attempt
+        except Exception as error:
+            detail = _error_envelope("RAG_UNAVAILABLE", "RETRY_TOOL", "knowledge_search",
+                                     str(error)[:500], retryable=True, next_action="retry_bounded",
+                                     attempt=attempt, max_attempts=MAX_TOOL_ATTEMPTS)
+            if spec is not None and spec.side_effect == "read_only" and spec.idempotent and attempt < MAX_TOOL_ATTEMPTS:
+                continue
+            return None, detail, False, attempt
+    return None, _budget_error(output["tool_call_count"]), True, MAX_TOOL_ATTEMPTS
 
 
 def _result_uncertainty(result):
@@ -80,10 +121,10 @@ class SnapshotSync:
         self.snapshot = None
         self.revision = None
 
-    def prepare(self, current):
+    def prepare(self, current, overrides=None):
         if not isinstance(current, dict):
             return {"mode": "full", "snapshot": None, "snapshotRevision": None, "baseRevision": None}
-        normalized = project_snapshot(current)
+        normalized = project_snapshot(current, overrides)
         revision = snapshot_revision(normalized)
         if self.snapshot is None or self.revision is None:
             self.snapshot, self.revision = normalized, revision
@@ -96,7 +137,7 @@ class SnapshotSync:
         return {"mode": "diff", "diff": {"baseRevision": base, "revision": revision, "changes": diff}, "snapshotRevision": revision, "baseRevision": base}
 
 
-def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revision_value=None, current_revision=None):
+def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revision_value=None, current_revision=None, context_overrides=None):
     """Execute a planner result without raising at the orchestration boundary."""
     handlers = handlers or {}
     output = {
@@ -129,6 +170,9 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
         if not isinstance(arguments, dict):
             output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "arguments must be a dict", next_action="repair_input")})
             continue
+        if context_overrides:
+            arguments = dict(arguments)
+            arguments.setdefault("contextOverrides", dict(context_overrides))
         expected_revision = step.get("expectedSnapshotRevision")
         if expected_revision is not None and (not isinstance(expected_revision, str) or not expected_revision.strip()):
             output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "expectedSnapshotRevision must be a non-empty string", next_action="repair_input")})
@@ -146,41 +190,50 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
             if search is None:
                 output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("SEARCH_UNAVAILABLE", "REJECT", "knowledge_search", "knowledge search is not configured", next_action="reject_request")})
                 continue
-            output["tool_call_count"] += 1
-            try:
-                result = search.search(arguments.get("query", ""), limit=arguments.get("limit", 10), category=arguments.get("category"))
-            except Exception as error:  # boundary: keep one failed step inspectable
-                output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SEARCH_ERROR", "RETRY_TOOL", "knowledge_search", str(error), retryable=True, next_action="retry_bounded", max_attempts=MAX_TOOL_ATTEMPTS)})
+            result, error, exhausted, attempt = _execute_search_call(
+                tool, lambda: search.search(arguments.get("query", ""), limit=arguments.get("limit", 10), category=arguments.get("category")), output)
+            if error is not None:
+                output["steps"].append({"tool": tool, "status": "human_review" if exhausted else "error",
+                                        "error": error, "attempt": attempt, "tool_call_count": output["tool_call_count"]})
+                if exhausted: budget_exhausted = True
             else:
-                step_result = {"tool": tool, "status": "ok", "attempt": 1, "tool_call_count": output["tool_call_count"], "result": result}
+                step_result = {"tool": tool, "status": "ok", "attempt": attempt, "tool_call_count": output["tool_call_count"], "result": result}
                 uncertainty = _result_uncertainty(result)
-                if uncertainty is not None:
-                    step_result["uncertainty"] = uncertainty
+                if uncertainty is not None: step_result["uncertainty"] = uncertainty
                 output["steps"].append(step_result)
+            if budget_exhausted: break
             continue
         if tool == "resolve_item_alias":
             if search is None:
                 output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("SEARCH_UNAVAILABLE", "REJECT", "knowledge_search", "knowledge search is not configured", next_action="reject_request")})
                 continue
-            output["tool_call_count"] += 1
-            try:
-                result = search.resolve_item_alias(arguments.get("query", ""), category=arguments.get("category"))
-            except Exception as error:
-                output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SEARCH_ERROR", "RETRY_TOOL", "knowledge_search", str(error), retryable=True, next_action="retry_bounded", max_attempts=MAX_TOOL_ATTEMPTS)})
+            result, error, exhausted, attempt = _execute_search_call(
+                tool, lambda: search.resolve_item_alias(arguments.get("query", ""), category=arguments.get("category")), output)
+            if error is not None:
+                output["steps"].append({"tool": tool, "status": "human_review" if exhausted else "error",
+                                        "error": error, "attempt": attempt, "tool_call_count": output["tool_call_count"]})
+                if exhausted: budget_exhausted = True
             else:
-                output["steps"].append({"tool": tool, "status": "ok" if result else "unavailable", "result": result} if result else {"tool": tool, "status": "unavailable", "error": _error_envelope("USER_CONTEXT_MISSING", "ASK_USER", "alias_resolution", "item alias was not found", next_action="ask_user")})
+                output["steps"].append({"tool": tool, "status": "ok", "attempt": attempt,
+                    "tool_call_count": output["tool_call_count"], "result": result} if result else
+                    {"tool": tool, "status": "unavailable", "error": _error_envelope("USER_CONTEXT_MISSING", "ASK_USER", "alias_resolution", "item alias was not found", next_action="ask_user")})
+            if budget_exhausted: break
             continue
         if tool == "resolve_skill_alias":
             if search is None:
                 output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("SEARCH_UNAVAILABLE", "REJECT", "knowledge_search", "knowledge search is not configured", next_action="reject_request")})
                 continue
-            output["tool_call_count"] += 1
-            try:
-                result = search.resolve_skill_alias(arguments.get("query", ""))
-            except Exception as error:
-                output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SEARCH_ERROR", "RETRY_TOOL", "knowledge_search", str(error), retryable=True, next_action="retry_bounded", max_attempts=MAX_TOOL_ATTEMPTS)})
+            result, error, exhausted, attempt = _execute_search_call(
+                tool, lambda: search.resolve_skill_alias(arguments.get("query", "")), output)
+            if error is not None:
+                output["steps"].append({"tool": tool, "status": "human_review" if exhausted else "error",
+                                        "error": error, "attempt": attempt, "tool_call_count": output["tool_call_count"]})
+                if exhausted: budget_exhausted = True
             else:
-                output["steps"].append({"tool": tool, "status": "ok", "result": result} if result else {"tool": tool, "status": "unavailable", "error": _error_envelope("USER_CONTEXT_MISSING", "ASK_USER", "alias_resolution", "skill alias was not found", next_action="ask_user")})
+                output["steps"].append({"tool": tool, "status": "ok", "attempt": attempt,
+                    "tool_call_count": output["tool_call_count"], "result": result} if result else
+                    {"tool": tool, "status": "unavailable", "error": _error_envelope("USER_CONTEXT_MISSING", "ASK_USER", "alias_resolution", "skill alias was not found", next_action="ask_user")})
+            if budget_exhausted: break
             continue
         handler = handlers.get(tool)
         if not callable(handler):
@@ -223,6 +276,17 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
                     continue
                 detail = _set_attempt(error, attempt)
                 output["steps"].append({"tool": tool, "status": "error", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
+                break
+            except ToolCallError as error:
+                detail = _set_attempt(error, attempt)
+                spec = TOOL_CATALOG.get(tool)
+                can_retry = (spec is not None and spec.side_effect == "read_only" and spec.idempotent
+                             and spec.retry_policy == "transient_read_only" and _retryable_tool_error(error))
+                if can_retry and attempt < min(MAX_TOOL_ATTEMPTS, detail.get("max_attempts", MAX_TOOL_ATTEMPTS)):
+                    continue
+                status = "timeout" if detail.get("code") == "TIMEOUT" else "error"
+                output["steps"].append({"tool": tool, "status": status, "attempt": attempt,
+                                        "tool_call_count": output["tool_call_count"], "error": detail})
                 break
             except TimeoutError as error:
                 detail = _error_envelope("TIMEOUT", "RETRY_TOOL", "tool_execution", "Tool timed out", retryable=True, next_action="retry_bounded", attempt=attempt, max_attempts=MAX_TOOL_ATTEMPTS)

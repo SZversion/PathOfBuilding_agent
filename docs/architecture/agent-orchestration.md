@@ -15,7 +15,7 @@ The external AI can plan multiple sequential operations, but one request is capp
 
 ## Search order
 
-PoB output and breakdown are authoritative for current-build numbers. Local RAG supplies English canonical rules and aliases. If local evidence is insufficient, the Bridge may perform temporary searches against PoE Wiki, PoEDB, the official Path of Exile site, PoB Community GitHub, or Craft of Exile. External results are session-only and are not automatically promoted to the knowledge base.
+PoB output and breakdown are authoritative for current-build numbers. Local RAG supplies English canonical rules and aliases. If local evidence is insufficient, `search_external` performs direct HTTPS requests from the local Bridge without opening a browser. PoE Wiki uses its MediaWiki search API and page parser. PoEDB currently has no documented general content-search API; the Bridge downloads the same public English autocomplete index used by PoEDB's site UI, ranks matching titles locally, and fetches selected pages directly. Only `poewiki.net` and `poedb.tw`/its CDN are allowed. Results include up to three pages per source and 12,000 page-body characters per result, remain session-only temporary evidence, and are not promoted to the knowledge base.
 
 ## Answer contract
 

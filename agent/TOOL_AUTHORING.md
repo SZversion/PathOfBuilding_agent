@@ -4,12 +4,13 @@ This document defines how PoB Agent Tools are designed, registered, reviewed, an
 
 ## Authoritative references
 
-- `docs/tools/catalog.md` is the authoritative Tool registry. Only entries under **Implemented and public** may be called by the model in production. Entries under **Planned Tools** are design requirements, not callable APIs.
+- `agent/tool_catalog.py` is the executable source of truth for public names, input schemas, model descriptions, provider groups, categories, side effects, timeout/retry rules, and error vocabulary. MCP, AgentLoop discovery, and the generated contract section in `docs/tools/catalog.md` derive from it.
+- `docs/tools/catalog.md` remains the human authority for PoB paths, fixture evidence, and promotion status. Only entries under **Implemented and public** may be called by the model in production. Entries under **Planned Tools** are design requirements, not callable APIs.
 - `docs/tools/response-envelope.md` is the single authoritative response-format specification. This document does not redefine the envelope, status enum, or evidence graph shape.
-- `agent/EXCEPTION_HANDLING.md` is the authoritative error-code and `recovery_class` registry. Tool authors must not invent error codes.
+- `agent/EXCEPTION_HANDLING.md` is the authoritative parent `error_ref`/leaf `error_code` registry. Tool authors must not invent either code. `error.code` is a legacy mirror only.
 - `RULE_SCHEMA.md` and `VALIDATION_WORKFLOW.md` define rule evidence, version fields, precision, and promotion gates.
 
-The response `status` describes the successful or usable result state (`calculated`, `partial`, `unavailable`, `not_simulated`, `conflict`, or `rejected`). An exception is represented separately by the registered `error.code` and `error.recovery_class` contract in `agent/EXCEPTION_HANDLING.md`. A successful result with `status: partial` and `VERSION_WARNING` is not an exception; an execution failure with `status: error` must carry a registry error and recovery class.
+The response `status` describes the successful or usable result state (`calculated`, `partial`, `unavailable`, `not_simulated`, `conflict`, or `rejected`). An exception is represented separately by registered `error_ref`, `error_code`, and `recovery_class` fields. Context errors use `recovery_class: ASK_USER` and carry `details.missing_fields`/`details.message`. A successful result with `status: partial` and `VERSION_WARNING` is not an exception.
 
 ## Tool categories
 
@@ -25,6 +26,8 @@ Every Tool belongs to one primary category:
 8. **Internal common layer** — snapshot/revision checks, alias normalization, version policy, envelope construction, budget accounting, and error mapping. This layer is not a public user Tool.
 
 ## Required Tool template
+
+Each public Tool's executable contract must also provide a concise purpose, when-to-use guidance, constraints, result shape, bounded timeout, idempotency and retry policy, registered failure codes, and one representative call. Its JSON Schema must describe every field in plain language and enforce the bounds and enums used by the provider. MCP annotations must match its actual behavior. Use small, composable operations; keep orchestration and multi-step planning in AgentLoop.
 
 Every Tool specification and implementation must document all fields below. A missing field keeps the Tool `planned`.
 

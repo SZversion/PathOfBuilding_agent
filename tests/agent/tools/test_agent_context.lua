@@ -35,4 +35,7 @@ local missing, missingErr = context.find_skill(loaded, "Endgame", "Missing")
 assert(missing == nil and missingErr)
 local invalid, invalidErr = context.load_xml_file("tests/agent/tools/missing.xml")
 assert(invalid == nil and invalidErr)
+local badBuild = { configTab = { input = { resistancePenalty = -60 } }, calcsTab = { BuildOutput = function() error("forced calculation failure") end } }
+local badRestore, badError = context.begin_config_overrides(badBuild, { resistancePenalty = 0 })
+assert(badRestore == nil and badError and badBuild.configTab.input.resistancePenalty == -60)
 print("agent context self-check passed")

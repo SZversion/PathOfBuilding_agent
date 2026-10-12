@@ -35,6 +35,8 @@ The existing one-shot Lua/XML bridge can be used for fixtures and read-only deve
 
 ```json
 {
+  "error_ref": "MUTATION_NOT_PERSISTENT",
+  "error_code": "MUTATION_NOT_PERSISTENT",
   "code": "MUTATION_NOT_PERSISTENT",
   "recovery_class": "REJECT",
   "stage": "bridge_capability",
@@ -147,10 +149,11 @@ Mutation timeout or uncertain result must not immediately repeat the mutation. R
 
 ## 10. Error contract
 
-All bridge errors use the stable registry in `agent/EXCEPTION_HANDLING.md` and include:
+All bridge errors use the stable parent/leaf registry in `agent/EXCEPTION_HANDLING.md` and include:
 
-- `code`;
-- `recovery_class`;
+- `error_ref` (parent category);
+- `error_code` (leaf diagnosis; legacy `error.code` mirror may also be present);
+- `recovery_class` (context errors use `ASK_USER`);
 - `stage`;
 - `next_action`;
 - `retryable`;
@@ -166,6 +169,20 @@ Important bridge errors:
 - `MUTATION_TIMEOUT`: mutation result is unknown;
 - `MUTATION_UNCERTAIN`: verification could not establish the result;
 - `VALUE_UNAVAILABLE`: PoB did not expose the requested value or source.
+
+For missing or ambiguous context, return one parent category with all missing fields, for example:
+
+```json
+{
+  "error_ref": "MISSING_CONTEXT",
+  "error_code": "USER_CONTEXT_MISSING",
+  "recovery_class": "ASK_USER",
+  "details": {
+    "missing_fields": ["skillSet", "config"],
+    "message": "사용할 Skill Set과 Config가 필요합니다."
+  }
+}
+```
 
 ## 11. User-change precedence
 

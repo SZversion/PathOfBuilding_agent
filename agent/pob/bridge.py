@@ -3,6 +3,9 @@ import os
 import subprocess
 from pathlib import Path
 
+from agent.error_registry import parent_error_ref
+from agent.search.external_search import ExternalSearch
+
 
 def _normalize_name(value):
     return " ".join(str(value).strip().split()).casefold() if isinstance(value, str) else ""
@@ -28,8 +31,8 @@ _ERRORS = {
     "BRIDGE_PROTOCOL_ERROR": ("FATAL_INTERNAL", "bridge_protocol", False, "stop"),
     "POB_CALCULATION_ERROR": ("FATAL_INTERNAL", "pob_calculation", False, "report_error"),
     "BUILD_LOAD_FAILED": ("REJECT", "build_load", False, "reject_request"),
-    "INPUT_INVALID": ("REPAIR_INPUT", "input_validation", False, "repair_input"),
-    "TOOL_NOT_FOUND": ("REPAIR_INPUT", "tool_dispatch", False, "repair_input"),
+    "INPUT_INVALID": ("ASK_USER", "input_validation", False, "ask_user"),
+    "TOOL_NOT_FOUND": ("ASK_USER", "tool_dispatch", False, "ask_user"),
     "AMBIGUOUS_ALIAS": ("ASK_USER", "context_resolution", False, "ask_user"),
     "USER_CONTEXT_MISSING": ("ASK_USER", "context_resolution", False, "ask_user"),
     "MUTATION_NOT_PERSISTENT": ("REJECT", "mutation_adapter", False, "reject_request"),
@@ -80,9 +83,10 @@ def _sorted_ids(value, use_values=False):
     return sorted(result)
 
 
-def project_snapshot(context):
+def project_snapshot(context, overrides=None):
     """Return a deterministic primitive-only snapshot projection."""
     context = context if isinstance(context, dict) else {}
+    context = context.get("context") if isinstance(context.get("context"), dict) else context
     spec = context.get("activeSpec") if isinstance(context.get("activeSpec"), dict) else {}
     projected = {
         "activeSpec": {
@@ -101,6 +105,24 @@ def project_snapshot(context):
     }
     projected["activeSpec"]["id"] = _primitive_or_none(projected["activeSpec"]["id"])
     projected["activeSpec"]["title"] = _primitive_or_none(projected["activeSpec"]["title"])
+    if isinstance(overrides, dict) and overrides:
+        provenance = {}
+        option_names = {"activeSpec": "availableSpecs", "activeSkillSet": "availableSkillSets", "activeItemSet": "availableItemSets"}
+        for field, requested in overrides.items():
+            if field not in option_names:
+                continue
+            resolved = None
+            options = context.get(option_names[field], [])
+            if isinstance(options, list):
+                for option in options:
+                    if not isinstance(option, dict):
+                        continue
+                    if option.get("id") == requested or str(option.get("id")) == str(requested) or _normalize_name(option.get("title")) == _normalize_name(requested):
+                        resolved = {key: option.get(key) for key in ("id", "title") if key in option}
+                        break
+            provenance[field] = {"provenance": "explicit_override", "requested": requested, "resolved": resolved,
+                                 "resolution": "catalog" if resolved is not None else "unresolved"}
+        projected["contextProvenance"] = provenance
     groups = context.get("socketGroups", context.get("gems", []))
     if isinstance(groups, list):
         projected["socketGroups"] = []
@@ -126,7 +148,7 @@ class PobBridgeError(RuntimeError):
         retryable = code in _RETRYABLE_CODES
         if retryable:
             recovery, stage, next_action = "RETRY_TOOL", "tool_execution", "retry_bounded"
-        self.error = {"code": code, "recovery_class": recovery, "stage": stage, "retryable": retryable,
+        self.error = {"code": code, "error_ref": parent_error_ref(code), "recovery_class": recovery, "stage": stage, "retryable": retryable,
                       "attempt": attempt, "max_attempts": MAX_TOOL_ATTEMPTS if retryable else 1, "message": message, "details": {},
                       "next_action": next_action, "secondary_causes": [], "side_effect": "none",
                       "operator_message": None}
@@ -208,7 +230,7 @@ class PobBridge:
 
 def make_pob_handlers(build_path, luajit=None, timeout=120, allow_headless_mutation=False):
     bridge = PobBridge(luajit or os.getenv("LUAJIT", "luajit"), timeout=timeout, allow_headless_mutation=allow_headless_mutation)
-    return {name: (lambda arguments, name=name: bridge.call(build_path, name, arguments)) for name in (
+    handlers = {name: (lambda arguments, name=name: bridge.call(build_path, name, arguments)) for name in (
         "get_character_stats", "get_skill_stats", "get_skill_dps", "get_highest_dps_skill",
         "get_skill_breakdown", "get_item_modifiers", "get_projectile_behavior", "get_trigger_sequence",
         "get_curse_application_order", "get_ailment_effect", "get_damage_breakdown", "get_conversion_chain",
@@ -221,3 +243,8 @@ def make_pob_handlers(build_path, luajit=None, timeout=120, allow_headless_mutat
         "change_passive",
         "get_duration", "explain_stat",
     )}
+    external_search = ExternalSearch()
+    handlers["search_external"] = lambda arguments: external_search.search(
+        arguments.get("query", ""), source=arguments.get("source", "both"), limit=arguments.get("limit", 3)
+    )
+    return handlers

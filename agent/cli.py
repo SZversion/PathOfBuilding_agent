@@ -7,17 +7,25 @@ import os
 import re
 from pathlib import Path
 
-from .orchestration.agent_loop import AgentLoop
-from .orchestration.recovery import recover_response
+from .orchestration.agent_loop import AgentLoop, ALLOWED_TOOLS
+from .orchestration.recovery import exhausted_response, recover_response, standardize_error
 from .orchestration.state_store import OrchestrationStateStore, StateStoreError
 from .pob.bridge import PobBridgeError, make_pob_handlers
-from .providers.ollama import DEFAULT_OLLAMA_MODEL, OllamaDevelopmentProvider
+from .search.external_search import ExternalSearch
+from .providers.ollama import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, OllamaDevelopmentProvider
 from .providers.openai_compatible import OpenAICompatibleClient
+from .mcp.client import McpClientError, McpSearchFacade, McpToolClient
 
 
 def _error(code, message, *, next_action="reject_request", details=None):
+    if code in {"INPUT_INVALID", "TOOL_NOT_FOUND"}:
+        next_action = "ask_user"
+        recovery = "ASK_USER"
+        details = {**(details or {}), "confirmation_type": "repair"}
+    else:
+        recovery = "REJECT"
     return {"status": "error", "error": {
-        "code": code, "recovery_class": "REJECT", "stage": "cli",
+        "code": code, "recovery_class": recovery, "stage": "cli",
         "retryable": False, "attempt": 1, "max_attempts": 1,
         "message": message, "details": details or {}, "next_action": next_action,
         "secondary_causes": [], "side_effect": "none", "operator_message": None,
@@ -40,8 +48,14 @@ def _cache_id(build):
 
 
 def _provider(args):
-    if args.local_ollama:
-        return OllamaDevelopmentProvider(model=args.model or DEFAULT_OLLAMA_MODEL)
+    provider_mode = os.getenv("POB_AGENT_MODEL_PROVIDER", "openai_compatible").strip().casefold()
+    if args.local_ollama or provider_mode == "ollama":
+        return OllamaDevelopmentProvider(
+            endpoint=os.getenv("POB_AGENT_MODEL_ENDPOINT", DEFAULT_OLLAMA_ENDPOINT),
+            model=args.model or os.getenv("POB_AGENT_MODEL", DEFAULT_OLLAMA_MODEL),
+        )
+    if provider_mode not in {"openai_compatible", "openai"}:
+        raise ValueError("POB_AGENT_MODEL_PROVIDER must be ollama or openai_compatible")
     if args.model:
         raise ValueError("--model requires --local-ollama")
     endpoint = os.getenv("POB_AGENT_MODEL_ENDPOINT")
@@ -64,6 +78,7 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
     stream_group.add_argument("--stream", dest="stream", action="store_true")
     stream_group.add_argument("--no-stream", dest="stream", action="store_false")
     parser.set_defaults(stream=True)
+    parser.add_argument("--stream-json", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("question", nargs="?")
     args = parser.parse_args(argv)
     try:
@@ -74,12 +89,12 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
             previous = cache.load_state(build_id)
         except StateStoreError as error:
             if error.error["code"] != "STATE_NOT_FOUND":
-                return _emit({"status": "error", "error": error.error}, args.json_output)
+                return _emit({"status": "error", "error": error.error}, args.json_output, stream_json=args.stream_json)
             previous = {}
         if args.expected_snapshot_revision is not None:
             actual = (previous.get("snapshot") or {}).get("snapshotRevision")
             if actual != args.expected_snapshot_revision:
-                return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "cached snapshot revision is stale", next_action="recapture_snapshot", details={"expected": args.expected_snapshot_revision, "actual": actual}), args.json_output)
+                return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "cached snapshot revision is stale", next_action="recapture_snapshot", details={"expected": args.expected_snapshot_revision, "actual": actual}), args.json_output, stream_json=args.stream_json)
         question = args.question
         if not question and not args.once:
             while True:
@@ -106,42 +121,65 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
         if args.clarification_answer:
             pending = (previous.get("orchestration") or {}).get("pending")
             if not isinstance(pending, dict):
-                return _emit(_error("USER_CONTEXT_MISSING", "no pending clarification is available", next_action="ask_user"), args.json_output)
+                return _emit(_error("USER_CONTEXT_MISSING", "no pending clarification is available", next_action="ask_user"), args.json_output, stream_json=args.stream_json)
             pending_revision = pending.get("snapshotRevision")
             if args.expected_snapshot_revision is None and pending_revision is not None:
                 actual = (previous.get("snapshot") or {}).get("snapshotRevision")
                 if actual != pending_revision:
-                    return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "pending clarification is stale", next_action="recapture_snapshot", details={"expected": pending_revision, "actual": actual}), args.json_output)
+                    return _emit(_error("SNAPSHOT_REVISION_CONFLICT", "pending clarification is stale", next_action="recapture_snapshot", details={"expected": pending_revision, "actual": actual}), args.json_output, stream_json=args.stream_json)
             question = question + "\nClarification answer: " + args.clarification_answer
         provider = provider_factory(args) if provider_factory else _provider(args)
-        bridge = bridge_factory(build) if bridge_factory else None
-        if bridge is None:
-            handlers = make_pob_handlers(build)
+        search = None
+        current_revision = None
+        mcp_client = None
+        discovered_tools = None
+        if bridge_factory is None:
+            # Production calls always cross the local MCP stdio boundary.
+            mcp_client = McpToolClient(cwd=Path(__file__).resolve().parents[1]).start()
+            try:
+                discovered_tools = mcp_client.list_tools()  # startup enforces exact catalog parity
+                snapshot = mcp_client.read_resource()
+            except Exception:
+                mcp_client.close()
+                raise
+            snapshot.setdefault("buildId", build_id)
+            snapshot.setdefault("buildNameHash", hashlib.sha256(build.stem.encode("utf-8")).hexdigest()[:16])
+            handlers = {name: (lambda arguments, name=name: mcp_client.call_tool(name, arguments)) for name in ALLOWED_TOOLS}
+            search = McpSearchFacade(mcp_client)
+            current_revision = lambda: mcp_client.read_resource().get("snapshotRevision")
         else:
-            handlers = {name: (lambda arguments, name=name: bridge.call(build, name, arguments)) for name in ()}
-        # The bridge is the only build reader; only its normalized result enters the model.
-        if bridge is None:
-            from .pob.bridge import PobBridge
-            bridge = PobBridge()
-        cached_snapshot = previous.get("snapshot") or {}
-        snapshot = {"buildId": build_id, "source": "pob_xml", "snapshotRevision": cached_snapshot.get("snapshotRevision", "unknown"), "buildNameHash": hashlib.sha256(build.stem.encode("utf-8")).hexdigest()[:16]}
-        try:
-            facts = bridge.call(build, "get_character_stats", {})
-            snapshot["facts"] = facts
-            if isinstance(facts, dict):
-                for key in ("snapshotRevision", "gamePatch", "pobVersion", "dataRevision"):
-                    if facts.get(key) is not None:
-                        snapshot[key] = facts[key]
-        except PobBridgeError as error:
-            return _emit(_error(error.error["code"], str(error), next_action=error.error.get("next_action", "reject_request")), args.json_output)
-        if bridge_factory is not None:
+            bridge = bridge_factory(build)
             handlers = {name: (lambda arguments, name=name: bridge.call(build, name, arguments)) for name in (
                 "get_character_stats", "get_skill_stats", "get_skill_dps", "get_highest_dps_skill", "get_skill_breakdown",
                 "get_projectile_count", "get_curse_limit", "get_elemental_penetration", "get_skill_chain", "get_duration",
                 "get_damage_breakdown", "get_support_links", "resolve_skill_context", "get_socket_order", "explain_stat",
             )}
-        on_token = (lambda token: print(token, end="", flush=True)) if args.stream and not args.json_output else None
-        result = AgentLoop(provider).run(question, handlers=handlers, snapshot=snapshot, on_token=on_token)
+            cached_snapshot = previous.get("snapshot") or {}
+            snapshot = {"buildId": build_id, "source": "test_adapter", "snapshotRevision": cached_snapshot.get("snapshotRevision", "unknown"), "buildNameHash": hashlib.sha256(build.stem.encode("utf-8")).hexdigest()[:16]}
+            try:
+                facts = bridge.call(build, "get_character_stats", {})
+                snapshot["facts"] = facts
+                if isinstance(facts, dict):
+                    for key in ("snapshotRevision", "gamePatch", "pobVersion", "dataRevision"):
+                        if facts.get(key) is not None:
+                            snapshot[key] = facts[key]
+            except PobBridgeError as error:
+                return _emit(_error(error.error["code"], str(error), next_action=error.error.get("next_action", "reject_request")), args.json_output, stream_json=args.stream_json)
+            external_search = ExternalSearch()
+            handlers["search_external"] = lambda arguments: external_search.search(
+                arguments.get("query", ""), source=arguments.get("source", "both"), limit=arguments.get("limit", 3)
+            )
+        if args.stream_json:
+            on_token = lambda token: print(json.dumps({"type": "token", "text": token}, ensure_ascii=False), flush=True)
+        else:
+            on_token = (lambda token: print(token, end="", flush=True)) if args.stream and not args.json_output else None
+        try:
+            result = AgentLoop(provider).run(question, search=search, handlers=handlers, snapshot=snapshot,
+                                           current_revision=current_revision, tool_definitions=discovered_tools,
+                                           on_token=on_token)
+        finally:
+            if mcp_client is not None:
+                mcp_client.close()
         if not args.json_output:
             result = recover_response(result, provider, on_token=on_token if args.stream else None)
         cache.save_state(build_id, {
@@ -152,16 +190,23 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
             "conversation": {"lastStatus": result.get("status")},
             "evidence": {"available": bool(result.get("execution"))},
         }, metadata={"gamePatch": snapshot.get("gamePatch"), "pobVersion": snapshot.get("pobVersion"), "dataRevision": snapshot.get("dataRevision")})
-        return _emit(result, args.json_output, streamed=bool(on_token))
+        return _emit(result, args.json_output, streamed=bool(on_token), stream_json=args.stream_json)
     except StateStoreError as error:
-        return _emit({"status": "error", "error": error.error}, args.json_output)
+        return _emit({"status": "error", "error": error.error}, args.json_output, stream_json=args.stream_json)
+    except McpClientError as error:
+        return _emit(_error("BRIDGE_UNAVAILABLE", str(error), next_action="restart_pob_or_bridge"), args.json_output, stream_json=args.stream_json)
     except (ValueError, RuntimeError) as error:
-        return _emit(_error("INPUT_INVALID" if isinstance(error, ValueError) else "MODEL_PROVIDER_UNAVAILABLE", str(error), next_action="repair_input" if isinstance(error, ValueError) else "configure_provider"), args.json_output)
+        return _emit(_error("INPUT_INVALID" if isinstance(error, ValueError) else "MODEL_PROVIDER_UNAVAILABLE", str(error), next_action="repair_input" if isinstance(error, ValueError) else "configure_provider"), args.json_output, stream_json=args.stream_json)
 
 
-def _emit(value, json_output, streamed=False):
+def _emit(value, json_output, streamed=False, stream_json=False):
+    value = standardize_error(value)
+    value = exhausted_response(value)
     if not json_output and isinstance(value, dict) and isinstance(value.get("error"), dict) and not value.get("answer"):
         value = recover_response(value)
+    if stream_json:
+        print(json.dumps({"type": "result", "result": value}, ensure_ascii=False), flush=True)
+        return 0 if value.get("status") not in {"error", "plan_error"} else 1
     if streamed and value.get("answer"):
         print()
         return 0 if value.get("status") not in {"error", "plan_error"} else 1

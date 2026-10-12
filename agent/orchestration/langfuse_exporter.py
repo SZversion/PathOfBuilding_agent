@@ -95,7 +95,9 @@ class LangfuseExporter:
         if any(not values.get(key) for key in required):
             return cls(enabled=True, reason="queue_only: incomplete Langfuse configuration", timeout=timeout, queue_path=queue_path, queue_max_bytes=queue_max_bytes)
         host = urlparse(values["LANGFUSE_BASE_URL"]).hostname
-        if host not in {"localhost", "127.0.0.1", "::1"}:
+        allowed_hosts = {"localhost", "127.0.0.1", "::1"}
+        allowed_hosts.update(item.strip() for item in values.get("POB_AGENT_LANGFUSE_ALLOWED_HOSTS", "").split(",") if item.strip())
+        if host not in allowed_hosts:
             return cls(enabled=True, reason="queue_only: Langfuse host must be local", timeout=timeout, queue_path=queue_path, queue_max_bytes=queue_max_bytes)
         if sdk_module is None:
             try:
@@ -134,7 +136,8 @@ class LangfuseExporter:
             "step_index": event.get("step_index"), "tool_call_count": event.get("tool_call_count"),
             "retry_of": event.get("retry_of"), "plan_ref": event.get("plan_ref"), "query_ref": event.get("query_ref"),
             "safe_args_ref": event.get("safe_args_ref"), "prompt_ref": event.get("prompt_ref"),
-            "error_ref": event.get("error_ref"), "provider": {"mode": provider.get("mode"), "model": provider.get("model"), "endpoint_ref": provider.get("endpoint_ref")},
+            "error_ref": event.get("error_ref"), "error_code": event.get("error_code"), "error_details": event.get("error_details", {}), "provider": {"mode": provider.get("mode"), "model": provider.get("model"), "endpoint_ref": provider.get("endpoint_ref")},
+            "presentation_class": event.get("presentation_class"),
             "snapshot": {"revision": snapshot.get("revision"), "build_id": snapshot.get("build_id")},
             "result_ref": {key: result.get(key) for key in ("facts_ref", "trace_ref", "sources_ref", "evidence_graph_ref")},
             "input": event.get("input_payload"),

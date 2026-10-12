@@ -15,6 +15,13 @@ local m_floor = math.floor
 local m_abs = math.abs
 local s_format = string.format
 
+local sideBarWidth = 312
+local buildNameSmallLeft = 4
+local buildNameRowOffsetY = 32
+local buildNameControlExtraWidth = 98
+local agentButtonWidth = 76
+local agentButtonGap = 4
+
 local buildMode = new("ControlHost")
 
 local function InsertIfNew(t, val)
@@ -140,12 +147,17 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 	local function buildNameConditional()
 		return self.anchorTopBarRight:GetPos() < 800
 	end
-	self.controls.buildName = new("Control", {"LEFT",self.controls.saveAs,"RIGHT"}, {4, 36, 0, 20})
+	self.controls.buildName = new("Control", {"LEFT",self.controls.saveAs,"RIGHT"}, {buildNameSmallLeft, 36, 0, 20})
 	self.controls.buildName.width = function(control)
-		local limit = buildNameConditional() and 203 or
-			(self.anchorTopBarRight:GetPos() - 98 - 62
+		local limit
+		if buildNameConditional() then
+			limit = m_min(203, sideBarWidth - 4 - 3 - buildNameSmallLeft - buildNameControlExtraWidth - agentButtonGap - agentButtonWidth)
+		else
+			limit = self.anchorTopBarRight:GetPos() - buildNameControlExtraWidth - 62
 			- self.controls.pointDisplay:GetSize() - self.controls.levelScalingButton:GetSize() - self.controls.characterLevel:GetSize()
-			- self.controls.back:GetSize() - self.controls.save:GetSize() - self.controls.saveAs:GetSize())
+			- self.controls.back:GetSize() - self.controls.save:GetSize() - self.controls.saveAs:GetSize()
+			- agentButtonGap - agentButtonWidth
+		end
 		local bnw = DrawStringWidth(16, "VAR", self.buildName)
 		self.strWidth = m_min(bnw, limit)
 		self.strLimited = bnw > limit
@@ -175,14 +187,26 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 		end
 	end
 	self.controls.buildName.x = function()
-		return buildNameConditional() and -196 or 8
+		if buildNameConditional() then
+			local saveAsX = self.controls.saveAs:GetPos()
+			local saveAsWidth = self.controls.saveAs:GetSize()
+			return buildNameSmallLeft - (saveAsX + saveAsWidth)
+		end
+		return 8
 	end
 	self.controls.buildName.y = function()
-		return buildNameConditional() and 32 or 0
+		return buildNameConditional() and buildNameRowOffsetY or 0
 	end
 
 	-- Controls: top bar, right side
 	self.anchorTopBarRight = new("Control", nil, {function() return main.screenW / 2 + 6 end, 4, 0, 20})
+	-- Keep Agent attached to the current build field across the top-bar and compact layouts.
+	self.controls.agent = new("ButtonControl", {"LEFT",self.controls.buildName,"RIGHT"}, {agentButtonGap, 0, agentButtonWidth, 20}, "Agent", function()
+		if self.agentChatPane then
+			self.agentChatPane:ToggleOverlay()
+		end
+	end)
+
 
 	local function getPointDisplayX() -- I had it hardcoded to -323 before switching to the control sizing
 		return - (23 + self.controls.pointDisplay:GetSize() + self.controls.levelScalingButton:GetSize() + self.controls.characterLevel:GetSize())
@@ -606,6 +630,8 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild, importLin
 	self.compareTab = new("CompareTab", self)
 	-- Used for pined calcs panes
 	self.overlayPanes = { }
+	self.agentChatPane = new("AgentChatPane", self)
+	t_insert(self.overlayPanes, self.agentChatPane)
 
 	-- Load sections from the build file
 	self.savers = {
@@ -951,6 +977,9 @@ function buildMode:GetArgs()
 end
 
 function buildMode:CloseBuild()
+	if self.agentChatPane then
+		self.agentChatPane:SetResizeCursorHidden(false)
+	end
 	main:SetWindowTitleSubtext()
 	main:SetMode("LIST", self.dbFileName and self.buildName, self.dbFileSubPath)
 end
@@ -1149,7 +1178,8 @@ function buildMode:OnFrame(inputEvents)
 	end
 
 	for id, event in ipairs(inputEvents) do
-		if event.type == "KeyDown" then
+		local chatHasFocus = self.agentChatPane and self.agentChatPane.isOverlay and self.agentChatPane.selControl
+		if event.type == "KeyDown" and not chatHasFocus then
 			if event.key == "MOUSE4" then
 				if self.unsaved then
 					self:OpenSavePopup("LIST")
@@ -1205,6 +1235,10 @@ function buildMode:OnFrame(inputEvents)
 					break
 				end
 			end
+			if inputEvents[i] and event.key == "LEFTBUTTON" and self.agentChatPane and self.agentChatPane.isOverlay
+				and not self.agentChatPane:IsMouseInOverlay(cursorX, cursorY) then
+				self.agentChatPane:ReleaseFocus()
+			end
 			if inputEvents[i] and overlayBreakdown and breakdown:IsMouseOver() then
 				self.overlayBreakdownControl = breakdown:OnKeyDown(event.key, event.doubleClick)
 				inputEvents[i] = nil
@@ -1212,7 +1246,10 @@ function buildMode:OnFrame(inputEvents)
 		elseif event.type == "KeyUp" and event.key:match("BUTTON") then
 			for _, pane in ipairs(self.overlayPanes) do
 				if pane.isOverlay then
-					pane:HandleOverlayRelease(event.key)
+					if pane:HandleOverlayRelease(event.key) then
+						inputEvents[i] = nil
+						break
+					end
 				end
 			end
 			if self.overlayBreakdownControl then
@@ -1221,9 +1258,20 @@ function buildMode:OnFrame(inputEvents)
 				inputEvents[i] = nil
 			end
 		elseif event.type == "KeyUp" and overlayBreakdown and breakdown:IsMouseOver()
+			and not (self.agentChatPane and self.agentChatPane.isOverlay and self.agentChatPane:IsMouseInOverlay(cursorX, cursorY))
 			and (breakdown.controls.scrollBar:IsScrollDownKey(event.key) or breakdown.controls.scrollBar:IsScrollUpKey(event.key)) then
 			breakdown:OnKeyUp(event.key)
 			inputEvents[i] = nil
+		end
+	end
+	-- Keep text input in chronological order; mouse overlay priority is handled above.
+	for i = 1, #inputEvents do
+		local event = inputEvents[i]
+		if event and self.agentChatPane and self.agentChatPane.isOverlay
+			and (event.type == "Char" or event.type == "KeyDown" or event.type == "KeyUp") then
+			if self.agentChatPane:HandleInputEvent(event, cursorX, cursorY) then
+				inputEvents[i] = nil
+			end
 		end
 	end
 
@@ -1266,7 +1314,6 @@ function buildMode:OnFrame(inputEvents)
 	-- Update contents of main skill dropdowns
 	self:RefreshSkillSelectControls(self.controls, self.mainSocketGroup, "")
 	-- Draw contents of current tab
-	local sideBarWidth = 312
 	local tabViewPort = {
 		x = sideBarWidth,
 		y = 32,
@@ -1296,7 +1343,7 @@ function buildMode:OnFrame(inputEvents)
 	-- Draw overlay panes on top of all tab content (last = topmost)
 	for _, pane in ipairs(self.overlayPanes) do
 		if pane.isOverlay then
-			pane:DrawOverlay(main.viewPort, inputEvents)
+			pane:DrawOverlay(pane == self.agentChatPane and tabViewPort or main.viewPort, inputEvents)
 		end
 	end
 

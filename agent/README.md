@@ -29,3 +29,9 @@ PoB에 추가되는 Agent 기능입니다. MVP에서는 모델을 사용자 컴�
 - `protocol/`: PoB-Agent JSON 계약
 - `security/`: 외부 전송 범위와 Bridge 호출 보안 규칙
 - `tools/`: PoB 계산 Tool 계약과 구현
+
+## MCP tool runtime
+
+The production backend runs as an HTTP container and connects to the separate MCP container over authenticated Streamable HTTP. Local development can continue to use stdio. `agent/tool_catalog.py` is the single executable contract for tool names, semantic categories, input schemas, model-facing descriptions, provider groups, side effects, idempotency, deadlines, retry policy, and registered failure codes. AgentLoop's allowlist and MCP definitions derive from it. Regenerate its documentation with `python tools/render_mcp_tool_catalog.py`; `python tools/lint_agent_catalog.py` checks generated docs and Lua capability parity. Add a handler to the record's provider group; Lua-backed tools also require a PoB Lua capability/handler entry.
+
+The MCP server exposes all 32 registered tool contracts. The three mutation calls return `MUTATION_NOT_PERSISTENT`; production execution never falls back to the headless XML adapter.

@@ -46,6 +46,17 @@ def test_cli_rejects_local_model_without_explicit_flag(tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)["error"]["code"] == "INPUT_INVALID"
 
 
+def test_cli_json_error_includes_confirmation_type(tmp_path, capsys):
+    build = tmp_path / "ask-json.xml"
+    build.write_text("<Build/>", encoding="utf-8")
+    class Asking:
+        def chat(self, messages):
+            return json.dumps({"schema_version": "1.0", "intent": "unknown", "operation": "answer", "steps": [], "ambiguities": ["skill"]})
+    assert run_cli(["--build", str(build), "--cache-root", str(tmp_path / "cache"), "--once", "which?", "--json"], bridge_factory=FakeBridge, provider_factory=lambda args: Asking()) == 1
+    output = json.loads(capsys.readouterr().out)
+    assert output["error"]["details"]["confirmation_type"] == "ask"
+
+
 def test_cli_rejects_missing_or_non_xml_build(tmp_path, capsys):
     result = run_cli(["--build", str(tmp_path / "missing.xml"), "--once", "life?", "--json"])
     assert result == 1

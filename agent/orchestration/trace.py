@@ -6,6 +6,8 @@ import time
 import uuid
 from datetime import datetime, timezone
 
+from agent.error_registry import parent_error_ref
+
 
 EVENTS = {
     "run_started", "provider_started", "provider_completed", "provider_failed",
@@ -18,6 +20,7 @@ MAX_EVENTS = 256
 MAX_BYTES = 1024 * 1024
 _SAFE_ARG_KEYS = {"skillName", "supportName", "stat", "skillSetSelector", "itemSetSelector", "buildId", "skillIndex", "socketGroup", "gemIdentity", "level", "quality", "enabled", "limit", "nodeId", "operation", "slot"}
 _SENSITIVE_KEYS = {"api_key", "apikey", "authorization", "token", "rawxml", "itemtext", "prompt", "notes", "freetext", "beforestate", "afterstate", "snapshot"}
+_SAFE_ERROR_KEYS = {"missing_fields", "invalid_fields", "message", "expected_format", "next_action", "candidates", "reason"}
 
 
 def _hash(value):
@@ -53,6 +56,19 @@ def _safe_result(value):
     return {"type": type(value).__name__}
 
 
+def _safe_error_details(value):
+    if not isinstance(value, dict):
+        return {}
+    result = {}
+    for key in _SAFE_ERROR_KEYS:
+        item = value.get(key)
+        if isinstance(item, str):
+            result[key] = item[:256]
+        elif isinstance(item, list):
+            result[key] = [entry[:128] for entry in item[:16] if isinstance(entry, str)]
+    return result
+
+
 class TraceRecorder:
     def __init__(self, request_id=None, *, max_events=MAX_EVENTS, max_bytes=MAX_BYTES, exporter=None):
         self.request_id = request_id or "req-" + uuid.uuid4().hex
@@ -77,13 +93,13 @@ class TraceRecorder:
         endpoint = getattr(provider, "endpoint", None)
         return {"mode": getattr(provider, "mode", "remote"), "model": getattr(provider, "model", None), "endpoint_ref": "endpoint:" + _hash(endpoint) if isinstance(endpoint, str) else None}
 
-    def _event(self, name, stage, status, *, attempt=1, max_attempts=None, provider=None, tool=None, step_index=None, tool_call_count=None, retry_of=None, plan_ref=None, query_ref=None, safe_args_ref=None, error_ref=None, result_ref=None, prompt_ref=None, input_payload=None, output_payload=None, duration_ms=None):
+    def _event(self, name, stage, status, *, attempt=1, max_attempts=None, provider=None, tool=None, step_index=None, tool_call_count=None, retry_of=None, plan_ref=None, query_ref=None, safe_args_ref=None, error_ref=None, error_details=None, result_ref=None, prompt_ref=None, input_payload=None, output_payload=None, duration_ms=None):
         if name == "run_completed":
             input_payload = self.input_payload if input_payload is None else input_payload
             output_payload = self.output_payload if output_payload is None else output_payload
             if output_payload is None:
                 output_payload = {"status": status, "error_ref": error_ref}
-        event = {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": self.run_id, "request_id": self.request_id, "event": name, "stage": stage, "timestamp_utc": _utc_now(), "duration_ms": duration_ms, "status": status, "attempt": attempt, "max_attempts": max_attempts, "provider": provider or {"mode": None, "model": None, "endpoint_ref": None}, "snapshot": dict(self.snapshot), "tool": tool, "step_index": step_index, "tool_call_count": tool_call_count, "retry_of": retry_of, "plan_ref": plan_ref, "query_ref": query_ref, "safe_args_ref": safe_args_ref, "error_ref": error_ref, "result_ref": result_ref or {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": prompt_ref}
+        event = {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": self.run_id, "request_id": self.request_id, "event": name, "stage": stage, "timestamp_utc": _utc_now(), "duration_ms": duration_ms, "status": status, "attempt": attempt, "max_attempts": max_attempts, "provider": provider or {"mode": None, "model": None, "endpoint_ref": None}, "snapshot": dict(self.snapshot), "tool": tool, "step_index": step_index, "tool_call_count": tool_call_count, "retry_of": retry_of, "plan_ref": plan_ref, "query_ref": query_ref, "safe_args_ref": safe_args_ref, "error_ref": parent_error_ref(error_ref) if error_ref else None, "error_code": error_ref, "error_details": _safe_error_details(error_details), "result_ref": result_ref or {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": prompt_ref}
         if input_payload is not None or output_payload is not None:
             self._payloads[event["event_id"]] = {"input_payload": input_payload, "output_payload": output_payload}
         return event
