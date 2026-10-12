@@ -7,6 +7,7 @@ import os
 import re
 from pathlib import Path
 
+from .orchestration.function_trace import trace_pipeline
 from .orchestration.agent_loop import AgentLoop, ALLOWED_TOOLS
 from .orchestration.recovery import exhausted_response, recover_response, standardize_error
 from .orchestration.state_store import OrchestrationStateStore, StateStoreError
@@ -64,6 +65,7 @@ def _provider(args):
     return OpenAICompatibleClient(endpoint=endpoint, model=os.getenv("POB_AGENT_MODEL", "external-agent"), api_key=os.getenv("POB_AGENT_API_KEY"))
 
 
+@trace_pipeline
 def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
     parser = argparse.ArgumentParser(prog="python -m agent.cli")
     parser.add_argument("--build", required=True)
