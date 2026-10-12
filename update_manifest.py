@@ -10,6 +10,8 @@ import xml.etree.ElementTree as Et
 from typing import Any, Callable
 
 alphanumeric_pattern = re.compile(r"(\d+)")
+UPDATE_REPOSITORY = "SZversion/PathOfBuilding_agent"
+UPDATE_BRANCH = "main"
 
 
 def _exclude_file(file_patterns: set[str], path: pathlib.Path) -> bool:
@@ -73,10 +75,13 @@ def create_manifest(version: str | None = None, replace: bool = False) -> None:
         logging.critical(f"Manifest configuration file not found in path '{base_path}'")
         return
 
-    base_url = "https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/{branch}/"
+    base_url = f"https://raw.githubusercontent.com/{UPDATE_REPOSITORY}/{{branch}}/"
     parts: list[dict[str, str]] = []
     for part in config.sections():
-        url = base_url + config[part]["path"]
+        source_path = config[part]["path"].strip().strip("/")
+        if source_path == ".":
+            source_path = ""
+        url = base_url + source_path
         url_with_trailing_slash = url if url.endswith("/") else url + "/"
         attributes = (
             {"part": part, "platform": "win32", "url": url_with_trailing_slash}
@@ -117,7 +122,13 @@ def create_manifest(version: str | None = None, replace: bool = False) -> None:
     files.sort(key=lambda attr: (attr["part"], _alphanumeric(attr["name"])))
 
     root = Et.Element("PoBVersion")
-    Et.SubElement(root, "Version", number=new_version)
+    Et.SubElement(
+        root,
+        "Version",
+        number=new_version,
+        branch=UPDATE_BRANCH,
+        platform="win32",
+    )
     for attributes in parts:
         Et.SubElement(root, "Source", attributes)
     for attributes in files:

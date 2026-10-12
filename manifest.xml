@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <PoBVersion>
-	<Version number="2.67.2" />
-	<Source part="default" url="https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/{branch}/" />
-	<Source part="runtime" platform="win32" url="https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/{branch}/runtime/" />
-	<Source part="program" url="https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/{branch}/src/" />
-	<Source part="tree" url="https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/{branch}/src/" />
+	<Version number="2.67.2" branch="main" platform="win32" />
+	<Source part="default" url="https://raw.githubusercontent.com/SZversion/PathOfBuilding_agent/{branch}/" />
+	<Source part="runtime" platform="win32" url="https://raw.githubusercontent.com/SZversion/PathOfBuilding_agent/{branch}/runtime/" />
+	<Source part="program" url="https://raw.githubusercontent.com/SZversion/PathOfBuilding_agent/{branch}/src/" />
+	<Source part="tree" url="https://raw.githubusercontent.com/SZversion/PathOfBuilding_agent/{branch}/src/" />
 	<File name="changelog.txt" part="default" sha1="cb4064c729074463baff1984f097aef0eedf8339" />
 	<File name="help.txt" part="default" sha1="e486cb63a78f5ca355430b67fa23e02fd30f5771" />
 	<File name="LICENSE.md" part="default" sha1="c77635aa1ba0a2ffe8eb72f93b3376e3a3d2041a" />
@@ -121,11 +121,12 @@
 	<File name="Assets/veiledicon.png" part="program" sha1="035479a7ee7847969ef50ff428e3bee897fba671" />
 	<File name="Assets/vestigialicon.png" part="program" sha1="ecb5dd4b9aed1cac0c1a677b18838ae9c62744d7" />
 	<File name="Assets/warlordicon.png" part="program" sha1="cca050c84884f5c0bb1380ece51d3c4b32be4900" />
+	<File name="Classes/AgentChatPane.lua" part="program" sha1="98225a2039b269b9a5afb597983b5248fe5edfa1" />
 	<File name="Classes/BuildListControl.lua" part="program" sha1="240954df96d392504962bc47230e0a0e49bceae0" />
 	<File name="Classes/ButtonControl.lua" part="program" sha1="697870f9f43eee2c804be087849b46849c83153a" />
 	<File name="Classes/CalcBreakdownControl.lua" part="program" sha1="d136d21c742679fd9269ad4be46f64c731390db5" />
 	<File name="Classes/CalcSectionControl.lua" part="program" sha1="b41a0194a1aa7dd7631b52b5454a24c1839d0425" />
-	<File name="Classes/CalcsTab.lua" part="program" sha1="91ab407889a12b10eab4251d824395e362b59c72" />
+	<File name="Classes/CalcsTab.lua" part="program" sha1="4cc0b0323095be044df1faec2b0fa023731c7edc" />
 	<File name="Classes/CheckBoxControl.lua" part="program" sha1="d828081e58f493f7688f8a3eed5af1ee389e3326" />
 	<File name="Classes/CompareBuySimilar.lua" part="program" sha1="183ba3a190f689d26bdde988ddfc5b0e5a7ed9b0" />
 	<File name="Classes/CompareCalcsHelpers.lua" part="program" sha1="c924001ae0a8fcb750d4d3092d0ed2b9efb70d8c" />
@@ -138,7 +139,7 @@
 	<File name="Classes/ControlHost.lua" part="program" sha1="183e699e358bb4945d72163af8f369443a08ce0a" />
 	<File name="Classes/DraggerControl.lua" part="program" sha1="239b2fbc675d4fe9a8fe36a79fe93870ae298bc6" />
 	<File name="Classes/DropDownControl.lua" part="program" sha1="6f61e2308d26bc6350f80b7f2a6689270394d4bf" />
-	<File name="Classes/EditControl.lua" part="program" sha1="14d80a708a6d8623f903ca406674d18e24ee8330" />
+	<File name="Classes/EditControl.lua" part="program" sha1="f3df3879c01211f6367e6faa938912a916cda773" />
 	<File name="Classes/ExtBuildListControl.lua" part="program" sha1="4d1dedc752e5c979ae0ad3928faaec8b8ea052be" />
 	<File name="Classes/ExtBuildListProvider.lua" part="program" sha1="79d6bab71c0e0194e7c5b48e6cfb348d85e20263" />
 	<File name="Classes/FolderListControl.lua" part="program" sha1="72629b1e31a67c0af958d980c3e97586e91d0422" />
@@ -373,7 +374,17 @@
 	<File name="GameVersions.lua" part="program" sha1="2ba59bb7443d8f829861fdd5794c57db14c894b3" />
 	<File name="Launch.lua" part="program" sha1="53c2f6a73b2e871722837d19708f4e5e8a1dc60b" />
 	<File name="LaunchServer.lua" part="program" sha1="f15bdfbedaf887e19556490dce49b720f8365379" />
-	<File name="Modules/Build.lua" part="program" sha1="1ef2cc076312e8f79506dc9e56b7c486a88df584" />
+	<File name="Modules/AgentBridge.lua" part="program" sha1="a349fbd6791306f446367e5cf607e60caae12384" />
+	<File name="Modules/AgentContext.lua" part="program" sha1="dcd1fdfaed7bb3403849ea3433599eb91afb1fd6" />
+	<File name="Modules/AgentControl.lua" part="program" sha1="1cee4074d9a26811979584e7c07f8d5739f5db83" />
+	<File name="Modules/AgentErrorRegistry.lua" part="program" sha1="545d467fbe7ddf31a5d27165af7796e295d9ce37" />
+	<File name="Modules/AgentInProcess.lua" part="program" sha1="07e64ebd75ba5003e973ab652e5542c65bea1fee" />
+	<File name="Modules/AgentMechanismTool.lua" part="program" sha1="9e73494a2bd60a67270db69e5ba90d7a73a366b8" />
+	<File name="Modules/AgentMutation.lua" part="program" sha1="662286a8392d42db78e56f05e0102a7f79d0dcdb" />
+	<File name="Modules/AgentSnapshot.lua" part="program" sha1="a84aa0bf4f9aa3951258aee8103695cc4352dc37" />
+	<File name="Modules/AgentTool.lua" part="program" sha1="dac84da24ade3b6975dbfd371a5f0cb9fc7310ac" />
+	<File name="Modules/AgentTrace.lua" part="program" sha1="23c666c7ede9c09bc6897b3cec17ec2b9c0cf718" />
+	<File name="Modules/Build.lua" part="program" sha1="62136d9488b40b7020d6100cc6dbeed8581e42cf" />
 	<File name="Modules/BuildDisplayStats.lua" part="program" sha1="f1b0f89f803ae4493154ca5b78ddda457679dd30" />
 	<File name="Modules/BuildList.lua" part="program" sha1="c7fd60483bda620b9fb1808f20c4ef532441fb25" />
 	<File name="Modules/BuildListHelpers.lua" part="program" sha1="b6622dc4abc685b094fc14b8e65120d897d55da5" />
@@ -383,7 +394,7 @@
 	<File name="Modules/CalcDefence.lua" part="program" sha1="77e6bd8ae00a80459821f069910a2068567f401f" />
 	<File name="Modules/CalcFormat.lua" part="program" sha1="eacfddab6dc96067db1822b48d906d20d25708dc" />
 	<File name="Modules/CalcMirages.lua" part="program" sha1="6391a1e8001052ce3ebfdf530624f9b268b93d9f" />
-	<File name="Modules/CalcOffence.lua" part="program" sha1="d6fb21d32df5f0cf234e1a838cab70b5d9e7ac79" />
+	<File name="Modules/CalcOffence.lua" part="program" sha1="e5f6fe347ed45beba373a0acded9710b424ea6ed" />
 	<File name="Modules/CalcPerform.lua" part="program" sha1="af88282228cc7dfd94e69bb446dbc55ce2a124d8" />
 	<File name="Modules/Calcs.lua" part="program" sha1="5060ae20bbf22121d747f1274c56baab8f7ca758" />
 	<File name="Modules/CalcSections.lua" part="program" sha1="fb490a3105beb1cab3ef3a17e6b0a348272b04c2" />
@@ -399,7 +410,7 @@
 	<File name="Modules/DataLegionLookUpTableHelper.lua" part="program" sha1="617477a663b7b6ece264a862c407eb05c2381fae" />
 	<File name="Modules/ItemSlotHelper.lua" part="program" sha1="4b7d441f9ade5d57c413aa1f8f8067b654cfb927" />
 	<File name="Modules/ItemTools.lua" part="program" sha1="2ea3bf94281203188090982c4ecd91e0ade782e4" />
-	<File name="Modules/Main.lua" part="program" sha1="fe81c6c5379c558bbdcab1376b11488433565408" />
+	<File name="Modules/Main.lua" part="program" sha1="50c7b3ad023b95a37f4b463eb7ea65664eeb6640" />
 	<File name="Modules/ModParser.lua" part="program" sha1="9c8ba0ebc313d58ee8cf1ba090460f1d6e00e4dc" />
 	<File name="Modules/ModTools.lua" part="program" sha1="e32d3c0c320f7add6e70987b5de8ff3370d0b321" />
 	<File name="Modules/PantheonTools.lua" part="program" sha1="ebe91a7d8f8444a6061acf4758da0e775cc8c314" />
@@ -560,7 +571,7 @@
 	<File name="SimpleGraphic/Fonts/Liberation Sans.64.tga" part="runtime" sha1="301ad24fae1b872d28632b9bfcb9f3e0889a0925" />
 	<File name="SimpleGraphic/Fonts/Liberation Sans.tgf" part="runtime" sha1="4048906c89ff0fd7f8799d038978b96e5e7b40b9" />
 	<File name="SimpleGraphic/Fonts/NotoSansKR-Regular.ttf" part="runtime" sha1="a9aa74ed6db405eb56129a938784b717374267ac" />
-	<File name="SimpleGraphic/Fonts/OFL.txt" part="runtime" sha1="89ab24ad3b9bb9f35dc4470908cf65a38c2e2073" />
+	<File name="SimpleGraphic/Fonts/OFL.txt" part="runtime" sha1="b353574536282aecde59969f617fcd2f5523c94a" />
 	<File name="socket.dll" part="runtime" runtime="win32" sha1="37cda809af7532ccb27cd7105f3994d63afecb82" />
 	<File name="vcruntime140.dll" part="runtime" runtime="win32" sha1="3d2998a27d164dd7cc3bc7d3eca08acf89a0ee42" />
 	<File name="vcruntime140_1.dll" part="runtime" runtime="win32" sha1="a0330279d3d0d47f19ed984726e25260b547a228" />
