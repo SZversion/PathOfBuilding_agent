@@ -110,7 +110,7 @@ def create_http_app(server=None, *, token=None):
                 return await response(scope, receive, send)
             run_id = headers.get(b"x-pob-trace-run-id", b"").decode("ascii", errors="ignore")
             parent_id = headers.get(b"x-pob-trace-parent-id", b"").decode("ascii", errors="ignore")
-            with FunctionTrace("agent.mcp.request", {"path": scope.get("path"), "method": scope.get("method")},
+            with FunctionTrace("agent.mcp.request", {"scope": scope, "receive": receive, "send": send},
                                run_id=run_id or None, parent_id=parent_id or None):
                 await self.app(scope, receive, send)
 
