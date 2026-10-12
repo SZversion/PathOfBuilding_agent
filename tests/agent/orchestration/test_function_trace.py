@@ -132,3 +132,19 @@ def test_offline_function_traces_keep_full_values_in_existing_queue(monkeypatch,
     function = next(e for e in saved["events"] if e["event"] == "agent.trace_fixture.run")
     assert function["input"]["value"] == {"value": 42, "token": "[REDACTED]"}
     assert function["output"]["return"]["empty"] == []
+
+
+def test_dataclass_runtime_handles_do_not_require_deepcopy():
+    import asyncio
+    from dataclasses import dataclass
+    from agent.orchestration.function_trace import _value
+    @dataclass
+    class Value:
+        future: object
+        payload: dict
+    loop = asyncio.new_event_loop()
+    try:
+        value = Value(loop.create_future(), {"all": [None, {}, []]})
+        assert _value(value)["payload"] == {"all": [None, {}, []]}
+    finally:
+        loop.close()
