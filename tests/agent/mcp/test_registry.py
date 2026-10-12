@@ -47,6 +47,27 @@ def test_validate_tool_call_normalizes_skill_shorthand():
     assert normalized == {"skillName": "Flicker Strike"}
 
 
+def test_private_context_metadata_survives_mcp_validation_without_public_schema_fields():
+    normalized = validate_tool_call("get_character_stats", {
+        "configOverrides": {"resistancePenalty": -30, "conditionStationary": 2},
+        "contextOverrides": {"activeItemSet": 2},
+    })
+    assert normalized["configOverrides"] == {"resistancePenalty": -30, "conditionStationary": 2}
+    assert normalized["contextOverrides"] == {"activeItemSet": 2}
+    schema = TOOL_CATALOG["get_character_stats"].input_schema
+    assert "configOverrides" not in schema["properties"]
+    assert "contextOverrides" not in schema["properties"]
+
+
+@pytest.mark.parametrize("overrides", [
+    {"enemyIsBoss": True}, {"resistancePenalty": 1},
+    {"conditionStationary": 1.5}, {"notAConfigKey": True},
+])
+def test_private_config_metadata_is_strictly_validated(overrides):
+    with pytest.raises(ToolContractError):
+        validate_tool_call("get_character_stats", {"configOverrides": overrides})
+
+
 @pytest.mark.parametrize(
     "name,arguments",
     [

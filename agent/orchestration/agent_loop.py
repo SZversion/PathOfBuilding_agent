@@ -1,4 +1,5 @@
 import json
+import re
 
 from .runtime import SnapshotSync, execute_plan
 from .recovery import EXHAUSTED_ANSWER, is_exhausted
@@ -37,7 +38,39 @@ ARGUMENT_TYPES = {
     "itemIdentity": str, "itemText": str, "condition": dict,
     "config": dict, "beforeState": (dict, str), "afterState": (dict, str),
     "comparisonFields": list, "source": str,
+    "contextOverrides": dict, "configOverrides": dict,
 }
+_CONFIG_BOOL_FIELDS = frozenset({
+    "conditionMoving", "conditionFullLife", "conditionLowLife", "conditionFullMana",
+    "conditionLowMana", "conditionFullEnergyShield", "conditionLowEnergyShield",
+    "conditionHaveEnergyShield", "conditionUnbrokenWard", "conditionEnemyCursed",
+    "conditionEnemyBleeding", "conditionEnemyPoisoned", "conditionEnemyBurning",
+    "conditionEnemyIgnited", "conditionEnemyChilled", "conditionEnemyFrozen",
+    "conditionEnemyShocked", "usePowerCharges", "useFrenzyCharges", "useEnduranceCharges",
+})
+_CONFIG_INTEGER_FIELDS = frozenset({"conditionStationary", "overridePowerCharges", "overrideFrenzyCharges", "overrideEnduranceCharges"})
+_CONFIG_ENUMS = {"enemyIsBoss": frozenset({"None", "Boss", "Pinnacle", "Uber"})}
+
+
+def _validate_config_overrides(arguments):
+    overrides = arguments.get("configOverrides")
+    if overrides is None:
+        return
+    if not isinstance(overrides, dict):
+        raise PlanValidationError("configOverrides must be an object", details={"argument": "configOverrides"})
+    for key, value in overrides.items():
+        if key in _CONFIG_BOOL_FIELDS:
+            valid = isinstance(value, bool)
+        elif key in _CONFIG_INTEGER_FIELDS:
+            valid = isinstance(value, int) and not isinstance(value, bool) and value >= 0
+        elif key in _CONFIG_ENUMS:
+            valid = value in _CONFIG_ENUMS[key]
+        elif key == "resistancePenalty":
+            valid = value in {0, -30, -60} and isinstance(value, int) and not isinstance(value, bool)
+        else:
+            raise PlanValidationError("unsupported config override", details={"argument": key})
+        if not valid:
+            raise PlanValidationError("invalid config override", details={"argument": key})
 REQUIRED_ARGUMENTS = {"search_knowledge": ("query",), "search_external": ("query",), "resolve_item_alias": ("query",), "resolve_skill_alias": ("query",)}
 SKILL_AWARE_READ_ONLY_TOOLS = frozenset({
     "get_skill_dps", "get_skill_stats", "get_skill_breakdown", "get_projectile_count",
@@ -78,7 +111,7 @@ PLANNER_JSON_SCHEMA = {
          "then": {"required": ["ambiguities"], "properties": {"ambiguities": {"minItems": 1}}}},
     ],
 }
-PLANNER_SYSTEM = f"""You are a PoE Path of Building read-only tool planner. Return JSON only with schema_version, intent, operation, evidenceLevel, required_evidence, stop_condition, ambiguities, and steps. Each step has tool, arguments, and expectedSnapshotRevision. Use ONLY canonical Tool names and this registry: {_PLANNER_CATALOG}. Never invent, translate, or paraphrase Tool names. Never return mutation Tools, free-text commands, raw XML, or PoB numbers. Classify the user's request before deciding whether clarification is needed. Resolve an omitted subject from the supplied authoritative PoB context whenever possible; for example, a request for the highest DPS skill should use get_highest_dps_skill when the build snapshot is available. For character-wide totals such as total life, mana, or attributes, use get_character_stats. Use explain_stat only when the user asks for a specific stat's modifier trace; use the exact PoB output key and include skillName or skillIndex only when the stat is skill-specific. If required information is genuinely missing or conflicting, list EVERY missing or conflicting field you know in ambiguities as concrete field names (such as skill, skill set, config, or comparison target), then set intent=unknown and stop_condition={{\"type\":\"ask_user\"}}. The ambiguities array must contain at least one item for ask_user and must never contain vague phrases such as \"more information\" or \"unclear\". Do not ask for information that can be determined from the PoB context. Correct clarification example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[\"skill\",\"skill set\"]}}. Incorrect example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[]}}. Planner ambiguity is a plan-level stop condition, not an execution error. Execution errors use the two-level contract: error_ref is one of MISSING_CONTEXT, AMBIGUOUS_CONTEXT, CONFLICTING_CONTEXT, or UNSUPPORTED_REQUEST; error_code is the detailed leaf cause (for example USER_CONTEXT_MISSING or AMBIGUOUS_ALIAS). Never replace error_ref with the leaf error_code. Context errors always use recovery_class=ASK_USER and details.missing_fields must contain every missing field plus a safe details.message for the user. Example: {{\"tool\":\"get_curse_limit\",\"arguments\":{{}}}}."""
+PLANNER_SYSTEM = f"""You are a PoE Path of Building read-only tool planner. Return JSON only with schema_version, intent, operation, evidenceLevel, required_evidence, stop_condition, ambiguities, and steps. Each step has tool, arguments, and expectedSnapshotRevision. Use ONLY canonical Tool names and this registry: {_PLANNER_CATALOG}. Never invent, translate, or paraphrase Tool names. Never return mutation Tools, free-text commands, raw XML, or PoB numbers. For an explicit Config request, put only the requested fields in private arguments.configOverrides and use exact PoB values: enemyIsBoss is one of None/Boss/Pinnacle/Uber; resistancePenalty is 0, -30, or -60; conditionMoving, conditionFullLife, conditionLowLife, conditionFullMana, conditionLowMana, conditionFullEnergyShield, conditionLowEnergyShield, conditionHaveEnergyShield, conditionUnbrokenWard, conditionEnemyCursed, conditionEnemyBleeding, conditionEnemyPoisoned, conditionEnemyBurning, conditionEnemyIgnited, conditionEnemyChilled, conditionEnemyFrozen, conditionEnemyShocked, and usePowerCharges/useFrenzyCharges/useEnduranceCharges are booleans; conditionStationary and overridePowerCharges/overrideFrenzyCharges/overrideEnduranceCharges are nonnegative integers. Never invent a Config value; if the requested tier/value is ambiguous, stop with ask_user. Do not include unmentioned Config fields. Classify the user's request before deciding whether clarification is needed. Resolve an omitted subject from the supplied authoritative PoB context whenever possible; for example, a request for the highest DPS skill should use get_highest_dps_skill when the build snapshot is available. For character-wide totals such as total life, mana, or attributes, use get_character_stats. Use explain_stat only when the user asks for a specific stat's modifier trace; use the exact PoB output key and include skillName or skillIndex only when the stat is skill-specific. If required information is genuinely missing or conflicting, list EVERY missing or conflicting field you know in ambiguities as concrete field names (such as skill, skill set, config, or comparison target), then set intent=unknown and stop_condition={{\"type\":\"ask_user\"}}. The ambiguities array must contain at least one item for ask_user and must never contain vague phrases such as \"more information\" or \"unclear\". Do not ask for information that can be determined from the PoB context. Correct clarification example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[\"skill\",\"skill set\"]}}. Incorrect example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[]}}. Planner ambiguity is a plan-level stop condition, not an execution error. Execution errors use the two-level contract: error_ref is one of MISSING_CONTEXT, AMBIGUOUS_CONTEXT, CONFLICTING_CONTEXT, or UNSUPPORTED_REQUEST; error_code is the detailed leaf cause (for example USER_CONTEXT_MISSING or AMBIGUOUS_ALIAS). Never replace error_ref with the leaf error_code. Context errors always use recovery_class=ASK_USER and details.missing_fields must contain every missing field plus a safe details.message for the user. Example: {{\"tool\":\"get_curse_limit\",\"arguments\":{{}}}}."""
 ANSWER_SYSTEM = """Answer the user's PoE question using only the supplied Tool results and knowledge documents. By default, answer in Korean using friendly and clear wording. Distinguish calculated values, applied effects, and calculation evidence. If a result is unavailable or an input is ambiguous, state that plainly and do not guess. Answer Korean questions in Korean."""
 ENVELOPE_FIELDS = frozenset({"status", "version", "snapshotRevision", "side_effect", "operator_message", "facts", "conditions", "trace", "sources", "evidenceGraph", "uncertainty", "error"})
 
@@ -141,6 +174,30 @@ class PlanValidationError(ValueError):
         self.details = details or {}
 
 
+def extract_context_overrides(question):
+    """Extract only explicitly named, request-local PoB context selectors."""
+    if not isinstance(question, str):
+        return {}
+    text = question.strip()
+    result = {}
+    item_matches = re.findall(r"(?:([0-9]+)\s*번\s*)?(?:장비\s*셋|장비세트|item\s*set)\s*([0-9]+)?", text, re.I)
+    item_values = [int(a or b) for a, b in item_matches if (a or b)]
+    if item_values:
+        if len(set(item_values)) > 1:
+            raise PlanValidationError("item set override is ambiguous", code="AMBIGUOUS_ALIAS", details={"field": "activeItemSet", "values": sorted(set(item_values))})
+        result["activeItemSet"] = item_values[0]
+    for field, patterns in {
+        "activeSkillSet": (r"(?:스킬\s*셋|skill\s*set)\s*([0-9]+)",),
+        "activeSpec": (r"(?:스펙|spec|패시브\s*트리|passive\s*tree)\s*([0-9]+)",),
+    }.items():
+        values = [int(value) for pattern in patterns for value in re.findall(pattern, text, re.I)]
+        if values:
+            if len(set(values)) > 1:
+                raise PlanValidationError("context override is ambiguous", code="AMBIGUOUS_ALIAS", details={"field": field, "values": sorted(set(values))})
+            result[field] = values[0]
+    return result
+
+
 def _canonical_arguments(arguments):
     return json.dumps(arguments, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
@@ -163,6 +220,7 @@ def _validate_arguments(tool, arguments):
                 raise PlanValidationError("argument has invalid type", details={"argument": key, "expected": "integer"})
             if not isinstance(value, expected):
                 raise PlanValidationError("argument has invalid type", details={"argument": key, "expected": str(expected)})
+    _validate_config_overrides(arguments)
     for key in REQUIRED_ARGUMENTS.get(tool, ()):
         if not isinstance(arguments.get(key), str) or not arguments[key].strip():
             raise PlanValidationError("required argument is missing or invalid", details={"argument": key})
@@ -238,6 +296,63 @@ def normalize_query(value):
     return result
 
 
+def _context_entries(value):
+    if isinstance(value, dict):
+        return [{"id": key, **(item if isinstance(item, dict) else {"title": item})} for key, item in value.items()]
+    if isinstance(value, list):
+        return [item if isinstance(item, dict) else {"id": item} for item in value]
+    return []
+
+
+def request_context_overrides(text, context):
+    """Parse only explicit, request-local set selectors; never mutate PoB."""
+    source = context.get("snapshot") if isinstance(context, dict) and isinstance(context.get("snapshot"), dict) else context
+    source = source if isinstance(source, dict) else {}
+    overrides, conflicts = {}, []
+    patterns = (("itemSet", "itemSets", r"(\d+)\s*번\s*(?:장비|아이템)\s*셋"),
+                ("skillSet", "skillSets", r"(\d+)\s*번\s*스킬\s*셋"),
+                ("treeSpec", "specs", r"(\d+)\s*번\s*(?:트리|스펙)"))
+    for name, key, pattern in patterns:
+        match = re.search(pattern, text or "", flags=re.IGNORECASE)
+        if not match:
+            continue
+        candidates = _context_entries(source.get(key))
+        index = int(match.group(1))
+        if index < 1 or index > len(candidates):
+            conflicts.append(name)
+            continue
+        candidate = candidates[index - 1]
+        overrides[name] = {"id": candidate.get("id"), "title": candidate.get("title") or candidate.get("label"), "source": "사용자 질문"}
+    return {"overrides": overrides, "conflicts": conflicts}
+
+
+def resolve_active_context(context, *, text=None):
+    """Select unambiguous PoB context without classifying the build."""
+    source = context.get("snapshot") if isinstance(context, dict) and isinstance(context.get("snapshot"), dict) else context
+    source = source if isinstance(source, dict) else {}
+    selected, conflicts = {}, []
+
+    for name, candidates_key, active_key in (("skillSet", "skillSets", "activeSkillSet"), ("itemSet", "itemSets", "activeItemSet"), ("treeSpec", "specs", "activeSpec")):
+        candidates = _context_entries(source.get(candidates_key))
+        active = source.get(active_key)
+        if len(candidates) == 1:
+            selected[name] = {"id": candidates[0].get("id"), "title": candidates[0].get("title") or candidates[0].get("label"), "source": "唯一 후보"}
+            continue
+        active_id = active.get("id") if isinstance(active, dict) else active
+        active_title = (active.get("title") or active.get("label")) if isinstance(active, dict) else None
+        matches = [item for item in candidates if (active_id is not None and item.get("id") == active_id) or (active_title and (item.get("title") or item.get("label")) == active_title)]
+        if len(candidates) > 1 and len(matches) == 1:
+            selected[name] = {"id": matches[0].get("id"), "title": matches[0].get("title") or matches[0].get("label"), "source": "PoB 활성 상태"}
+        elif len(candidates) > 1:
+            conflicts.append(name)
+        elif active_id is not None or active_title:
+            selected[name] = {"id": active_id, "title": active_title, "source": "PoB 활성 상태"}
+    request = request_context_overrides(text, source) if isinstance(text, str) else {"overrides": {}, "conflicts": []}
+    selected.update(request["overrides"])
+    conflicts.extend(item for item in request["conflicts"] if item not in conflicts)
+    return {"selected": selected, "conflicts": conflicts}
+
+
 def planner_query_projection(query, *, context=None):
     """Project a normalized query to the planner's observable input.
 
@@ -248,6 +363,7 @@ def planner_query_projection(query, *, context=None):
     projected = {"question": query["text"], "text": query["text"]}
     if context is not None:
         projected["context"] = context
+        projected["contextSelection"] = resolve_active_context(context, text=query["text"])
     return projected
 
 
@@ -400,11 +516,23 @@ class AgentLoop:
             return {"status": "plan_error", "error": {"code": "INPUT_INVALID", "error_ref": parent_error_ref("INPUT_INVALID"), "recovery_class": "ASK_USER", "message": str(error), "next_action": "ask_user", "details": {"confirmation_type": "repair"}}, "trace": recorder.events}
         question_text = query["text"]
         recorder.set_input({"question": question_text, "query": query})
+        try:
+            context_overrides = extract_context_overrides(question_text)
+        except PlanValidationError as error:
+            recorder.emit("run_completed", "run", "rejected", error_ref=error.code, error_details=error.details)
+            return {"status": "error", "error": {"code": error.code, "error_ref": parent_error_ref(error.code), "recovery_class": "ASK_USER", "stage": "context_override", "retryable": False, "attempt": 1, "max_attempts": 1, "message": str(error), "details": error.details, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
         recorder.emit("planner_started", "planner", "started", attempt=1, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), provider=recorder.provider_metadata(self.model), input_payload=query)
         if snapshot is None and callable(self.snapshot_provider):
-            snapshot = self.snapshot_provider()
-        sync = self.snapshot_sync.prepare(snapshot) if snapshot is not None else None
+            try:
+                snapshot = self.snapshot_provider(context_overrides)
+            except TypeError:
+                snapshot = self.snapshot_provider()
+        sync = self.snapshot_sync.prepare(snapshot, context_overrides) if snapshot is not None else None
         planning_payload = planner_query_projection(query, context=sync)
+        if context_overrides:
+            planning_payload["explicitContextOverrides"] = context_overrides
+        if isinstance(snapshot, dict):
+            planning_payload["contextSelection"] = resolve_active_context(snapshot, text=query["text"])
         planner_system = PLANNER_SYSTEM
         if tool_definitions is not None:
             available = [item for item in tool_definitions if isinstance(item, dict)
@@ -415,6 +543,11 @@ class AgentLoop:
             planner_system += "\nMCP tool descriptions and input schemas (source of truth): " + json.dumps(available, ensure_ascii=False, separators=(",", ":"))
         if sync is not None:
             recorder.set_snapshot((sync or {}).get("snapshotRevision"), snapshot.get("buildId") if isinstance(snapshot, dict) else None)
+        selection_conflicts = (planning_payload.get("contextSelection") or {}).get("conflicts", [])
+        if selection_conflicts:
+            details = {"missing_fields": list(selection_conflicts), "message": "PoB active context conflicts with multiple candidate selections."}
+            recorder.emit("run_completed", "run", "rejected", error_ref="AMBIGUOUS_CONTEXT", error_details=details)
+            return {"status": "error", "error": {"code": "AMBIGUOUS_CONTEXT", "error_ref": "AMBIGUOUS_CONTEXT", "recovery_class": "ASK_USER", "stage": "context_resolution", "retryable": False, "attempt": 1, "max_attempts": 1, "message": details["message"], "details": details, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
         last_error = None
         repair_feedback = None
         for llm_attempt in range(1, MAX_PLANNER_ATTEMPTS + 1):
@@ -453,7 +586,8 @@ class AgentLoop:
             return {"status": "plan_error", "error": {"code": "REPAIR_INPUT", "recovery_class": "ASK_USER", "stage": "plan_validation", "retryable": False, "attempt": MAX_PLANNER_ATTEMPTS, "max_attempts": MAX_PLANNER_ATTEMPTS, "message": "planner failed after bounded repair attempts", "details": {**(repair_feedback if isinstance(repair_feedback, dict) else {}), "confirmation_type": "repair", "exhausted": True}, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "answer": EXHAUSTED_ANSWER, "trace": recorder.events}
         execution = execute_plan(question_text, planned, search=search, handlers=handlers,
                                  snapshot_revision_value=(sync or {}).get("snapshotRevision"),
-                                 current_revision=current_revision)
+                                 current_revision=current_revision,
+                                 context_overrides=context_overrides)
         for index, step in enumerate(execution.get("steps", [])):
             final_attempt = step.get("attempt") or (step.get("error") or {}).get("attempt", 1)
             final_count = step.get("tool_call_count", execution.get("tool_call_count"))

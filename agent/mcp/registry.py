@@ -10,6 +10,19 @@ class ToolContractError(ValueError):
     """A tool name or argument object does not match its advertised contract."""
 
 
+_PRIVATE_CONTEXT_ARGUMENTS = frozenset({"contextOverrides", "configOverrides"})
+_CONFIG_BOOL_FIELDS = frozenset({
+    "conditionMoving", "conditionFullLife", "conditionLowLife", "conditionFullMana",
+    "conditionLowMana", "conditionFullEnergyShield", "conditionLowEnergyShield",
+    "conditionHaveEnergyShield", "conditionUnbrokenWard", "conditionEnemyCursed",
+    "conditionEnemyBleeding", "conditionEnemyPoisoned", "conditionEnemyBurning",
+    "conditionEnemyIgnited", "conditionEnemyChilled", "conditionEnemyFrozen",
+    "conditionEnemyShocked", "usePowerCharges", "useFrenzyCharges", "useEnduranceCharges",
+})
+_CONFIG_INTEGER_FIELDS = frozenset({"conditionStationary", "overridePowerCharges", "overrideFrenzyCharges", "overrideEnduranceCharges"})
+_CONFIG_ENUMS = {"enemyIsBoss": frozenset({"None", "Boss", "Pinnacle", "Uber"})}
+
+
 def tool_definitions() -> list[dict]:
     """Return MCP-ready definitions directly from the canonical catalog."""
     return [TOOL_CATALOG[name].as_mcp_definition() for name in sorted(TOOL_CATALOG)]
@@ -47,6 +60,28 @@ def validate_tool_call(name: str, arguments: dict) -> dict:
         if "skillName" in args and args["skillName"].casefold() != skill.casefold():
             raise ToolContractError("skill and skillName conflict")
         args.setdefault("skillName", skill)
+    private = {key: args.pop(key) for key in list(args) if key in _PRIVATE_CONTEXT_ARGUMENTS}
+    if "contextOverrides" in private and not isinstance(private["contextOverrides"], dict):
+        raise ToolContractError("contextOverrides must be an object")
+    if "configOverrides" in private:
+        config = private["configOverrides"]
+        if not isinstance(config, dict):
+            raise ToolContractError("configOverrides must be an object")
+        for key, value in config.items():
+            if key in _CONFIG_BOOL_FIELDS:
+                if not isinstance(value, bool):
+                    raise ToolContractError("config override must be boolean: " + key)
+            elif key in _CONFIG_INTEGER_FIELDS:
+                if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                    raise ToolContractError("config override must be a nonnegative integer: " + key)
+            elif key in _CONFIG_ENUMS:
+                if value not in _CONFIG_ENUMS[key]:
+                    raise ToolContractError("config override has unsupported enum value: " + key)
+            elif key == "resistancePenalty":
+                if value not in {0, -30, -60}:
+                    raise ToolContractError("config override has unsupported resistance penalty")
+            else:
+                raise ToolContractError("unsupported config override: " + str(key))
     schema = TOOL_CATALOG[name].input_schema
     properties = schema["properties"]
     unknown = set(args) - set(properties)
@@ -74,4 +109,5 @@ def validate_tool_call(name: str, arguments: dict) -> dict:
     if alternatives and not any(all(key in args for key in candidate.get("required", ()))
                                 for candidate in alternatives):
         raise ToolContractError("one of the alternative required arguments is missing")
+    args.update(private)
     return args

@@ -8,6 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 from agent.mcp.handlers import create_handlers, current_snapshot
 from agent.pob.live_transport import LivePobTransportError
 from agent.tool_catalog import ALLOWED_TOOLS
+from agent.orchestration.agent_loop import AgentLoop
 
 
 class FakeTransport:
@@ -84,3 +85,22 @@ def test_handler_success_uses_envelope_and_preserves_existing_evidence():
     assert result["snapshotRevision"] == "r1"
     assert result["schema_version"] == "1.0"
     assert result["evidenceGraph"] == {"nodes": [], "stages": [], "sourceEdges": []}
+
+
+def test_agent_loop_to_mcp_handler_preserves_private_config_metadata():
+    transport = FakeTransport()
+    handlers = create_handlers(knowledge_search=FakeKnowledge(), external_search=FakeExternal(), transport=transport)
+
+    class Model:
+        def __init__(self):
+            self.calls = 0
+
+        def chat(self, messages, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_character_stats","arguments":{"configOverrides":{"resistancePenalty":-30,"conditionStationary":2}}}]}'
+            return "PoB 계산 결과를 기준으로 답변합니다."
+
+    result = AgentLoop(Model()).run("설정 변경 후 수치를 알려줘", handlers=handlers)
+    assert result["status"] == "ok"
+    assert transport.calls[0]["arguments"]["configOverrides"] == {"resistancePenalty": -30, "conditionStationary": 2}

@@ -83,9 +83,10 @@ def _sorted_ids(value, use_values=False):
     return sorted(result)
 
 
-def project_snapshot(context):
+def project_snapshot(context, overrides=None):
     """Return a deterministic primitive-only snapshot projection."""
     context = context if isinstance(context, dict) else {}
+    context = context.get("context") if isinstance(context.get("context"), dict) else context
     spec = context.get("activeSpec") if isinstance(context.get("activeSpec"), dict) else {}
     projected = {
         "activeSpec": {
@@ -104,6 +105,24 @@ def project_snapshot(context):
     }
     projected["activeSpec"]["id"] = _primitive_or_none(projected["activeSpec"]["id"])
     projected["activeSpec"]["title"] = _primitive_or_none(projected["activeSpec"]["title"])
+    if isinstance(overrides, dict) and overrides:
+        provenance = {}
+        option_names = {"activeSpec": "availableSpecs", "activeSkillSet": "availableSkillSets", "activeItemSet": "availableItemSets"}
+        for field, requested in overrides.items():
+            if field not in option_names:
+                continue
+            resolved = None
+            options = context.get(option_names[field], [])
+            if isinstance(options, list):
+                for option in options:
+                    if not isinstance(option, dict):
+                        continue
+                    if option.get("id") == requested or str(option.get("id")) == str(requested) or _normalize_name(option.get("title")) == _normalize_name(requested):
+                        resolved = {key: option.get(key) for key in ("id", "title") if key in option}
+                        break
+            provenance[field] = {"provenance": "explicit_override", "requested": requested, "resolved": resolved,
+                                 "resolution": "catalog" if resolved is not None else "unresolved"}
+        projected["contextProvenance"] = provenance
     groups = context.get("socketGroups", context.get("gems", []))
     if isinstance(groups, list):
         projected["socketGroups"] = []

@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 
-from agent.orchestration.agent_loop import AgentLoop, PLANNER_JSON_SCHEMA, PlanValidationError, normalize_query, planner_query_projection, validate_plan
+from agent.orchestration.agent_loop import AgentLoop, PLANNER_JSON_SCHEMA, PlanValidationError, normalize_query, planner_query_projection, resolve_active_context, validate_plan
 
 
 def test_query_schema_normalizes_legacy_and_validates_enums():
@@ -26,6 +26,65 @@ def test_planner_projection_excludes_query_inference_fields():
     assert projected["text"] == projected["question"]
     assert projected["context"]["snapshotRevision"] == "rev-1"
     assert not ({"intent", "operation", "evidenceLevel", "required_evidence", "subject", "ambiguities", "confidence", "requires"} & set(projected))
+
+
+def test_active_context_selection_prefers_pob_state_and_unique_candidates():
+    context = {
+        "activeSkillSet": {"id": "b", "title": "Endgame"},
+        "skillSets": {"a": {"title": "Leveling"}, "b": {"title": "Endgame"}},
+        "itemSets": [{"id": "items-1", "title": "Mapping"}],
+        "specs": {"spec-1": {"title": "Default"}, "spec-2": {"title": "Boss"}},
+        "activeSpec": {"id": "spec-2", "title": "Boss"},
+    }
+    selection = resolve_active_context(context)
+    assert selection["selected"]["skillSet"]["id"] == "b"
+    assert selection["selected"]["itemSet"]["id"] == "items-1"
+    assert selection["selected"]["treeSpec"]["id"] == "spec-2"
+    assert selection["conflicts"] == []
+    projected = planner_query_projection(normalize_query("DPS"), context=context)
+    assert projected["contextSelection"] == selection
+
+
+def test_context_selection_conflict_stops_before_planner():
+    class MustNotRun:
+        def __init__(self): self.calls = 0
+        def chat(self, messages, **kwargs):
+            self.calls += 1
+            raise AssertionError("planner must not run for conflicting context")
+
+    model = MustNotRun()
+    result = AgentLoop(model).run("dps?", snapshot={
+        "activeSkillSet": None,
+        "skillSets": {"a": {"title": "One"}, "b": {"title": "Two"}},
+    })
+    assert model.calls == 0
+    assert result["error"]["error_ref"] == "AMBIGUOUS_CONTEXT"
+    assert result["error"]["recovery_class"] == "ASK_USER"
+    assert result["error"]["details"]["missing_fields"] == ["skillSet"]
+
+
+def test_request_local_item_set_override_preserves_unmentioned_active_context():
+    context = {
+        "activeSkillSet": {"id": "skill-active", "title": "Mapping"},
+        "skillSets": {"skill-active": {"title": "Mapping"}, "skill-other": {"title": "Boss"}},
+        "activeItemSet": {"id": "items-active", "title": "Mapping"},
+        "itemSets": [{"id": "items-active", "title": "Mapping"}, {"id": "items-boss", "title": "Boss"}],
+        "activeSpec": {"id": "spec-active", "title": "Mapping"},
+        "specs": {"spec-active": {"title": "Mapping"}, "spec-boss": {"title": "Boss"}},
+    }
+    projected = planner_query_projection(normalize_query("2번 장비셋으로 DPS 비교"), context=context)
+    selection = projected["contextSelection"]["selected"]
+    assert selection["itemSet"]["id"] == "items-boss"
+    assert selection["itemSet"]["source"] == "사용자 질문"
+    assert selection["skillSet"]["id"] == "skill-active"
+    assert selection["treeSpec"]["id"] == "spec-active"
+    assert projected["contextSelection"]["conflicts"] == []
+
+
+def test_request_local_unsupported_item_set_is_marked_for_user_clarification():
+    context = {"itemSets": [{"id": "items-active", "title": "Mapping"}, {"id": "items-boss", "title": "Boss"}], "activeItemSet": {"id": "items-active"}}
+    projected = planner_query_projection(normalize_query("99번 장비셋으로 계산"), context=context)
+    assert "itemSet" in projected["contextSelection"]["conflicts"]
 
 
 def test_dps_question_planner_payload_has_no_inferred_defaults():

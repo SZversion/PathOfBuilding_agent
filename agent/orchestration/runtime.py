@@ -121,10 +121,10 @@ class SnapshotSync:
         self.snapshot = None
         self.revision = None
 
-    def prepare(self, current):
+    def prepare(self, current, overrides=None):
         if not isinstance(current, dict):
             return {"mode": "full", "snapshot": None, "snapshotRevision": None, "baseRevision": None}
-        normalized = project_snapshot(current)
+        normalized = project_snapshot(current, overrides)
         revision = snapshot_revision(normalized)
         if self.snapshot is None or self.revision is None:
             self.snapshot, self.revision = normalized, revision
@@ -137,7 +137,7 @@ class SnapshotSync:
         return {"mode": "diff", "diff": {"baseRevision": base, "revision": revision, "changes": diff}, "snapshotRevision": revision, "baseRevision": base}
 
 
-def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revision_value=None, current_revision=None):
+def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revision_value=None, current_revision=None, context_overrides=None):
     """Execute a planner result without raising at the orchestration boundary."""
     handlers = handlers or {}
     output = {
@@ -170,6 +170,9 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
         if not isinstance(arguments, dict):
             output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "arguments must be a dict", next_action="repair_input")})
             continue
+        if context_overrides:
+            arguments = dict(arguments)
+            arguments.setdefault("contextOverrides", dict(context_overrides))
         expected_revision = step.get("expectedSnapshotRevision")
         if expected_revision is not None and (not isinstance(expected_revision, str) or not expected_revision.strip()):
             output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "expectedSnapshotRevision must be a non-empty string", next_action="repair_input")})

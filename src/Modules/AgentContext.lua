@@ -115,7 +115,8 @@ local function apply_calculation_context(build, selectors)
 	selectors = selectors or {}
 	local treeTab, skillsTab, itemsTab = build.treeTab, build.skillsTab, build.itemsTab
 	local selected = {}
-	if treeTab then
+	if selectors.activeSpec ~= nil then
+		if not treeTab then return nil, "Tree Spec state is unavailable" end
 		local spec, specId = resolve_spec_selector(selectors.activeSpec, treeTab)
 		if not spec then return nil, specId end
 		selected.activeSpec = { id = specId, title = spec.title or "Default" }
@@ -125,7 +126,8 @@ local function apply_calculation_context(build, selectors)
 		if type(treeTab.SetActiveSpec) ~= "function" then return nil, "Tree Spec selector cannot be applied" end
 		treeTab:SetActiveSpec(selected.activeSpec.id)
 	end
-	if skillsTab then
+	if selectors.activeSkillSet ~= nil then
+		if not skillsTab then return nil, "Skill Set state is unavailable" end
 		local skillSet, skillId = resolve_title_selector(selectors.activeSkillSet, skillsTab.skillSets, skillsTab.skillSetOrderList, "Skill Set")
 		if not skillSet then return nil, skillId end
 		selected.activeSkillSet = { id = skillId, title = skillSet.title or "Default" }
@@ -135,7 +137,8 @@ local function apply_calculation_context(build, selectors)
 		if type(skillsTab.SetActiveSkillSet) ~= "function" then return nil, "Skill Set selector cannot be applied" end
 		skillsTab:SetActiveSkillSet(selected.activeSkillSet.id)
 	end
-	if itemsTab then
+	if selectors.activeItemSet ~= nil then
+		if not itemsTab then return nil, "Item Set state is unavailable" end
 		local itemSet, itemId = resolve_title_selector(selectors.activeItemSet, itemsTab.itemSets, itemsTab.itemSetOrderList, "Item Set")
 		if not itemSet then return nil, itemId end
 		selected.activeItemSet = { id = itemId, title = itemSet.title or "Default" }
@@ -277,4 +280,144 @@ local function find_skill(build, selector, name)
 	}
 end
 
-	return { load_xml_file = load_xml_file, find_skill = find_skill, normalize_name = normalize_name, resolve_skill_alias = resolve_skill_alias, apply_calculation_context = apply_calculation_context }
+local configRules = {
+	enemyIsBoss = { kind = "enum", values = { None = true, Boss = true, Pinnacle = true, Uber = true } },
+	resistancePenalty = { kind = "number", values = { [0] = true, [-30] = true, [-60] = true } },
+	conditionMoving = { kind = "bool" }, conditionFullLife = { kind = "bool" }, conditionLowLife = { kind = "bool" },
+	conditionFullMana = { kind = "bool" }, conditionLowMana = { kind = "bool" }, conditionFullEnergyShield = { kind = "bool" },
+	conditionLowEnergyShield = { kind = "bool" }, conditionHaveEnergyShield = { kind = "bool" }, conditionUnbrokenWard = { kind = "bool" },
+	conditionEnemyCursed = { kind = "bool" }, conditionEnemyBleeding = { kind = "bool" }, conditionEnemyPoisoned = { kind = "bool" },
+	conditionEnemyBurning = { kind = "bool" }, conditionEnemyIgnited = { kind = "bool" }, conditionEnemyChilled = { kind = "bool" },
+	conditionEnemyFrozen = { kind = "bool" }, conditionEnemyShocked = { kind = "bool" },
+	conditionStationary = { kind = "integer", min = 0 },
+	usePowerCharges = { kind = "bool" }, useFrenzyCharges = { kind = "bool" }, useEnduranceCharges = { kind = "bool" },
+	overridePowerCharges = { kind = "integer", min = 0, requires = "usePowerCharges" },
+	overrideFrenzyCharges = { kind = "integer", min = 0, requires = "useFrenzyCharges" },
+	overrideEnduranceCharges = { kind = "integer", min = 0, requires = "useEnduranceCharges" },
+}
+
+local function validate_config_overrides(overrides)
+	if overrides == nil then return {} end
+	if type(overrides) ~= "table" then return nil, "configOverrides must be an object" end
+	local result = {}
+	for key, value in pairs(overrides) do
+		local rule = configRules[key]
+		if not rule then return nil, "unsupported config override: " .. tostring(key) end
+		if rule.kind == "bool" then
+			if type(value) ~= "boolean" then return nil, "config override must be boolean: " .. tostring(key) end
+			result[key] = value
+		elseif rule.kind == "enum" then
+			if type(value) ~= "string" or not rule.values[value] then return nil, "config override has invalid enum value: " .. tostring(key) end
+			result[key] = value
+		elseif rule.kind == "integer" then
+			if type(value) ~= "number" or value ~= math.floor(value) or (rule.min and value < rule.min) or (rule.max and value > rule.max) then
+				return nil, "config override must be a bounded integer: " .. tostring(key)
+			end
+			result[key] = value
+		elseif type(value) ~= "number" or value ~= value or (rule.values and not rule.values[value]) or (rule.min and value < rule.min) then
+			return nil, "config override is out of range: " .. tostring(key)
+		else result[key] = value end
+	end
+	return result
+end
+
+local function with_config_overrides(build, overrides, callback)
+	if not build or not build.configTab or type(build.configTab.input) ~= "table" then return nil, "PoB Config state is unavailable" end
+	local validated, validationErr = validate_config_overrides(overrides)
+	if not validated then return nil, validationErr end
+	local input, backup = build.configTab.input, {}
+	for key, rule in pairs(configRules) do
+		if rule.requires and validated[key] ~= nil and validated[rule.requires] ~= true and input[rule.requires] ~= true then
+			return nil, "config override requires " .. rule.requires .. "=true: " .. key
+		end
+	end
+	for key, value in pairs(validated) do backup[key] = input[key]; input[key] = value end
+	local calcs = build.calcsTab
+	local ok, first, second
+	if calcs and type(calcs.BuildOutput) == "function" then
+		ok, first, second = pcall(callback)
+	else ok, first, second = pcall(callback) end
+	for key, value in pairs(backup) do input[key] = value end
+	for key in pairs(validated) do if backup[key] == nil then input[key] = nil end end
+	if calcs and type(calcs.BuildOutput) == "function" then pcall(calcs.BuildOutput, calcs) end
+	if not ok then return nil, first end
+	return first, second, validated
+end
+
+local function begin_config_overrides(build, overrides)
+	if not build or not build.configTab or type(build.configTab.input) ~= "table" then return nil, "PoB Config state is unavailable" end
+	local validated, validationErr = validate_config_overrides(overrides)
+	if not validated then return nil, validationErr end
+	local input, backup = build.configTab.input, {}
+	for key, rule in pairs(configRules) do
+		if rule.requires and validated[key] ~= nil and validated[rule.requires] ~= true and input[rule.requires] ~= true then
+			return nil, "config override requires " .. rule.requires .. "=true: " .. key
+		end
+	end
+	local calcs = build.calcsTab
+	local calcState = calcs and {
+		mainEnv = calcs.mainEnv, mainOutput = calcs.mainOutput, calcsEnv = calcs.calcsEnv,
+		calcsOutput = calcs.calcsOutput, nodeCalculator = calcs.nodeCalculator,
+		miscCalculator = calcs.miscCalculator, powerBuildFlag = calcs.powerBuildFlag,
+		powerBuilder = calcs.powerBuilder,
+	} or nil
+	local function captureOutput(env)
+		local output = env and env.player and env.player.output
+		if type(output) ~= "table" then return nil end
+		local values = {}
+		for key, value in pairs(output) do values[key] = value end
+		return output, values
+	end
+	local mainOutputRef, mainOutputValues = captureOutput(calcState and calcState.mainEnv)
+	local calcsOutputRef, calcsOutputValues = captureOutput(calcState and calcState.calcsEnv)
+	local buildState = {
+		agentSnapshot = build.agentSnapshot, explainAgentStat = build.explainAgentStat,
+		saveAgentSnapshot = build.saveAgentSnapshot, mainSocketGroup = build.mainSocketGroup,
+	}
+	local controlState = {}
+	for name, control in pairs(build.configTab.varControls or {}) do
+		if type(control) == "table" then
+			controlState[name] = { selIndex = control.selIndex, state = control.state, placeholder = control.placeholder,
+				enabled = control.enabled, buf = control.buf, text = control.text }
+		end
+	end
+	local oldCache = GlobalCache and GlobalCache.cachedData
+	if oldCache then
+		GlobalCache.cachedData = { MAIN = {}, CALCS = {}, CALCULATOR = {} }
+	end
+	for key, value in pairs(validated) do backup[key] = input[key]; input[key] = value end
+	local calculated, calculationErr = true, nil
+	if calcs and type(calcs.BuildOutput) == "function" then
+		calculated, calculationErr = pcall(calcs.BuildOutput, calcs)
+	end
+	local restored = false
+	local function restore()
+		if restored then return end
+		restored = true
+		for key, value in pairs(backup) do input[key] = value end
+		for key in pairs(validated) do if backup[key] == nil then input[key] = nil end end
+		if oldCache then GlobalCache.cachedData = oldCache end
+		if calcs and calcState then
+			for key, value in pairs(calcState) do calcs[key] = value end
+		end
+		local function restoreOutput(output, values)
+			if not output or not values then return end
+			for key in pairs(output) do output[key] = nil end
+			for key, value in pairs(values) do output[key] = value end
+		end
+		restoreOutput(mainOutputRef, mainOutputValues)
+		restoreOutput(calcsOutputRef, calcsOutputValues)
+		for key, value in pairs(buildState) do build[key] = value end
+		for name, values in pairs(controlState) do
+			local control = build.configTab.varControls and build.configTab.varControls[name]
+			if control then for key, value in pairs(values) do control[key] = value end end
+		end
+	end
+	if not calculated then
+		restore()
+		return nil, calculationErr
+	end
+	return restore, validated
+end
+
+	return { load_xml_file = load_xml_file, find_skill = find_skill, normalize_name = normalize_name, resolve_skill_alias = resolve_skill_alias, apply_calculation_context = apply_calculation_context, validate_config_overrides = validate_config_overrides, with_config_overrides = with_config_overrides, begin_config_overrides = begin_config_overrides }
