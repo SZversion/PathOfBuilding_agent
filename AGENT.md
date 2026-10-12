@@ -118,3 +118,11 @@ localhost/127.0.0.1/::1을 허용한다. Docker 백엔드는 Compose 내부 주�
 ## 9. 검증 기준
 
 변경은 기존 PoB 회귀 테스트와 함께 검증한다. 최소 검증 시나리오는 Impending Doom/Vixen’s Entrapment 저주 순서, 변형 젬, 아이템 제공 스킬과 보조 젬, Static Strike 지속시간, Arc of Oscillating 연쇄·시전 속도, 스킬 군 주얼, 경매장 아이템 텍스트, PoB 코드 기반 빌드 비교다. 수치가 PoB 출력과 다르면 성공으로 간주하지 않는다.
+
+
+로컬 Langfuse의 최상위 및 run_completed Output은 `llm_outputs`(재시도별 전체 LLM
+응답 JSON)와 `response`(전체 AgentLoop 응답 JSON)를 기록한다. 중첩 필드·배열·빈
+값을 유지하고 인증 필드 및 설정된 인증정보 값은 전송·큐 저장 전에 마스킹한다.
+이 로컬 추적 정책은 전체 Tool 결과 전송 금지의 예외이며 원격 Langfuse나 XML
+원문 전송을 허용하지 않는다. span 시작·종료 시각은 전송 시점이 아니라 실제
+이벤트 시각을 사용한다. 이전 trace는 소급 변경하지 않는다.
