@@ -243,3 +243,11 @@ redacted trace는 `data/traces/langfuse-queue.ndjson`에 제한된 크기로 임
 Planner, local Bridge, StateStore, recovery_response, Trace, and Langfuse must emit and consume the same error fields. `error_ref` is the parent classification: `MISSING_CONTEXT`, `AMBIGUOUS_CONTEXT`, `CONFLICTING_CONTEXT`, or `UNSUPPORTED_REQUEST`. `error_code` is the registered leaf diagnosis, and `recovery_class` remains `ASK_USER` for these context errors. `details` must contain `missing_fields` when applicable and a user-safe `message`.
 
 The canonical fields are `error_ref` and `error_code`; legacy `error.code` is accepted and mirrored for compatibility, but is normalized to `error_code` and cannot disagree silently. Success `status` is separate from exception fields. No new error code may be invented outside `agent/EXCEPTION_HANDLING.md`; unknown codes fall back to `UNCLASSIFIED_FAILURE` and `FATAL_INTERNAL`.
+
+
+로컬 Langfuse의 최상위 및 run_completed Output은 `llm_outputs`(재시도별 전체 LLM
+응답 JSON)와 `response`(전체 AgentLoop 응답 JSON)를 기록한다. 중첩 필드·배열·빈
+값을 유지하고 인증 필드 및 설정된 인증정보 값은 전송·큐 저장 전에 마스킹한다.
+이 로컬 추적 정책은 전체 Tool 결과 전송 금지의 예외이며 원격 Langfuse나 XML
+원문 전송을 허용하지 않는다. span 시작·종료 시각은 전송 시점이 아니라 실제
+이벤트 시각을 사용한다. 이전 trace는 소급 변경하지 않는다.
