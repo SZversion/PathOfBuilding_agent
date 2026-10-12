@@ -148,3 +148,18 @@ def test_dataclass_runtime_handles_do_not_require_deepcopy():
         assert _value(value)["payload"] == {"all": [None, {}, []]}
     finally:
         loop.close()
+
+
+def test_server_callback_restores_trace_context_from_request_headers(monkeypatch):
+    import hashlib
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    fixture = project_function("def callback(value): return value")
+    run_id = "run-request-context"
+    wrapped = trace_pipeline(fixture.callback, context_provider=lambda: {
+        "x-pob-trace-run-id": run_id, "x-pob-trace-parent-id": "1234567890abcdef"})
+    assert wrapped({"all": 42}) == {"all": 42}
+    context = client.spans[0]["trace_context"]
+    assert context["trace_id"] == hashlib.sha256(("pob-agent:" + run_id).encode()).hexdigest()[:32]
+    assert context["parent_span_id"] == "1234567890abcdef"
