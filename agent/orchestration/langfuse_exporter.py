@@ -185,7 +185,7 @@ class LangfuseExporter:
         snapshot = event.get("snapshot") if isinstance(event.get("snapshot"), dict) else {}
         result = event.get("result_ref") if isinstance(event.get("result_ref"), dict) else {}
         return {
-            "event_id": event.get("event_id"), "event": event.get("event"), "stage": event.get("stage"),
+            "event_id": event.get("event_id"), "parent_event_id": event.get("parent_event_id"), "event": event.get("event"), "stage": event.get("stage"),
             "timestamp_utc": event.get("timestamp_utc"), "duration_ms": event.get("duration_ms"),
             "status": event.get("status"), "attempt": event.get("attempt"), "max_attempts": event.get("max_attempts"), "tool": event.get("tool"),
             "step_index": event.get("step_index"), "tool_call_count": event.get("tool_call_count"),
