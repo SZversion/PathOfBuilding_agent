@@ -35,10 +35,14 @@ Tool semantics, or the external-model protocol.
 
 - API keys are used only for authentication and are never placed in events,
   metadata, errors, logs, or user responses.
-- Send only existing redacted `prompt_ref`, `safe_args_ref`, `result_ref`,
-  lifecycle fields, and non-sensitive provider identifiers.
-- Never send raw prompts, XML, complete snapshots, user notes, free-form Tool
-  arguments, Authorization headers, or full Tool results.
+- Local Langfuse records complete LLM response JSON (including retries) and
+  the complete AgentLoop response JSON. Root and terminal outputs contain
+  `llm_outputs` and `response`; JSON objects, arrays, empty values, and nested
+  fields are preserved. Valid JSON model responses are stored as objects.
+- Authentication fields and configured credential values are redacted before
+  SDK export or queue persistence. This does not authorize sending raw XML
+  or sending payloads to remote Langfuse services.
+- Span start/end times reflect original event timestamps, not export time.
 - `.env` is read only from the repository root, not an arbitrary working
   directory. Process environment variables take precedence.
 
