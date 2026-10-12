@@ -75,9 +75,9 @@ def _value(value, seen=None):
         if isinstance(value, type):
             return {"type": value.__module__ + "." + value.__qualname__}
         if is_dataclass(value):
-            return _value({field.name: getattr(value, field.name) for field in fields(value)}, seen)
+            return _value({field.name: getattr(value, field.name, {"state": "uninitialized"}) for field in fields(value)}, seen)
         if hasattr(value, "model_dump"):
-            return _value(value.model_dump(mode="json"), seen)
+            return _value(value.model_dump(mode="python"), seen)
         if isinstance(value, BaseException):
             return {"type": type(value).__name__, "message": _value(str(value)),
                     "arguments": _value(value.args, seen), "details": _value(vars(value), seen),
@@ -208,7 +208,9 @@ class FunctionTrace:
                     if not frame.f_code.co_flags & inspect.CO_COROUTINE:
                         entry["yields"].append(_value(value))
                     return
-                output = {"return": _value(value), "exceptions": entry["exceptions"]}
+                returned = ({"type": type(value).__name__, "object_id": f"{id(value):016x}"}
+                            if "self" in frame.f_locals and value is frame.f_locals["self"] else _value(value))
+                output = {"return": returned, "exceptions": entry["exceptions"]}
                 if entry["yields"]:
                     output["yields"] = entry["yields"]
                 escaped = bool(entry["exceptions"]) and opcode not in {"RETURN_VALUE", "RETURN_CONST"}
