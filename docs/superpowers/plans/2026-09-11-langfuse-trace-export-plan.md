@@ -1,5 +1,12 @@
 # Langfuse Trace Export Plan
 
+The original opt-in policy below has been updated to default local tracing.
+The current host URL is `http://localhost:13000` (`LANGFUSE_PORT=13000` in
+`.env.docker`). The Docker backend uses `http://langfuse-web:3000` with
+`POB_AGENT_LANGFUSE_ALLOWED_HOSTS=langfuse-web`; the container port remains
+`3000`. A backend running directly on the host uses
+`LANGFUSE_BASE_URL=http://localhost:13000`. Remote Langfuse is out of scope.
+
 ## Goal
 
 Export the existing sanitized, run-scoped Agent Trace to a local Langfuse
@@ -8,13 +15,15 @@ Tool semantics, or the external-model protocol.
 
 ## In scope
 
-- An optional Langfuse exporter attached to the existing TraceRecorder.
+- A default Langfuse exporter attached to the existing TraceRecorder.
 - One Agent `run_id`/`request_id` mapped to exactly one Langfuse trace.
 - Lifecycle event export with IDs, stages, durations, statuses, provider
   metadata, retry/error references, snapshot/build references, and result refs.
-- Configuration from process environment variables only by default:
+- Configuration from process environment variables, supplemented by the
+  repository-root `.env` when a value is absent:
   `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASE_URL`.
-- An explicit development opt-in flag; a base URL alone never enables export.
+- No development opt-in flag; sampling defaults to `1`. Missing credentials
+  or SDK keep tracing in local queue mode.
 - SDK version support bounded to the tested Langfuse 4.x API. Missing SDK or
   incomplete configuration produces a no-op/unavailable exporter.
 - Bounded flush/close timeout and no exporter retries that block AgentLoop.
@@ -30,16 +39,16 @@ Tool semantics, or the external-model protocol.
   lifecycle fields, and non-sensitive provider identifiers.
 - Never send raw prompts, XML, complete snapshots, user notes, free-form Tool
   arguments, Authorization headers, or full Tool results.
-- `.env` is not read implicitly from an arbitrary working directory. Process
-  environment variables take precedence; any `.env` loading must be an
-  explicit development-only option with an explicit project-root path.
+- `.env` is read only from the repository root, not an arbitrary working
+  directory. Process environment variables take precedence.
 
-## Explicit enablement and failure behavior
+## Default enablement and failure behavior
 
-1. Export is disabled by default and sampling defaults to `0`.
-2. Enablement requires an explicit development flag plus all three Langfuse
-   variables. Missing or partial configuration returns an unavailable/no-op
-   exporter without stopping AgentLoop.
+1. Tracing is wired by default and sampling defaults to `1`.
+2. Sending requires all three Langfuse variables, an available SDK, and a
+   local endpoint. Loopback hosts are allowed by default; the Docker service
+   `langfuse-web` requires the explicit allowed-host setting above. Missing or
+   partial configuration queues redacted events without stopping AgentLoop.
 3. SDK import errors, connection errors, malformed responses, flush errors, and
    close errors are isolated from PoB/Agent execution and recorded only as a
    local warning.
@@ -70,7 +79,9 @@ Tool semantics, or the external-model protocol.
 
 ## Acceptance criteria
 
-1. Export remains disabled unless explicitly enabled in development.
+1. AgentLoop attempts export by default with sampling `1`; incomplete
+   configuration or service failures preserve redacted events in the bounded
+   local queue.
 2. One run creates at most one Langfuse trace and preserves its run/request IDs.
 3. Fake SDK/HTTP tests cover success, incomplete config, missing SDK, timeout,
    flush failure, malformed response, and close behavior.
