@@ -12,6 +12,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Resource, TextContent, Tool, ToolAnnotations, CallToolResult
 
+from agent.orchestration.function_trace import FunctionTrace, trace_pipeline
 from agent.mcp.handlers import _error, create_handlers, current_snapshot
 from agent.tool_catalog import TOOL_CATALOG
 
@@ -27,6 +28,7 @@ def create_server(*, endpoint_dir=None, knowledge_search=None, external_search=N
                 for spec in TOOL_CATALOG.values()]
 
     @server.call_tool()
+    @trace_pipeline
     async def call_tool(name: str, arguments: dict):
         spec = TOOL_CATALOG.get(name)
         if spec is None or name not in handlers:
@@ -48,6 +50,7 @@ def create_server(*, endpoint_dir=None, knowledge_search=None, external_search=N
                          mimeType="application/json")]
 
     @server.read_resource()
+    @trace_pipeline
     async def read_resource(uri):
         if str(uri) != "pob://current-snapshot":
             raise ValueError("unknown MCP resource")
@@ -96,7 +99,11 @@ def create_http_app(server=None, *, token=None):
             if not hmac.compare_digest(supplied, expected):
                 response = JSONResponse({"error": "unauthorized"}, status_code=401)
                 return await response(scope, receive, send)
-            await self.app(scope, receive, send)
+            run_id = headers.get(b"x-pob-trace-run-id", b"").decode("ascii", errors="ignore")
+            parent_id = headers.get(b"x-pob-trace-parent-id", b"").decode("ascii", errors="ignore")
+            with FunctionTrace("agent.mcp.request", {"path": scope.get("path"), "method": scope.get("method")},
+                               run_id=run_id or None, parent_id=parent_id or None):
+                await self.app(scope, receive, send)
 
     return BearerTokenMiddleware(application)
 
