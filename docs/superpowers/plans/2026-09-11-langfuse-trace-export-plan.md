@@ -25,7 +25,7 @@ Tool semantics, or the external-model protocol.
 - No development opt-in flag; sampling defaults to `1`. Missing credentials
   or SDK keep tracing in local queue mode.
 - SDK version support bounded to the tested Langfuse 4.x API. Missing SDK or
-  incomplete configuration produces a no-op/unavailable exporter.
+  incomplete configuration produces a queue-only exporter.
 - Bounded flush/close timeout and no exporter retries that block AgentLoop.
 - Fake SDK and fake HTTP boundary tests plus a real local smoke test when the
   Langfuse service is available.
@@ -77,7 +77,7 @@ Tool semantics, or the external-model protocol.
 ## Out of scope
 
 - UI viewer, remote Langfuse hosting, automatic `.env` discovery, model or
-  provider changes, RAG/PoB/Tool changes, raw prompt logging, persistent Agent
+  provider changes, RAG/PoB/Tool changes, additional raw XML capture, persistent Agent
   cache changes, retention enforcement inside the app, and changing the
   production remote default.
 
@@ -91,8 +91,10 @@ Tool semantics, or the external-model protocol.
    flush failure, malformed response, and close behavior.
 4. A local Langfuse smoke test succeeds when the service is available, or is
    reported as unavailable without being treated as a passing export.
-5. Redaction tests prove that keys, Authorization, raw prompt/XML/snapshot,
-   notes, free text, and full Tool results never leave the process.
+5. Redaction tests prove that credentials and Authorization values never
+   leave the process. Tests preserve all non-credential JSON response fields,
+   including nested objects, arrays, empty values, retries, and error details.
+   Real-service verification confirms original span timestamps and duration.
 6. Existing Trace/AgentLoop behavior, remote default, Ollama dev-only policy,
    27-test regression suite, and Ollama smoke remain unchanged.
 
