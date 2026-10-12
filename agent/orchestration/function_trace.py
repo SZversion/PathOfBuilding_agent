@@ -199,6 +199,9 @@ class FunctionTrace:
                                "object_id": f"{id(arguments.locals[name]):016x}"}
                               if name in {"self", "cls"} else _value(arguments.locals[name]))
                        for name in names}
+            if _module(frame.f_globals) == "agent.cli" and frame.f_code.co_name == "<lambda>" and "token" in payload:
+                # CLI callbacks name streamed text "token", which is not an auth credential.
+                payload["stream_fragment"] = _value(arguments.locals["token"])
             parent = self.parent_span(frame.f_back)
             parent_id = _span_ids(parent)[1] if parent else None
             name = _module(frame.f_globals) + "." + frame.f_code.co_qualname
