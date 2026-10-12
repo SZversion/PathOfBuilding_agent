@@ -192,3 +192,14 @@ def test_python_module_entrypoints_keep_canonical_function_names(monkeypatch):
     assert trace_pipeline(module.run)({"all": 42}) == {"all": 42}
     span = next(s for s in client.spans if s["name"] == "agent.trace_fixture.run")
     assert span["output"]["return"] == {"all": 42}
+
+
+def test_cli_stream_fragments_are_not_lost_to_auth_token_redaction(monkeypatch):
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    module = types.ModuleType("agent.cli")
+    exec("def run(text):\n callback = lambda token: token\n return callback(text)", module.__dict__)
+    assert trace_pipeline(module.run)("model fragment") == "model fragment"
+    fragment = next(s for s in client.spans if s["name"].endswith(".<lambda>"))
+    assert fragment["input"]["stream_fragment"] == "model fragment"
