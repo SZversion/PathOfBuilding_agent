@@ -29,6 +29,7 @@ def create_server(*, endpoint_dir=None, knowledge_search=None, external_search=N
         return request.headers if request is not None else {}
 
     @server.list_tools()
+    @trace_pipeline(context_provider=request_trace_headers)
     async def list_tools():
         return [Tool(name=spec.name, description=spec.description, inputSchema=spec.input_schema,
                      annotations=ToolAnnotations(**spec.as_mcp_definition()["annotations"]))
@@ -51,6 +52,7 @@ def create_server(*, endpoint_dir=None, knowledge_search=None, external_search=N
                               isError=failed)
 
     @server.list_resources()
+    @trace_pipeline(context_provider=request_trace_headers)
     async def list_resources():
         return [Resource(uri="pob://current-snapshot", name="Current PoB snapshot",
                          description="Fresh normalized context from the active Path of Building session",
