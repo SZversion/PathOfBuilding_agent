@@ -32,8 +32,8 @@ process environment가 우선되고 저장소 root `.env`의 설정이 보완적
 `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` 또는 SDK/서비스가
 없으면 Langfuse 전송 대신 local queue 모드로 동작합니다.
 
-전송되는 값은 이미 redacted된 Trace event와 stable reference뿐이며 API key, 원문 prompt,
-XML, snapshot, notes, free-form 인자, 전체 Tool 결과는 전송하지 않습니다. 로컬 개발
+로컬 Langfuse에는 전체 LLM 응답 JSON과 AgentLoop 최종 응답 JSON을 기록합니다.
+인증정보는 전송·큐 저장 전에 마스킹하며 XML 원문은 추가로 전송하지 않습니다. 로컬 개발
 Langfuse의 retention/deletion은 Langfuse 서버 설정과 UI/API에서 관리하며, Agent는
 보존 정책을 변경하지 않습니다. exporter가 없거나 설정이 불완전하거나 flush/close가
 실패해도 Agent 답변과 PoB 실행은 중단되지 않습니다.
@@ -48,3 +48,11 @@ Docker 백엔드는 `LANGFUSE_BASE_URL=http://langfuse-web:3000`을 사용합니
 외부 원격 Langfuse는 허용하지 않습니다. 전송 실패 시 redacted event만
 `data/traces/langfuse-queue.ndjson`에 임시 보관하며 기본 디스크 상한은 10 MiB입니다.
 동일 `run_id`는 한 번만 보관하고 상한 초과 시에는 경고 후 쓰지 않습니다.
+
+
+로컬 Langfuse의 최상위 및 run_completed Output은 `llm_outputs`(재시도별 전체 LLM
+응답 JSON)와 `response`(전체 AgentLoop 응답 JSON)를 기록한다. 중첩 필드·배열·빈
+값을 유지하고 인증 필드 및 설정된 인증정보 값은 전송·큐 저장 전에 마스킹한다.
+이 로컬 추적 정책은 전체 Tool 결과 전송 금지의 예외이며 원격 Langfuse나 XML
+원문 전송을 허용하지 않는다. span 시작·종료 시각은 전송 시점이 아니라 실제
+이벤트 시각을 사용한다. 이전 trace는 소급 변경하지 않는다.
