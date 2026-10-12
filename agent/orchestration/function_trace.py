@@ -1,6 +1,6 @@
 """Request-scoped function-boundary tracing for the Python agent pipeline."""
 
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import contextvars
 import dis
 import functools
@@ -31,6 +31,8 @@ def _value(value, seen=None):
         return LangfuseExporter._payload(value.decode("utf-8", errors="replace"))
     if isinstance(value, Path):
         return str(value)
+    if type(value).__module__ in _EXCLUDED:
+        return {"type": type(value).__name__}
     if id(value) in seen:
         return {"type": type(value).__name__, "reference": "cyclic"}
     if isinstance(value, (tuple, list)) and len(value) == 2 and isinstance(value[0], (str, bytes)):
@@ -209,7 +211,7 @@ class FunctionTrace:
                                            "tracing_warnings": self.warnings})
                 if self.events:
                     from opentelemetry import trace
-                    with (trace.use_span(self.root._otel_span) if hasattr(self.root, "_otel_span") else contextmanager(lambda: iter([None]))()):
+                    with (trace.use_span(self.root._otel_span) if hasattr(self.root, "_otel_span") else nullcontext()):
                         for event in self.events:
                             with self.exporter._record_event(self.exporter.client, event):
                                 pass
