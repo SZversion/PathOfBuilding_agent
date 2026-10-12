@@ -106,6 +106,10 @@ Agent 변경을 적용하기 전에 Bridge가 기대한 revision과 현재 revis
 - 외부 검색 결과의 자동 KB 승격
 - 기존 PoB 기능·UI·저장 흐름의 회귀를 허용하는 변경
 
+Langfuse 추적은 AgentLoop에 기본 연결되고 sampling 기본값은 1이다. endpoint는
+localhost/127.0.0.1/::1만 허용하며, 전송 실패는
+요청 결과를 중단시키지 않고 redacted event를 제한된 NDJSON queue에 남긴다.
+
 ## 9. 검증 기준
 
 변경은 기존 PoB 회귀 테스트와 함께 검증한다. 최소 검증 시나리오는 Impending Doom/Vixen’s Entrapment 저주 순서, 변형 젬, 아이템 제공 스킬과 보조 젬, Static Strike 지속시간, Arc of Oscillating 연쇄·시전 속도, 스킬 군 주얼, 경매장 아이템 텍스트, PoB 코드 기반 빌드 비교다. 수치가 PoB 출력과 다르면 성공으로 간주하지 않는다.

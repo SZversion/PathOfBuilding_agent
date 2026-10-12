@@ -152,7 +152,7 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
             except Exception as error:  # boundary: keep one failed step inspectable
                 output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SEARCH_ERROR", "RETRY_TOOL", "knowledge_search", str(error), retryable=True, next_action="retry_bounded", max_attempts=MAX_TOOL_ATTEMPTS)})
             else:
-                step_result = {"tool": tool, "status": "ok", "result": result}
+                step_result = {"tool": tool, "status": "ok", "attempt": 1, "tool_call_count": output["tool_call_count"], "result": result}
                 uncertainty = _result_uncertainty(result)
                 if uncertainty is not None:
                     step_result["uncertainty"] = uncertainty
@@ -210,7 +210,8 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
                     break
                 if _retryable_tool_error(error) and attempt < MAX_TOOL_ATTEMPTS:
                     continue
-                output["steps"].append({"tool": tool, "status": "timeout", "error": _set_attempt(error, attempt)})
+                detail = _set_attempt(error, attempt)
+                output["steps"].append({"tool": tool, "status": "timeout", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
                 break
             except PobBridgeError as error:
                 if tool in MUTATION_TOOLS and _retryable_tool_error(error):
@@ -220,13 +221,20 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
                     break
                 if _retryable_tool_error(error) and attempt < MAX_TOOL_ATTEMPTS:
                     continue
-                output["steps"].append({"tool": tool, "status": "error", "error": _set_attempt(error, attempt)})
+                detail = _set_attempt(error, attempt)
+                output["steps"].append({"tool": tool, "status": "error", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
+                break
+            except TimeoutError as error:
+                detail = _error_envelope("TIMEOUT", "RETRY_TOOL", "tool_execution", "Tool timed out", retryable=True, next_action="retry_bounded", attempt=attempt, max_attempts=MAX_TOOL_ATTEMPTS)
+                if attempt < MAX_TOOL_ATTEMPTS:
+                    continue
+                output["steps"].append({"tool": tool, "status": "timeout", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
                 break
             except Exception as error:  # boundary: tool failures belong to the step
                 output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("TOOL_EXECUTION_ERROR", "FATAL_INTERNAL", "tool_execution", str(error), next_action="report_error")})
                 break
             else:
-                step_result = {"tool": tool, "status": "ok", "result": result}
+                step_result = {"tool": tool, "status": "ok", "attempt": attempt, "tool_call_count": output["tool_call_count"], "result": result}
                 uncertainty = _result_uncertainty(result)
                 if uncertainty is not None:
                     step_result["uncertainty"] = uncertainty

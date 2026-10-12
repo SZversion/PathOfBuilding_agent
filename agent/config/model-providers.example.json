@@ -2,12 +2,17 @@
   "defaultMode": "remote",
   "remote": {
     "endpoint": "https://agent.example.invalid/v1/agent",
+    "model": "external-agent",
     "protocol": "pob-agent-json-v1",
     "tlsRequired": true,
     "maxToolCalls": 8
   },
   "local": {
     "enabled": false,
-    "reservedFor": "post-mvp"
+    "mode": "development",
+    "endpoint": "http://127.0.0.1:11434/v1",
+    "model": "qwen3:8b",
+    "timeout": 120,
+    "reservedFor": "development-only"
   }
 }
