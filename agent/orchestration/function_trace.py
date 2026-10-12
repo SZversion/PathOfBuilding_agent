@@ -119,9 +119,15 @@ def trace_environment():
                              if headers else {})}
 
 
+def _module(globals):
+    name = globals.get("__name__", "")
+    spec = globals.get("__spec__")
+    return spec.name if name == "__main__" and spec is not None else name
+
+
 def _trace(frame, event, value):
     session = current_trace()
-    module = frame.f_globals.get("__name__", "")
+    module = _module(frame.f_globals)
     if session is None or session.root is None or session.closed or not module.startswith("agent.") or module in _EXCLUDED:
         return None
     try:
@@ -195,7 +201,7 @@ class FunctionTrace:
                        for name in names}
             parent = self.parent_span(frame.f_back)
             parent_id = _span_ids(parent)[1] if parent else None
-            name = frame.f_globals["__name__"] + "." + frame.f_code.co_qualname
+            name = _module(frame.f_globals) + "." + frame.f_code.co_qualname
             span = self._start(name, payload, parent_id)
             self.frames[key] = {"span": span, "exceptions": [], "yields": []}
         elif key in self.frames:
@@ -278,7 +284,7 @@ class FunctionTrace:
 def trace_pipeline(function=None, *, context_provider=None):
     if function is None:
         return lambda target: trace_pipeline(target, context_provider=context_provider)
-    name = function.__module__ + "." + function.__qualname__
+    name = _module(function.__globals__) + "." + function.__qualname__
 
     def session_for(args, kwargs):
         headers = context_provider() if context_provider else {}
