@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Callable
 
+from agent.orchestration.function_trace import trace_pipeline
 from agent.mcp.registry import validate_tool_call
 from agent.error_registry import parent_error_ref
 from agent.pob.live_transport import LivePobTransport, LivePobTransportError
@@ -121,6 +122,7 @@ def create_handlers(endpoint_dir=None, knowledge_search=None, external_search=No
 
 
 def _validated_handler(name, handler):
+    @trace_pipeline
     def call(arguments):
         try:
             normalized = validate_tool_call(name, arguments)
