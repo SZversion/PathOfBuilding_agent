@@ -179,3 +179,16 @@ def test_detached_callback_does_not_reuse_a_closed_request_trace(monkeypatch):
     callback = next(s for s in client.spans if s["name"] == "agent.trace_fixture.callback")
     assert callback["output"]["return"] == 42
     assert callback["ended"]
+
+
+def test_python_module_entrypoints_keep_canonical_function_names(monkeypatch):
+    from importlib.machinery import ModuleSpec
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    module = types.ModuleType("__main__")
+    module.__spec__ = ModuleSpec("agent.trace_fixture", loader=None)
+    exec("def run(value): return value", module.__dict__)
+    assert trace_pipeline(module.run)({"all": 42}) == {"all": 42}
+    span = next(s for s in client.spans if s["name"] == "agent.trace_fixture.run")
+    assert span["output"]["return"] == {"all": 42}
