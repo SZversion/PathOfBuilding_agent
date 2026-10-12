@@ -11,7 +11,7 @@ EVENTS = {
     "run_started", "provider_started", "provider_completed", "provider_failed",
     "planner_started", "planner_completed", "planner_failed", "tool_started",
     "tool_completed", "tool_failed", "final_started", "final_completed",
-    "final_failed", "run_completed", "trace_overflow",
+    "final_failed", "run_completed", "recovery_response", "trace_overflow",
 }
 TERMINAL_EVENTS = {"run_completed", "final_failed", "run_failed"}
 MAX_EVENTS = 256

@@ -86,6 +86,45 @@ def test_cli_persists_bridge_revision_and_resumes_pending(tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)["status"] == "ok"
 
 
+def test_cli_streams_text_tokens_and_json_remains_one_envelope(tmp_path, capsys):
+    build = tmp_path / "stream.xml"
+    build.write_text("<Build/>", encoding="utf-8")
+    class Streaming:
+        def __init__(self): self.calls = 0
+        def chat(self, messages):
+            self.calls += 1
+            return json.dumps({"schema_version": "1.0", "intent": "stat", "operation": "answer", "evidenceLevel": "authoritative", "steps": [{"tool": "get_character_stats", "arguments": {}}]})
+        def stream_chat(self, messages):
+            yield "토큰"
+            yield "순서"
+    provider = Streaming()
+    assert run_cli(["--build", str(build), "--cache-root", str(tmp_path / "text-cache"), "--once", "life?"], bridge_factory=FakeBridge, provider_factory=lambda args: provider) == 0
+    assert capsys.readouterr().out == "토큰순서\n"
+    provider = Streaming()
+    assert run_cli(["--build", str(build), "--cache-root", str(tmp_path / "json-cache"), "--once", "life?", "--json"], bridge_factory=FakeBridge, provider_factory=lambda args: provider) == 0
+    output = capsys.readouterr().out
+    assert json.loads(output)["answer"] == "토큰순서"
+    assert output.count("\n") == 1
+
+
+def test_cli_default_stream_ask_user_is_natural_text(tmp_path, capsys):
+    build = tmp_path / "ask.xml"
+    build.write_text("<Build/>", encoding="utf-8")
+    class Asking:
+        def chat(self, messages):
+            return json.dumps({"schema_version": "1.0", "intent": "unknown", "operation": "answer", "steps": [], "ambiguities": ["skill"]})
+    assert run_cli(["--build", str(build), "--cache-root", str(tmp_path / "cache"), "--once", "which?"], bridge_factory=FakeBridge, provider_factory=lambda args: Asking()) == 1
+    output = capsys.readouterr().out
+    assert output.startswith("추가 정보가 필요합니다")
+    assert "AMBIGUOUS_ALIAS" not in output
+
+
+def test_cli_initial_error_is_not_json_in_text_mode(tmp_path, capsys):
+    assert run_cli(["--build", str(tmp_path / "missing.xml"), "--once", "life?"]) == 1
+    output = capsys.readouterr().out
+    assert not output.lstrip().startswith("{")
+
+
 def test_cli_streams_final_answer_tokens_in_text_mode(tmp_path, capsys):
     build = tmp_path / "stream sample.xml"
     build.write_text("<Build/>", encoding="utf-8")
