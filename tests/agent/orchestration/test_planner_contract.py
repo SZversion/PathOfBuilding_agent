@@ -72,6 +72,13 @@ def test_revision_and_step_fields_are_checked():
         _validate_planner_output(output)
 
 
+@pytest.mark.parametrize("tool,arguments", [("get_duration", {"skillName": "Arc", "durationType": "skill"}), ("get_item_modifiers", {"itemId": 1})])
+def test_catalog_arguments_survive_execution_validation(tool, arguments):
+    output = plan(tool, arguments)
+    _validate_planner_output(output)
+    assert agent_loop.validate_plan(output)["steps"][0]["arguments"] == arguments
+
+
 def test_schema_tracks_configured_step_limit(monkeypatch):
     from agent.orchestration import agent_loop
     monkeypatch.setattr(agent_loop, "MAX_STEPS", 2)
