@@ -27,7 +27,7 @@ assert "allocNodes" not in projected["activeSpec"] and "cycle" not in projected[
 assert project_snapshot({"activeSpec": {"id": {"bad": True}, "title": ["bad"]}, "gamePatch": {"bad": True}})["activeSpec"] == {"id": None, "title": None, "allocatedNodeIds": [], "jewelIds": []}
 assert serialize_snapshot(snapshot_a) == serialize_snapshot(snapshot_b)
 mixed_keys = serialize_snapshot({"config": {"a": 1, 2: "x"}})
-assert mixed_keys == '{"activeBuffs":{},"activeConfigSet":{},"activeItemSet":{},"activeSkillSet":{},"activeSpec":{"allocatedNodeIds":[],"id":null,"jewelIds":[],"title":null},"config":{"a":1},"dataRevision":null,"enemyConditions":{},"gamePatch":null,"mainSkill":{},"pobVersion":null,"socketGroups":[]}'
+assert mixed_keys == '{"activeBuffs":{},"activeItemSet":{},"activeSkillSet":{},"activeSpec":{"allocatedNodeIds":[],"id":null,"jewelIds":[],"title":null},"config":{"a":1},"dataRevision":null,"enemyConditions":{},"gamePatch":null,"mainSkill":{},"pobVersion":null,"socketGroups":[]}'
 
 baseline = json.load(open("tests/fixtures/bridge/capture_baseline.json", encoding="utf-8"))
 large = {"activeSpec": {"id": 1, "allocNodes": {index: {"linked": list(range(20)), "graph": {"node": index}} for index in range(1, 5001)}, "jewels": {index: index for index in range(9000, 9100)}}}
