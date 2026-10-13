@@ -31,6 +31,18 @@ class FakeResponse:
         return self.url
 
 
+@pytest.mark.parametrize("url,referer", [("https://cdn.poedb.tw/json/autocomplete_us.test.json", "https://poedb.tw/us/"), ("https://www.poewiki.net/w/api.php", None)])
+def test_poedb_cdn_request_includes_site_referer(monkeypatch, url, referer):
+    import agent.search.external_search as module
+
+    def fake_urlopen(request, timeout):
+        assert request.get_header("Referer") == referer
+        return FakeResponse("[]", url)
+
+    monkeypatch.setattr(module, "_urlopen", fake_urlopen)
+    assert module._read_url(url) == "[]"
+
+
 def test_poewiki_search_uses_mediawiki_api_and_returns_cited_temporary_evidence(monkeypatch):
     seen = []
 
