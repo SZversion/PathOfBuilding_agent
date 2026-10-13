@@ -149,7 +149,14 @@ def recover_response(result, model=None, *, on_token=None):
             instruction += " Return JSON with question (Korean text), ambiguous_fields, and missing_fields. Copy both field lists exactly from the provided context; explain which fields the user must clarify."
         messages = [{"role": "system", "content": instruction}, {"role": "user", "content": prompt}]
         try:
-            if on_token and hasattr(model, "stream_chat"):
+            if presentation_class == "ask" and getattr(model, "supports_json_schema", False):
+                context = safe_context(error)
+                schema = {"type": "object", "required": ["question", "ambiguous_fields", "missing_fields"], "additionalProperties": False,
+                          "properties": {"question": {"type": "string", "minLength": 1},
+                                         "ambiguous_fields": {"type": "array", "items": {"type": "string"}, "const": context.get("ambiguous_fields", [])},
+                                         "missing_fields": {"type": "array", "items": {"type": "string"}, "const": context.get("missing_fields", [])}}}
+                answer = model.chat(messages, format=schema)
+            elif on_token and hasattr(model, "stream_chat"):
                 chunks = []
                 for chunk in model.stream_chat(messages):
                     chunks.append(chunk)
