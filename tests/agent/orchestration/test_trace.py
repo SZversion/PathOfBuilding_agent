@@ -304,3 +304,32 @@ def test_planner_repair_feedback_is_bounded_and_safe():
     assert len(model.planner_payloads) == 3
     planner_events = [event for event in result["trace"] if event["event"] == "planner_completed"]
     assert planner_events[-1]["attempt"] == 3 and planner_events[-1]["max_attempts"] == 5
+
+
+def test_step_limit_repair_feedback_uses_configured_limit(monkeypatch):
+    from agent.orchestration import agent_loop
+
+    monkeypatch.setattr(agent_loop, "MAX_STEPS", 3)
+
+    class Model:
+        def __init__(self):
+            self.payloads = []
+
+        def chat(self, messages):
+            if messages[0]["role"] == "system" and "planner" in messages[0]["content"]:
+                self.payloads.append(json.loads(messages[1]["content"]))
+                if len(self.payloads) == 1:
+                    return json.dumps({"intent": "stat", "steps": [{"tool": "get_skill_dps", "arguments": {}}] * 4})
+                feedback = self.payloads[-1]["repair_feedback"]
+                assert feedback["details"]["expected"] == 3
+                assert feedback["details"]["actual"] == 4
+                assert "at most 3 steps" in feedback["instruction"]
+                return '{"intent":"stat","steps":[]}'
+            return "복구 완료"
+
+    model = Model()
+    result = AgentLoop(model).run("DPS")
+    assert result["status"] == "ok"
+    assert len(model.payloads) == 2
+    planner, _ = agent_loop._load_common_instructions()
+    assert "at most 3 steps" in planner
