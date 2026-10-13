@@ -99,7 +99,6 @@ def project_snapshot(context, overrides=None):
         },
         "activeSkillSet": _primitive_fields(context.get("activeSkillSet")),
         "activeItemSet": _primitive_fields(context.get("activeItemSet")),
-        "activeConfigSet": _primitive_fields(context.get("activeConfigSet")),
         "mainSkill": _primitive_fields(context.get("mainSkill")),
         "config": _primitive_fields(context.get("config")),
         "activeBuffs": _primitive_fields(context.get("activeBuffs")),
@@ -124,6 +123,8 @@ def project_snapshot(context, overrides=None):
             ]
     elif isinstance(context.get("calculatedSnapshot"), dict):
         projected["calculatedSnapshot"] = context["calculatedSnapshot"]
+    if isinstance(context.get("activeConfigSet"), dict):
+        projected["activeConfigSet"] = _primitive_fields(context["activeConfigSet"])
     for field, catalog in (("specs", "availableSpecs"), ("skillSets", "availableSkillSets"),
                            ("itemSets", "availableItemSets"), ("configSets", "availableConfigSets")):
         options = context.get(field, context.get(catalog))
