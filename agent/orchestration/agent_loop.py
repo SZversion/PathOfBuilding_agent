@@ -403,7 +403,29 @@ def planner_query_projection(query, *, context=None):
     return projected
 
 
+def _validate_ambiguity_paths(plan):
+    ambiguities = plan.get("ambiguities", [])
+    details = {"fields": ["ambiguities"], "instruction": "Repair ambiguities using only JSON Pointer paths to existing fields in the plan JSON, such as /steps/0/arguments/skillName. Never list game components or instruction names. Use [] if no field needs clarification."}
+    if not isinstance(ambiguities, list) or len(ambiguities) > 16:
+        raise PlanValidationError("plan.ambiguities must be a bounded array of field paths", code="MODEL_SCHEMA_INVALID", details=details)
+    seen = set()
+    pattern = PLANNER_JSON_SCHEMA["properties"]["ambiguities"]["items"]["pattern"]
+    for path in ambiguities:
+        if not isinstance(path, str) or not re.fullmatch(pattern, path) or path in seen:
+            raise PlanValidationError("invalid or duplicate ambiguity field path", code="MODEL_SCHEMA_INVALID", details=details)
+        seen.add(path)
+        target = plan
+        for part in path.split("/")[1:]:
+            if isinstance(target, dict) and part in target:
+                target = target[part]
+            elif isinstance(target, list) and part.isdigit() and int(part) < len(target):
+                target = target[int(part)]
+            else:
+                raise PlanValidationError("ambiguity path does not identify an existing plan field", code="MODEL_SCHEMA_INVALID", details=details)
+
+
 def validate_context_ambiguities(plan, payload):
+    _validate_ambiguity_paths(plan)
     source = _context_source(payload.get("context"))
     selection = payload.get("contextSelection", {}).get("selected", {})
     known_skills = [skill["name"].casefold() for skill in source.get("calculatedSnapshot", {}).get("skills", []) if isinstance(skill, dict) and isinstance(skill.get("name"), str)]
@@ -413,8 +435,11 @@ def validate_context_ambiguities(plan, payload):
     for ambiguity in plan.get("ambiguities", []):
         if not isinstance(ambiguity, str):
             continue
-        field, separator, target = ambiguity.partition(":")
-        if (not separator and fields.get(field) in selection) or (separator and field in {"skill_id", "skillName", "skillAlias", "skill_alias", "gem_name"} and known_skills.count(target.strip().casefold()) == 1):
+        field = ambiguity.rsplit("/", 1)[-1]
+        step = plan["steps"][int(ambiguity.split("/")[2])] if ambiguity.startswith("/steps/") else {}
+        arguments = step.get("arguments", {})
+        target = arguments.get(field) if isinstance(arguments, dict) else None
+        if (fields.get(field) in selection) or (field == "skillName" and isinstance(target, str) and known_skills.count(target.strip().casefold()) == 1):
             contradicted.append(ambiguity)
     if contradicted:
         raise PlanValidationError("planner clarification contradicts the supplied live context", code="PLAN_CONTEXT_CONFLICT",
@@ -456,6 +481,7 @@ def validate_plan(value):
     value.setdefault("required_evidence", [])
     value.setdefault("stop_condition", {})
     value.setdefault("ambiguities", [])
+    _validate_ambiguity_paths(value)
     if not legacy and (value["intent"] == "unknown" or value["ambiguities"] or (isinstance(value["stop_condition"], dict) and value["stop_condition"].get("type") == "ask_user")):
         raise PlanValidationError(
             "planner requires user clarification",
@@ -466,8 +492,6 @@ def validate_plan(value):
         raise PlanValidationError("plan operation or evidenceLevel is not a supported enum")
     if not isinstance(value["required_evidence"], list) or any(not isinstance(item, str) for item in value["required_evidence"]):
         raise PlanValidationError("plan.required_evidence must be a string array")
-    if not isinstance(value["ambiguities"], list) or len(value["ambiguities"]) > 16:
-        raise PlanValidationError("plan.ambiguities must be a bounded array")
     if not isinstance(value["stop_condition"], (dict, str)):
         raise PlanValidationError("plan.stop_condition must be an object or string")
     steps = value["steps"]
