@@ -107,3 +107,55 @@ def test_recovery_preserves_safe_legacy_detail_fields():
     assert details["legacy_code"] == "old-format"
     assert details["internal_id"] == "id-7"
     assert "token" not in details
+
+
+def test_ambiguity_fields_reach_question_json_and_trace():
+    import json
+    result = error("ASK_USER")
+    result["error"]["details"] = {"ambiguities": ["skillSet", "config.enemyIsBoss"]}
+    result["trace"] = [{"run_id": "run-1"}]
+    messages_seen = []
+    class Model:
+        def chat(self, messages):
+            messages_seen.extend(messages)
+            return json.dumps({"question": "skillSet와 config.enemyIsBoss를 알려주세요.", "ambiguous_fields": [], "missing_fields": []}, ensure_ascii=False)
+    recovered = recover_response(result, Model())
+    fields = ["skillSet", "config.enemyIsBoss"]
+    assert json.loads(messages_seen[1]["content"])["error"]["context"]["ambiguous_fields"] == fields
+    assert recovered["clarification"]["ambiguous_fields"] == fields
+    assert recovered["clarification"]["question"] == recovered["answer"]
+    assert recovered["error"]["details"]["ambiguous_fields"] == fields
+    assert recovered["trace"][-1]["error_details"]["ambiguous_fields"] == fields
+
+
+def test_streaming_clarification_emits_question_and_keeps_fields():
+    import json
+    result = error("ASK_USER")
+    result["error"]["details"] = {"ambiguities": ["skillSet"]}
+    class Model:
+        def stream_chat(self, messages):
+            value = json.dumps({"question": "skillSet를 알려주세요.", "ambiguous_fields": ["skillSet"], "missing_fields": []}, ensure_ascii=False)
+            yield value[:10]
+            yield value[10:]
+    chunks = []
+    recovered = recover_response(result, Model(), on_token=chunks.append)
+    assert ''.join(chunks) == recovered["answer"]
+    assert recovered["clarification"]["ambiguous_fields"] == ["skillSet"]
+
+
+def test_schema_capable_clarification_requires_field_lists():
+    import json
+    value = error("ASK_USER")
+    value["error"]["details"] = {"ambiguities": ["skillSet"]}
+    class Model:
+        supports_json_schema = True
+        def chat(self, messages, *, format=None):
+            assert format["properties"]["ambiguous_fields"]["const"] == ["skillSet"]
+            assert set(format["required"]) == {"question", "ambiguous_fields", "missing_fields"}
+            return json.dumps({"question": "skillSet를 선택해 주세요.", "ambiguous_fields": ["skillSet"], "missing_fields": []}, ensure_ascii=False)
+        def stream_chat(self, messages):
+            raise AssertionError("schema-capable clarification must generate JSON")
+    chunks = []
+    recovered = recover_response(value, Model(), on_token=chunks.append)
+    assert recovered["clarification"]["ambiguous_fields"] == ["skillSet"]
+    assert ''.join(chunks) == recovered["answer"]
