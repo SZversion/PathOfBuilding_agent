@@ -5,8 +5,12 @@
     "intent",
     "operation",
     "evidenceLevel",
+    "required_evidence",
+    "stop_condition",
+    "ambiguities",
     "steps"
   ],
+  "additionalProperties": false,
   "properties": {
     "schema_version": {
       "type": "string",
@@ -21,14 +25,22 @@
     "evidenceLevel": {
       "type": "string"
     },
+    "required_evidence": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
     "stop_condition": {
       "type": "object",
+      "required": ["type"],
       "properties": {
         "type": {
-          "type": "string"
+          "type": "string",
+          "enum": ["answer", "ask_user"]
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "ambiguities": {
       "type": "array",
