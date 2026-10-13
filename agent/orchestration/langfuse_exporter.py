@@ -208,7 +208,9 @@ class LangfuseExporter:
             end_time = self._timestamp(event)
             duration = event.get("duration_ms") or 0
             start_time = end_time - timedelta(milliseconds=duration) if end_time else None
-            return self._observation(trace, name=safe["event"] or "event", as_type="span", input=safe.get("input"), output=safe.get("output"), metadata=metadata, start_time=start_time, end_time=end_time)
+            generation = safe["event"] in {"provider_completed", "provider_failed"} or safe.get("stage") == "generation"
+            model = {"model": (event.get("provider") or {}).get("model")} if generation else {}
+            return self._observation(trace, name="generate" if generation else safe["event"] or "event", as_type="generation" if generation else "span", input=safe.get("input"), output=safe.get("output"), metadata=metadata, start_time=start_time, end_time=end_time, **model)
         if hasattr(trace, "span"):
             trace.span(name=safe["event"], metadata=metadata)
             return nullcontext()
