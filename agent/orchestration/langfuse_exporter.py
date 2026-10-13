@@ -202,6 +202,8 @@ class LangfuseExporter:
     def _record_event(self, trace, event):
         safe = self._safe_event(event)
         metadata = {key: value for key, value in safe.items() if key not in {"event_id", "event", "timestamp_utc", "duration_ms", "input", "output"}}
+        failed = safe.get("status") in {"failed", "rejected", "timeout", "error", "unavailable", "human_review"}
+        metadata["errors"] = [{"code": safe.get("error_code") or safe.get("error_ref"), "details": safe.get("error_details")}] if failed else []
         # Langfuse 4.x creates child observations from the current observation.
         # Keep the fallback for injected test clients that expose a simple span.
         if hasattr(trace, "start_as_current_observation"):
@@ -210,7 +212,8 @@ class LangfuseExporter:
             start_time = end_time - timedelta(milliseconds=duration) if end_time else None
             generation = safe["event"] in {"provider_completed", "provider_failed"} or safe.get("stage") == "generation"
             model = {"model": (event.get("provider") or {}).get("model")} if generation else {}
-            return self._observation(trace, name="generate" if generation else safe["event"] or "event", as_type="generation" if generation else "span", input=safe.get("input"), output=safe.get("output"), metadata=metadata, start_time=start_time, end_time=end_time, **model)
+            name = {"run_started": "input", "run_completed": "output"}.get(safe["event"], safe["event"] or "event")
+            return self._observation(trace, name="generate" if generation else name, as_type="generation" if generation else "span", input=safe.get("input"), output=safe.get("output"), level="ERROR" if failed else "DEFAULT", metadata=metadata, start_time=start_time, end_time=end_time, **model)
         if hasattr(trace, "span"):
             trace.span(name=safe["event"], metadata=metadata)
             return nullcontext()
@@ -304,6 +307,11 @@ class LangfuseExporter:
                 root = self._observation(self.client, start_time=self._timestamp(events[0]), end_time=self._timestamp(events[-1]), **root_kwargs)
             with root:
                 for event in events:
+                    if event.get("event") == "run_started":
+                        event = {**event, "input_payload": input_payload, "output_payload": input_payload}
+                    elif event.get("event") == "run_completed":
+                        final_output = output_payload.get("response", output_payload) if isinstance(output_payload, dict) else output_payload
+                        event = {**event, "input_payload": input_payload, "output_payload": final_output}
                     observation = self._record_event(self.client, event)
                     with observation:
                         pass
