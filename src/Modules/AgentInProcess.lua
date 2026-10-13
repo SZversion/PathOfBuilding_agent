@@ -45,7 +45,15 @@ local function dispatch(name, args, main)
 		if not args.skillIndex then return nil, err end
 	end
 	local tool = tools[name]
-	if name == "capture_snapshot" then return snapshot.capture(current) end
+	if name == "capture_snapshot" then
+		local captured = snapshot.capture(current)
+		local bridge = LoadModule("Modules/AgentBridge")
+		local selected, selectionErr = bridge.capture(current)
+		if not selected then return nil, selectionErr end
+		for key, value in pairs(selected.context) do captured[key] = value end
+		captured.snapshotRevision = selected.snapshotRevision
+		return captured
+	end
 	if type(tool) ~= "function" then return nil, "unknown PoB tool: " .. tostring(name) end
 	if name == "get_item_modifiers" then return tool(current, args.itemId) end
 	if name == "get_duration" then return tool(current, args.skillIndex, args.durationType) end
