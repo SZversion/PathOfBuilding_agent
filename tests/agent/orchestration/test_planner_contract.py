@@ -88,6 +88,14 @@ def test_schema_tracks_configured_step_limit(monkeypatch):
         _validate_planner_output(output)
 
 
+@pytest.mark.parametrize("branch_index", [0, 1])
+def test_decoding_alternatives_enforce_the_complete_contract(branch_index):
+    branch = _load_planner_schema()["oneOf"][branch_index]
+    jsonschema.Draft202012Validator.check_schema(branch)
+    partial = {"intent": "skill_stat" if branch_index == 0 else "unknown", "steps": []}
+    assert list(jsonschema.Draft202012Validator(branch).iter_errors(partial))
+
+
 def test_model_receives_strict_schema_and_repairs_invalid_source():
     seen = []
 
