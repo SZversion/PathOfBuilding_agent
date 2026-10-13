@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .orchestration.function_trace import trace_pipeline
 from .orchestration.agent_loop import AgentLoop, ALLOWED_TOOLS
+from .orchestration.runtime import snapshot_revision
 from .orchestration.recovery import exhausted_response, recover_response, standardize_error
 from .orchestration.state_store import OrchestrationStateStore, StateStoreError
 from .pob.bridge import PobBridgeError, make_pob_handlers
@@ -148,7 +149,7 @@ def run_cli(argv=None, *, bridge_factory=None, provider_factory=None):
             snapshot.setdefault("buildNameHash", hashlib.sha256(build.stem.encode("utf-8")).hexdigest()[:16])
             handlers = {name: (lambda arguments, name=name: mcp_client.call_tool(name, arguments)) for name in ALLOWED_TOOLS}
             search = McpSearchFacade(mcp_client)
-            current_revision = lambda: mcp_client.read_resource().get("snapshotRevision")
+            current_revision = lambda: snapshot_revision(mcp_client.read_resource())
         else:
             bridge = bridge_factory(build)
             handlers = {name: (lambda arguments, name=name: bridge.call(build, name, arguments)) for name in (
