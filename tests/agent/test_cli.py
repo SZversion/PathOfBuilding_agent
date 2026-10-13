@@ -1,10 +1,69 @@
 import json
 import pathlib
 import sys
+import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[2]))
 
 from agent.cli import run_cli
+
+
+@pytest.mark.parametrize("changed", [False, True])
+def test_cli_live_snapshot_revision_checks_calculated_state(tmp_path, capsys, monkeypatch, changed):
+    from agent.orchestration.runtime import SnapshotSync
+
+    build = tmp_path / "live.xml"
+    build.write_text("<Build/>", encoding="utf-8")
+    calls = []
+
+    class Client:
+        def __init__(self, **kwargs): self.reads = 0
+        def start(self): return self
+        def list_tools(self): return None
+        def read_resource(self):
+            self.reads += 1
+            return {"status": "ok", "snapshotRevision": None, "facts": {
+                "schemaVersion": 1, "snapshotRevision": "unknown", "characterLevel": 98,
+                "outputs": {"TotalDPS": 200 if changed and self.reads > 1 else 100},
+                "skills": [{"name": "Arc", "output": {"TotalDPS": 100}}],
+            }}
+        def call_tool(self, name, arguments):
+            calls.append(name)
+            return {"status": "ok", "facts": {"TotalDPS": 100}, "sources": ["PoB"]}
+        def close(self): pass
+
+    class Provider:
+        def __init__(self): self.calls = 0
+        def chat(self, messages):
+            self.calls += 1
+            if self.calls > 1: return "PoB DPS: 100"
+            revision = SnapshotSync().prepare(Client().read_resource())["snapshotRevision"]
+            return json.dumps({"schema_version": "1.0", "intent": "stat", "operation": "answer",
+                "evidenceLevel": "authoritative", "steps": [{"tool": "get_character_stats",
+                "arguments": {}, "expectedSnapshotRevision": revision}]})
+
+    monkeypatch.setattr("agent.cli.McpToolClient", Client)
+    run_cli(["--build", str(build), "--cache-root", str(tmp_path / "cache"), "--once", "DPS?", "--json"],
+            provider_factory=lambda args: Provider())
+    output = json.loads(capsys.readouterr().out)
+    if changed:
+        assert calls == []
+        assert output["execution"]["steps"][0]["error"]["code"] == "SNAPSHOT_REVISION_CONFLICT"
+    else:
+        assert calls == ["get_character_stats"]
+        assert output["status"] == "ok"
+
+
+def test_live_snapshot_projection_preserves_pob_values():
+    from agent.orchestration.runtime import SnapshotSync, snapshot_revision
+    raw = {"status": "ok", "snapshotRevision": None, "facts": {
+        "schemaVersion": 1, "snapshotRevision": "unknown", "outputs": {"TotalDPS": 100},
+        "skills": [{"name": "Arc", "output": {"TotalDPS": 100}}],
+    }}
+    sync = SnapshotSync().prepare(raw)
+    assert sync["snapshot"]["calculatedSnapshot"]["outputs"]["TotalDPS"] == 100
+    assert sync["snapshot"]["calculatedSnapshot"]["skills"][0]["name"] == "Arc"
+    assert snapshot_revision(raw) == sync["snapshotRevision"]
 
 
 class FakeProvider:
