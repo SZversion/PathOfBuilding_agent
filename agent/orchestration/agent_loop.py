@@ -13,7 +13,7 @@ from agent.tool_catalog import ALLOWED_TOOLS
 
 TOOL_ALIASES = {tool.replace("_", ""): tool for tool in ALLOWED_TOOLS}
 TOOL_ALIASES.update({"getCurseLimit": "get_curse_limit", "getProjectileCount": "get_projectile_count", "getElementalPenetration": "get_elemental_penetration", "searchKnowledge": "search_knowledge", "getSocketOrder": "get_socket_order", "getSkillChain": "get_skill_chain", "compareSupportEffect": "compare_support_effect", "explainDamageChange": "explain_damage_change"})
-MAX_STEPS = 8
+MAX_STEPS = 8  # Shared limit for planner instructions, validation, and repair feedback.
 MAX_PLANNER_ATTEMPTS = 5
 MUTATION_TOOLS = frozenset({"replace_item", "replace_gem", "change_passive"})
 READ_ONLY_TOOLS = frozenset(ALLOWED_TOOLS - MUTATION_TOOLS)
@@ -101,6 +101,7 @@ def _load_planner_schema():
     properties["intent"]["enum"] = sorted(INTENT_ENUM)
     properties["operation"]["enum"] = sorted(OPERATION_ENUM)
     properties["evidenceLevel"]["enum"] = sorted(EVIDENCE_LEVEL_ENUM)
+    properties["steps"]["maxItems"] = MAX_STEPS
     properties["steps"]["items"]["properties"]["tool"]["enum"] = sorted(READ_ONLY_TOOLS)
     return schema
 
@@ -168,7 +169,7 @@ def _repair_feedback(error):
         "code": code,
         "message": str(error)[:240] if isinstance(error, PlanValidationError) else "planner response failed the JSON/schema contract",
         "details": safe_details,
-        "instruction": details.get("instruction") if code == "PLAN_CONTEXT_CONFLICT" else "Return a new plan using only canonical Tool names, object arguments, and the declared argument schema. Do not repeat the invalid field.",
+        "instruction": details.get("instruction") if details.get("instruction") else "Return a new plan using only canonical Tool names, object arguments, and the declared argument schema. Do not repeat the invalid field.",
     }
 
 
@@ -471,7 +472,11 @@ def validate_plan(value):
         raise PlanValidationError("plan.stop_condition must be an object or string")
     steps = value["steps"]
     if len(steps) > MAX_STEPS:
-        raise PlanValidationError("plan has too many steps", code="RETRY_EXHAUSTED")
+        raise PlanValidationError("plan has too many steps", code="RETRY_EXHAUSTED", details={
+            "expected": MAX_STEPS,
+            "actual": len(steps),
+            "instruction": f"Return a new plan with at most {MAX_STEPS} steps. The rejected plan has {len(steps)} steps. Use only the calls needed for the requested result and evidence, canonical Tool names, object arguments, and the declared argument schema.",
+        })
     seen = {}
     for step in steps:
         if not isinstance(step, dict) or not isinstance(step.get("tool"), str):
@@ -594,6 +599,7 @@ class AgentLoop:
                 snapshot = self.snapshot_provider()
         sync = self.snapshot_sync.prepare(snapshot, context_overrides) if snapshot is not None else None
         planning_payload = planner_query_projection(query, context=sync)
+        planning_payload["max_steps"] = MAX_STEPS
         if context_overrides:
             planning_payload["explicitContextOverrides"] = context_overrides
         for name, field in (("skillSet", "activeSkillSet"), ("itemSet", "activeItemSet"), ("treeSpec", "activeSpec"), ("configSet", "activeConfigSet")):
@@ -602,7 +608,7 @@ class AgentLoop:
                 context_overrides[field] = selected["id"]
         if context_overrides:
             planning_payload["explicitContextOverrides"] = context_overrides
-        planner_system = PLANNER_SYSTEM
+        planner_system, _ = _load_common_instructions()
         if tool_definitions is not None:
             available = [item for item in tool_definitions if isinstance(item, dict)
                          and item.get("name") in READ_ONLY_TOOLS]
@@ -646,7 +652,7 @@ class AgentLoop:
                 planned = validate_plan(validate_context_ambiguities(_json_object(self._chat([
                     {"role": "system", "content": planner_system},
                     {"role": "user", "content": json.dumps(planner_input, ensure_ascii=False)},
-                ], recorder=recorder, response_format=PLANNER_JSON_SCHEMA)), planning_payload))
+                ], recorder=recorder, response_format=_load_planner_schema())), planning_payload))
                 recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), plan_ref=recorder.plan_ref(planned), input_payload=query, output_payload=planned)
                 break
             except PlanValidationError as error:
