@@ -1,3 +1,5 @@
+local previousLoadModule = LoadModule
+_G.LoadModule = function(name) return dofile("src/" .. name .. ".lua") end
 local previousBuild = build
 local tools = dofile("src/Modules/AgentInProcess.lua")
 build = { targetVersion = "3_29", calcsTab = { mainEnv = { player = { activeSkillList = { { activeEffect = { grantedEffect = { name = "Fireball" } }, output = { TotalDPS = 10 }, breakdown = { TotalDPS = { "base 10" } } } } } } } }
@@ -8,7 +10,11 @@ local explanation = assert(tools.dispatch("explain_stat", { stat = "TotalDPS", s
 assert(explanation.facts.value == 10)
 local snapshot = assert(tools.dispatch("capture_snapshot", {}))
 assert(snapshot.skills[1].output.TotalDPS == 10 and snapshot.skills[1].gems[1].level == nil)
+assert(snapshot.activeSpec.id == 1 and type(snapshot.config) == "table")
+assert(snapshot.snapshotRevision ~= "unknown")
 local missing, err = tools.dispatch("get_skill_dps", { skillName = "Missing" })
 assert(missing == nil and type(err) == "string")
 build = previousBuild
 print("agent in-process adapter self-check passed")
+
+_G.LoadModule = previousLoadModule
