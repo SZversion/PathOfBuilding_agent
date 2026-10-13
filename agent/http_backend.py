@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 
-from agent.orchestration.function_trace import trace_pipeline, trace_environment
+from agent.orchestration.function_trace import trace_pipeline, trace_environment, current_trace
 
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
@@ -62,6 +62,7 @@ def _sse_event(name: str, payload: dict) -> str:
 
 @trace_pipeline
 def _stream_execute(build: Path, question: str):
+    session = current_trace()
     cache = os.environ.get("POB_AGENT_CACHE_DIR", "/data/cache")
     command = [sys.executable, "-m", "agent.cli", "--build", str(build), "--cache-root", cache,
                "--once", "--stream-json", question]
@@ -70,6 +71,8 @@ def _stream_execute(build: Path, question: str):
                                    text=True, encoding="utf-8", errors="replace", bufsize=1,
                                    cwd=Path(__file__).resolve().parents[1], env=trace_environment())
     except OSError:
+        if session:
+            session.record_output({"status": "error", "error": {"code": "PROCESS_START_FAILED", "message": "agent process could not be started"}})
         yield _sse_event("error", {"message": "agent process could not be started"})
         yield _sse_event("complete", {"status": "error"})
         return
@@ -94,6 +97,8 @@ def _stream_execute(build: Path, question: str):
         while not reader_finished:
             if time.monotonic() - started > 300:
                 timed_out = True
+                if session:
+                    session.record_error({"code": "TIMEOUT", "message": "agent run timed out"})
                 process.kill()
                 yield _sse_event("error", {"message": "agent run timed out"})
                 break
@@ -108,6 +113,8 @@ def _stream_execute(build: Path, question: str):
             try:
                 event = json.loads(line)
             except json.JSONDecodeError:
+                if session:
+                    session.record_error({"code": "INVALID_STREAM_DATA", "message": "agent returned invalid stream data"})
                 yield _sse_event("error", {"message": "agent returned invalid stream data"})
                 continue
             if event.get("type") == "token" and isinstance(event.get("text"), str):
@@ -122,11 +129,15 @@ def _stream_execute(build: Path, question: str):
             process.kill()
             process.wait()
         if result is None:
+            if session:
+                session.record_output({"status": "error", "error": {"code": "TIMEOUT" if timed_out else "MISSING_FINAL_RESPONSE", "message": "agent run timed out" if timed_out else "agent ended without a final response"}})
             if not timed_out:
                 yield _sse_event("error", {"message": "agent ended without a final response"})
             yield _sse_event("complete", {"status": "error"})
             return
 
+        if session:
+            session.record_output(result)
         answer = result.get("answer")
         if isinstance(answer, str) and answer and not streamed:
             yield _sse_event("token", {"text": answer})
@@ -149,6 +160,9 @@ async def health(_request):
 
 @trace_pipeline
 async def run_agent(request: Request):
+    session = current_trace()
+    if session:
+        session.record_input((await request.body()).decode("utf-8", errors="replace"))
     _authorize(request)
     try:
         body = await request.json()
@@ -162,10 +176,15 @@ async def run_agent(request: Request):
     if not isinstance(question, str) or not question.strip() or len(question) > 4000:
         raise HTTPException(status_code=422, detail="question must contain 1 to 4000 characters")
     build = _build_path(build_file)
+    if session:
+        session.complete_input(body)
     if "text/event-stream" in request.headers.get("accept", "").casefold():
         return StreamingResponse(_stream_execute(build, question), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
-    return JSONResponse(await run_in_threadpool(_execute, build, question))
+    result = await run_in_threadpool(_execute, build, question)
+    if session:
+        session.record_output(result)
+    return JSONResponse(result)
 
 
 app = Starlette(routes=[

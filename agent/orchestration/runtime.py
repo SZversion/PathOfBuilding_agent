@@ -137,6 +137,139 @@ class SnapshotSync:
         return {"mode": "diff", "diff": {"baseRevision": base, "revision": revision, "changes": diff}, "snapshotRevision": revision, "baseRevision": base}
 
 
+def _prepare_step(step, output, seen_calls, snapshot_revision_value, context_overrides):
+    if not isinstance(step, dict) or not isinstance(step.get("tool"), str):
+        output["steps"].append({"tool": None, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "invalid planner step", next_action="repair_input")})
+        return None
+    tool = step["tool"]
+    if "arguments" not in step:
+        output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "arguments are required", next_action="repair_input")})
+        return None
+    arguments = step["arguments"]
+    if not isinstance(arguments, dict):
+        output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "arguments must be a dict", next_action="repair_input")})
+        return None
+    if context_overrides:
+        arguments = dict(arguments)
+        arguments.setdefault("contextOverrides", dict(context_overrides))
+    expected_revision = step.get("expectedSnapshotRevision")
+    if expected_revision is not None and (not isinstance(expected_revision, str) or not expected_revision.strip()):
+        output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "expectedSnapshotRevision must be a non-empty string", next_action="repair_input")})
+        return None
+    signature = (tool, json.dumps(arguments, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+    revisions = seen_calls.setdefault(signature, set())
+    if expected_revision in revisions:
+        output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("DUPLICATE_TOOL_CALL", "REPAIR_INPUT", "plan_validation", "exact duplicate Tool call rejected", next_action="repair_input")})
+        return None
+    revisions.add(expected_revision)
+    if expected_revision is not None and snapshot_revision_value is not None and expected_revision != snapshot_revision_value:
+        output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SNAPSHOT_REVISION_CONFLICT", "REFRESH_CONTEXT", "snapshot_validation", "planner revision is stale", next_action="recapture_snapshot", details={"expected": expected_revision, "current": snapshot_revision_value})})
+        return None
+    return tool, arguments, expected_revision
+
+
+def _execute_search_step(tool, arguments, search, output):
+    if search is None:
+        output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("SEARCH_UNAVAILABLE", "REJECT", "knowledge_search", "knowledge search is not configured", next_action="reject_request")})
+        return False
+    if tool == "search_knowledge":
+        callback = lambda: search.search(arguments.get("query", ""), limit=arguments.get("limit", 10), category=arguments.get("category"))
+    elif tool == "resolve_item_alias":
+        callback = lambda: search.resolve_item_alias(arguments.get("query", ""), category=arguments.get("category"))
+    else:
+        callback = lambda: search.resolve_skill_alias(arguments.get("query", ""))
+    result, error, exhausted, attempt = _execute_search_call(tool, callback, output)
+    if error is not None:
+        output["steps"].append({"tool": tool, "status": "human_review" if exhausted else "error",
+                                "error": error, "attempt": attempt, "tool_call_count": output["tool_call_count"]})
+        return exhausted
+    if tool != "search_knowledge" and not result:
+        subject = "item" if tool == "resolve_item_alias" else "skill"
+        output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("USER_CONTEXT_MISSING", "ASK_USER", "alias_resolution", subject + " alias was not found", next_action="ask_user")})
+        return False
+    step_result = {"tool": tool, "status": "ok", "attempt": attempt, "tool_call_count": output["tool_call_count"], "result": result}
+    if tool == "search_knowledge":
+        uncertainty = _result_uncertainty(result)
+        if uncertainty is not None:
+            step_result["uncertainty"] = uncertainty
+    output["steps"].append(step_result)
+    return False
+
+
+def _execute_tool_step(tool, arguments, expected_revision, handlers, current_revision, output):
+    budget_exhausted = False
+    handler = handlers.get(tool)
+    if not callable(handler):
+        output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("HANDLER_NOT_CONFIGURED", "FATAL_INTERNAL", "tool_dispatch", "handler is not configured", next_action="report_error")})
+        return False
+    for attempt in range(1, MAX_TOOL_ATTEMPTS + 1):
+        if output["tool_call_count"] >= MAX_TOOL_CALLS:
+            output["steps"].append({"tool": tool, "status": "human_review", "error": _budget_error(output["tool_call_count"])})
+            budget_exhausted = True
+            break
+        output["tool_call_count"] += 1
+        if callable(current_revision) and expected_revision is not None:
+            observed_revision = current_revision()
+            if observed_revision != expected_revision:
+                output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SNAPSHOT_REVISION_CONFLICT", "REFRESH_CONTEXT", "snapshot_validation", "PoB state changed before Tool execution", next_action="recapture_snapshot", details={"expected": expected_revision, "current": observed_revision})})
+                break
+        try:
+            result = handler(arguments)
+        except PobUnavailableError as error:
+            output["steps"].append({"tool": tool, "status": "unavailable", "error": _set_attempt(error, attempt)})
+            break
+        except PobTimeoutError as error:
+            if tool in MUTATION_TOOLS:
+                detail = _set_attempt(error, attempt)
+                detail.update({"code": "MUTATION_TIMEOUT", "recovery_class": "REFRESH_CONTEXT", "retryable": False, "max_attempts": 1, "next_action": "recapture_snapshot", "operator_message": "Mutation outcome is uncertain; refresh the latest snapshot and verify idempotency before retrying."})
+                output["steps"].append({"tool": tool, "status": "timeout", "error": detail})
+                break
+            if _retryable_tool_error(error) and attempt < MAX_TOOL_ATTEMPTS:
+                continue
+            detail = _set_attempt(error, attempt)
+            output["steps"].append({"tool": tool, "status": "timeout", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
+            break
+        except PobBridgeError as error:
+            if tool in MUTATION_TOOLS and _retryable_tool_error(error):
+                detail = _set_attempt(error, attempt)
+                detail.update({"code": "MUTATION_UNCERTAIN", "recovery_class": "REFRESH_CONTEXT", "retryable": False, "max_attempts": 1, "next_action": "recapture_snapshot", "operator_message": "Mutation outcome is uncertain; refresh the latest snapshot and verify idempotency before retrying."})
+                output["steps"].append({"tool": tool, "status": "error", "error": detail})
+                break
+            if _retryable_tool_error(error) and attempt < MAX_TOOL_ATTEMPTS:
+                continue
+            detail = _set_attempt(error, attempt)
+            output["steps"].append({"tool": tool, "status": "error", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
+            break
+        except ToolCallError as error:
+            detail = _set_attempt(error, attempt)
+            spec = TOOL_CATALOG.get(tool)
+            can_retry = (spec is not None and spec.side_effect == "read_only" and spec.idempotent
+                         and spec.retry_policy == "transient_read_only" and _retryable_tool_error(error))
+            if can_retry and attempt < min(MAX_TOOL_ATTEMPTS, detail.get("max_attempts", MAX_TOOL_ATTEMPTS)):
+                continue
+            status = "timeout" if detail.get("code") == "TIMEOUT" else "error"
+            output["steps"].append({"tool": tool, "status": status, "attempt": attempt,
+                                    "tool_call_count": output["tool_call_count"], "error": detail})
+            break
+        except TimeoutError as error:
+            detail = _error_envelope("TIMEOUT", "RETRY_TOOL", "tool_execution", "Tool timed out", retryable=True, next_action="retry_bounded", attempt=attempt, max_attempts=MAX_TOOL_ATTEMPTS)
+            if attempt < MAX_TOOL_ATTEMPTS:
+                continue
+            output["steps"].append({"tool": tool, "status": "timeout", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
+            break
+        except Exception as error:  # boundary: tool failures belong to the step
+            output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("TOOL_EXECUTION_ERROR", "FATAL_INTERNAL", "tool_execution", str(error), next_action="report_error")})
+            break
+        else:
+            step_result = {"tool": tool, "status": "ok", "attempt": attempt, "tool_call_count": output["tool_call_count"], "result": result}
+            uncertainty = _result_uncertainty(result)
+            if uncertainty is not None:
+                step_result["uncertainty"] = uncertainty
+            output["steps"].append(step_result)
+            break
+    return budget_exhausted
+
+
 def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revision_value=None, current_revision=None, context_overrides=None):
     """Execute a planner result without raising at the orchestration boundary."""
     handlers = handlers or {}
@@ -151,160 +284,21 @@ def execute_plan(question, planned, search=None, handlers=None, *, snapshot_revi
     if not isinstance(steps, list):
         output["steps"].append({"tool": None, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "steps must be a list", next_action="repair_input")})
         return output
-    budget_exhausted = False
     seen_calls = {}
     for step in steps:
         if output["tool_call_count"] >= MAX_TOOL_CALLS:
             output["steps"].append({"tool": step.get("tool") if isinstance(step, dict) else None,
                                      "status": "human_review", "error": _budget_error(output["tool_call_count"])})
-            budget_exhausted = True
             break
-        if not isinstance(step, dict) or not isinstance(step.get("tool"), str):
-            output["steps"].append({"tool": None, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "invalid planner step", next_action="repair_input")})
+        prepared = _prepare_step(step, output, seen_calls, snapshot_revision_value, context_overrides)
+        if prepared is None:
             continue
-        tool = step["tool"]
-        if "arguments" not in step:
-            output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "arguments are required", next_action="repair_input")})
-            continue
-        arguments = step["arguments"]
-        if not isinstance(arguments, dict):
-            output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "arguments must be a dict", next_action="repair_input")})
-            continue
-        if context_overrides:
-            arguments = dict(arguments)
-            arguments.setdefault("contextOverrides", dict(context_overrides))
-        expected_revision = step.get("expectedSnapshotRevision")
-        if expected_revision is not None and (not isinstance(expected_revision, str) or not expected_revision.strip()):
-            output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("INPUT_INVALID", "REPAIR_INPUT", "plan_validation", "expectedSnapshotRevision must be a non-empty string", next_action="repair_input")})
-            continue
-        signature = (tool, json.dumps(arguments, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
-        revisions = seen_calls.setdefault(signature, set())
-        if expected_revision in revisions:
-            output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("DUPLICATE_TOOL_CALL", "REPAIR_INPUT", "plan_validation", "exact duplicate Tool call rejected", next_action="repair_input")})
-            continue
-        revisions.add(expected_revision)
-        if expected_revision is not None and snapshot_revision_value is not None and expected_revision != snapshot_revision_value:
-            output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SNAPSHOT_REVISION_CONFLICT", "REFRESH_CONTEXT", "snapshot_validation", "planner revision is stale", next_action="recapture_snapshot", details={"expected": expected_revision, "current": snapshot_revision_value})})
-            continue
-        if tool == "search_knowledge":
-            if search is None:
-                output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("SEARCH_UNAVAILABLE", "REJECT", "knowledge_search", "knowledge search is not configured", next_action="reject_request")})
-                continue
-            result, error, exhausted, attempt = _execute_search_call(
-                tool, lambda: search.search(arguments.get("query", ""), limit=arguments.get("limit", 10), category=arguments.get("category")), output)
-            if error is not None:
-                output["steps"].append({"tool": tool, "status": "human_review" if exhausted else "error",
-                                        "error": error, "attempt": attempt, "tool_call_count": output["tool_call_count"]})
-                if exhausted: budget_exhausted = True
-            else:
-                step_result = {"tool": tool, "status": "ok", "attempt": attempt, "tool_call_count": output["tool_call_count"], "result": result}
-                uncertainty = _result_uncertainty(result)
-                if uncertainty is not None: step_result["uncertainty"] = uncertainty
-                output["steps"].append(step_result)
-            if budget_exhausted: break
-            continue
-        if tool == "resolve_item_alias":
-            if search is None:
-                output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("SEARCH_UNAVAILABLE", "REJECT", "knowledge_search", "knowledge search is not configured", next_action="reject_request")})
-                continue
-            result, error, exhausted, attempt = _execute_search_call(
-                tool, lambda: search.resolve_item_alias(arguments.get("query", ""), category=arguments.get("category")), output)
-            if error is not None:
-                output["steps"].append({"tool": tool, "status": "human_review" if exhausted else "error",
-                                        "error": error, "attempt": attempt, "tool_call_count": output["tool_call_count"]})
-                if exhausted: budget_exhausted = True
-            else:
-                output["steps"].append({"tool": tool, "status": "ok", "attempt": attempt,
-                    "tool_call_count": output["tool_call_count"], "result": result} if result else
-                    {"tool": tool, "status": "unavailable", "error": _error_envelope("USER_CONTEXT_MISSING", "ASK_USER", "alias_resolution", "item alias was not found", next_action="ask_user")})
-            if budget_exhausted: break
-            continue
-        if tool == "resolve_skill_alias":
-            if search is None:
-                output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("SEARCH_UNAVAILABLE", "REJECT", "knowledge_search", "knowledge search is not configured", next_action="reject_request")})
-                continue
-            result, error, exhausted, attempt = _execute_search_call(
-                tool, lambda: search.resolve_skill_alias(arguments.get("query", "")), output)
-            if error is not None:
-                output["steps"].append({"tool": tool, "status": "human_review" if exhausted else "error",
-                                        "error": error, "attempt": attempt, "tool_call_count": output["tool_call_count"]})
-                if exhausted: budget_exhausted = True
-            else:
-                output["steps"].append({"tool": tool, "status": "ok", "attempt": attempt,
-                    "tool_call_count": output["tool_call_count"], "result": result} if result else
-                    {"tool": tool, "status": "unavailable", "error": _error_envelope("USER_CONTEXT_MISSING", "ASK_USER", "alias_resolution", "skill alias was not found", next_action="ask_user")})
-            if budget_exhausted: break
-            continue
-        handler = handlers.get(tool)
-        if not callable(handler):
-            output["steps"].append({"tool": tool, "status": "unavailable", "error": _error_envelope("HANDLER_NOT_CONFIGURED", "FATAL_INTERNAL", "tool_dispatch", "handler is not configured", next_action="report_error")})
-            continue
-        for attempt in range(1, MAX_TOOL_ATTEMPTS + 1):
-            if output["tool_call_count"] >= MAX_TOOL_CALLS:
-                output["steps"].append({"tool": tool, "status": "human_review", "error": _budget_error(output["tool_call_count"])})
-                budget_exhausted = True
-                break
-            output["tool_call_count"] += 1
-            if callable(current_revision) and expected_revision is not None:
-                observed_revision = current_revision()
-                if observed_revision != expected_revision:
-                    output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("SNAPSHOT_REVISION_CONFLICT", "REFRESH_CONTEXT", "snapshot_validation", "PoB state changed before Tool execution", next_action="recapture_snapshot", details={"expected": expected_revision, "current": observed_revision})})
-                    break
-            try:
-                result = handler(arguments)
-            except PobUnavailableError as error:
-                output["steps"].append({"tool": tool, "status": "unavailable", "error": _set_attempt(error, attempt)})
-                break
-            except PobTimeoutError as error:
-                if tool in MUTATION_TOOLS:
-                    detail = _set_attempt(error, attempt)
-                    detail.update({"code": "MUTATION_TIMEOUT", "recovery_class": "REFRESH_CONTEXT", "retryable": False, "max_attempts": 1, "next_action": "recapture_snapshot", "operator_message": "Mutation outcome is uncertain; refresh the latest snapshot and verify idempotency before retrying."})
-                    output["steps"].append({"tool": tool, "status": "timeout", "error": detail})
-                    break
-                if _retryable_tool_error(error) and attempt < MAX_TOOL_ATTEMPTS:
-                    continue
-                detail = _set_attempt(error, attempt)
-                output["steps"].append({"tool": tool, "status": "timeout", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
-                break
-            except PobBridgeError as error:
-                if tool in MUTATION_TOOLS and _retryable_tool_error(error):
-                    detail = _set_attempt(error, attempt)
-                    detail.update({"code": "MUTATION_UNCERTAIN", "recovery_class": "REFRESH_CONTEXT", "retryable": False, "max_attempts": 1, "next_action": "recapture_snapshot", "operator_message": "Mutation outcome is uncertain; refresh the latest snapshot and verify idempotency before retrying."})
-                    output["steps"].append({"tool": tool, "status": "error", "error": detail})
-                    break
-                if _retryable_tool_error(error) and attempt < MAX_TOOL_ATTEMPTS:
-                    continue
-                detail = _set_attempt(error, attempt)
-                output["steps"].append({"tool": tool, "status": "error", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
-                break
-            except ToolCallError as error:
-                detail = _set_attempt(error, attempt)
-                spec = TOOL_CATALOG.get(tool)
-                can_retry = (spec is not None and spec.side_effect == "read_only" and spec.idempotent
-                             and spec.retry_policy == "transient_read_only" and _retryable_tool_error(error))
-                if can_retry and attempt < min(MAX_TOOL_ATTEMPTS, detail.get("max_attempts", MAX_TOOL_ATTEMPTS)):
-                    continue
-                status = "timeout" if detail.get("code") == "TIMEOUT" else "error"
-                output["steps"].append({"tool": tool, "status": status, "attempt": attempt,
-                                        "tool_call_count": output["tool_call_count"], "error": detail})
-                break
-            except TimeoutError as error:
-                detail = _error_envelope("TIMEOUT", "RETRY_TOOL", "tool_execution", "Tool timed out", retryable=True, next_action="retry_bounded", attempt=attempt, max_attempts=MAX_TOOL_ATTEMPTS)
-                if attempt < MAX_TOOL_ATTEMPTS:
-                    continue
-                output["steps"].append({"tool": tool, "status": "timeout", "attempt": attempt, "tool_call_count": output["tool_call_count"], "error": detail})
-                break
-            except Exception as error:  # boundary: tool failures belong to the step
-                output["steps"].append({"tool": tool, "status": "error", "error": _error_envelope("TOOL_EXECUTION_ERROR", "FATAL_INTERNAL", "tool_execution", str(error), next_action="report_error")})
-                break
-            else:
-                step_result = {"tool": tool, "status": "ok", "attempt": attempt, "tool_call_count": output["tool_call_count"], "result": result}
-                uncertainty = _result_uncertainty(result)
-                if uncertainty is not None:
-                    step_result["uncertainty"] = uncertainty
-                output["steps"].append(step_result)
-                break
-        if budget_exhausted:
+        tool, arguments, expected_revision = prepared
+        if tool in {"search_knowledge", "resolve_item_alias", "resolve_skill_alias"}:
+            exhausted = _execute_search_step(tool, arguments, search, output)
+        else:
+            exhausted = _execute_tool_step(tool, arguments, expected_revision, handlers, current_revision, output)
+        if exhausted:
             break
     return output
 
