@@ -316,8 +316,12 @@ def test_step_limit_repair_feedback_uses_configured_limit(monkeypatch):
             self.payloads = []
 
         def chat(self, messages):
+            payload = json.loads(messages[1]["content"])
+            if "skills" in payload:
+                return '{"skills":[]}'
             if messages[0]["role"] == "system" and "planner" in messages[0]["content"]:
                 self.payloads.append(json.loads(messages[1]["content"]))
+                assert self.payloads[-1]["max_steps"] == 3
                 if len(self.payloads) == 1:
                     return json.dumps({"intent": "stat", "steps": [{"tool": "get_skill_dps", "arguments": {}}] * 4})
                 feedback = self.payloads[-1]["repair_feedback"]
@@ -333,3 +337,4 @@ def test_step_limit_repair_feedback_uses_configured_limit(monkeypatch):
     assert len(model.payloads) == 2
     planner, _ = agent_loop._load_common_instructions()
     assert "at most 3 steps" in planner
+    assert agent_loop._load_planner_schema()["properties"]["steps"]["maxItems"] == 3
