@@ -29,8 +29,8 @@ def test_selection_receives_only_metadata_and_injects_selected_body(names):
                 assert ("# Analysis, mechanisms, and requested targets" in messages[0]["content"]) == ("analysis" in names)
                 assert json.loads(messages[1]["content"])["selected_skills"] == names
                 return json.dumps({"schema_version": "1.0", "intent": "stat", "operation": "read",
-                                   "evidenceLevel": "calculated", "ambiguities": [],
-                                   "steps": [{"tool": "get_character_stats", "arguments": {}}]})
+                                   "evidenceLevel": "calculated", "required_evidence": [], "stop_condition": {"type": "answer"}, "ambiguities": [],
+                                   "steps": [{"tool": "get_character_stats", "arguments": {}, "expectedSnapshotRevision": None}]})
             assert ("Use get_highest_dps_skill" in messages[0]["content"]) == ("lookup" in names)
             assert ("# Changes and comparisons" in messages[0]["content"]) == ("compare" in names)
             assert ("# Analysis, mechanisms, and requested targets" in messages[0]["content"]) == ("analysis" in names)
@@ -62,7 +62,7 @@ def test_invalid_selection_is_repaired_before_any_tool_executes():
                 assert "repair_feedback" in json.loads(messages[1]["content"])
                 return '{"skills":["lookup"]}'
             if len(calls) == 3:
-                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_character_stats","arguments":{}}]}'
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{"type":"answer"},"ambiguities":[],"steps":[{"tool":"get_character_stats","arguments":{},"expectedSnapshotRevision":null}]}'
             return "Life: 100"
 
     def handler(args):
