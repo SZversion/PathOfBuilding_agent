@@ -82,7 +82,10 @@ def standardize_error(result):
         return result
     confirmation_type = details.get("confirmation_type") or ("ask" if recovery_class == "ASK_USER" else "repair")
     details = {**details, "confirmation_type": confirmation_type, "ambiguous_fields": normalized_details(error).get("ambiguous_fields", [])}
-    return {**result, "error": {**error, "recovery_class": "ASK_USER", "next_action": "ask_user", "details": details}}
+    updated = {**result, "error": {**error, "recovery_class": "ASK_USER", "next_action": "ask_user", "details": details}}
+    if confirmation_type == "ask" and result.get("answer"):
+        updated["clarification"] = {"question": result["answer"], "ambiguous_fields": details["ambiguous_fields"], "missing_fields": details.get("missing_fields", [])}
+    return updated
 
 
 def is_exhausted(error):
@@ -131,6 +134,7 @@ def _template(error):
 
 def recover_response(result, model=None, *, on_token=None):
     """Return a user-facing answer while retaining the original error envelope."""
+    result = standardize_error(result)
     if not isinstance(result, dict) or not isinstance(result.get("error"), dict) or result.get("answer"):
         return result
     error = result["error"]
