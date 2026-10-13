@@ -44,6 +44,7 @@ ARGUMENT_TYPES = {
     "itemIdentity": str, "itemText": str, "condition": dict,
     "config": dict, "beforeState": (dict, str), "afterState": (dict, str),
     "comparisonFields": list, "source": str,
+    "itemId": int, "durationType": str,
     "contextOverrides": dict, "configOverrides": dict,
 }
 _CONFIG_BOOL_FIELDS = frozenset({
@@ -129,12 +130,20 @@ def _load_planner_schema(snapshot_revision=None):
         for key, field in arguments["properties"].items():
             clarification["properties"]["arguments"]["properties"][key] = {"anyOf": [deepcopy(field), {"type": "null"}]}
         clarification_steps.append(clarification)
-    schema["oneOf"] = [
+    schema.pop("allOf", None)
+    alternatives = [
         {"properties": {"intent": {"enum": sorted(INTENT_ENUM - {"unknown"})}, "stop_condition": {"properties": {"type": {"const": "answer"}}},
                         "ambiguities": {"maxItems": 0}, "steps": {"items": {"oneOf": normal_steps}}}},
         {"properties": {"intent": {"const": "unknown"}, "stop_condition": {"properties": {"type": {"const": "ask_user"}}},
                         "ambiguities": {"minItems": 1}, "steps": {"items": {"oneOf": clarification_steps}}}},
     ]
+    schema["oneOf"] = []
+    # Ollama's grammar converter needs each alternative to include the complete contract.
+    for alternative in alternatives:
+        branch = {key: deepcopy(value) for key, value in schema.items() if key != "oneOf"}
+        for key, constraints in alternative["properties"].items():
+            branch["properties"][key].update(constraints)
+        schema["oneOf"].append(branch)
     return schema
 
 
@@ -500,11 +509,11 @@ def _validate_planner_output(plan, *, snapshot_revision=None):
             missing = next(key for key in expected if key not in error.instance)
             path = path.rstrip("/") + "/" + missing
             expected = "required field"
-        actual = error.instance if isinstance(error.instance, (str, int, float, bool)) or error.instance is None else None
+        actual = len(error.instance) if error.validator == "maxItems" else error.instance if isinstance(error.instance, (str, int, float, bool)) or error.instance is None else None
         raise PlanValidationError("planner output violates its JSON schema", code="MODEL_SCHEMA_INVALID", details={
             "fields": [path], "constraint": error.validator, "expected": expected,
             "actual": actual[:200] if isinstance(actual, str) else actual,
-            "instruction": f"Repair the plan field at {path} to satisfy {error.validator}. Follow the supplied JSON schema and Tool-specific argument schemas; do not turn schema errors into user ambiguities.",
+            "instruction": f"Return a plan with at most {MAX_STEPS} steps. Repair the plan field at {path} to satisfy {error.validator}. Follow the supplied JSON schema and Tool-specific argument schemas; do not turn schema errors into user ambiguities.",
         })
     _validate_ambiguity_paths(plan)
     if clarification:
