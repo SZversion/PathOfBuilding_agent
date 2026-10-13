@@ -238,7 +238,7 @@ def run(provider):
 """)
     result = trace_pipeline(fixture.run)(provider_module.Provider())
     assert result['answer'] == '42'
-    assert len(client.spans) == 4
+    assert len(client.spans) == 5
     assert not any(s['name'].endswith('.helper') for s in client.spans)
     generations = [s for s in client.spans if s.get('as_type') == 'generation']
     assert len(generations) == 2
@@ -259,3 +259,65 @@ def test_mcp_context_does_not_duplicate_client_stages(monkeypatch):
         assert headers['X-PoB-Trace-Run-Id'] == 'run-mcp'
         assert headers['X-PoB-Trace-Parent-Id'] == '1234567890abcdef'
     assert client.spans == []
+
+
+def test_returned_error_envelopes_mark_the_stage_and_output_as_failed(monkeypatch):
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    fixture = project_function("""
+def child(): return {'status': 'error', 'error': {'code': 'SNAPSHOT_REVISION_CONFLICT', 'message': 'state changed'}}
+def run(): return child()
+""")
+    result = trace_pipeline(fixture.run)()
+    assert result['error']['code'] == 'SNAPSHOT_REVISION_CONFLICT'
+    child = next(s for s in client.spans if s['name'].endswith('.child'))
+    output = next(s for s in client.spans if s['name'] == 'output')
+    assert child['level'] == output['level'] == 'ERROR'
+    assert child['output']['errors'][0]['code'] == 'SNAPSHOT_REVISION_CONFLICT'
+    assert output['output'] == result
+    assert output['metadata']['errors'][0]['code'] == 'SNAPSHOT_REVISION_CONFLICT'
+
+
+def test_failed_generation_preserves_partial_output_and_exception(monkeypatch):
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    provider = types.ModuleType('agent.providers.trace_fixture')
+    exec("""
+class Provider:
+    model = 'test-model'
+    def stream_chat(self, messages):
+        yield 'partial answer'
+        raise TimeoutError('model timed out')
+""", provider.__dict__)
+    fixture = project_function('def run(provider): return list(provider.stream_chat([]))')
+    with pytest.raises(TimeoutError, match='model timed out'):
+        trace_pipeline(fixture.run)(provider.Provider())
+    generate = next(s for s in client.spans if s['name'] == 'generate')
+    assert generate['as_type'] == 'generation'
+    assert generate['level'] == 'ERROR'
+    assert generate['output']['partial_output'] == 'partial answer'
+    assert generate['output']['error']['type'] == 'TimeoutError'
+    assert generate['metadata']['errors'][0]['message'] == 'model timed out'
+    assert any(s['name'] == 'output' and s['level'] == 'ERROR' for s in client.spans)
+
+
+def test_handled_helper_exceptions_are_attached_to_the_stage_without_extra_spans(monkeypatch):
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    fixture = project_function("""
+def helper():
+    try: raise ValueError('handled input error')
+    except ValueError: return 'recovered'
+def run(): return [helper() for _ in range(3)]
+""")
+    assert trace_pipeline(fixture.run)() == ['recovered'] * 3
+    assert not any(s['name'].endswith('.helper') for s in client.spans)
+    stage = next(s for s in client.spans if s['name'] == 'agent.trace_fixture.run')
+    error = next(e for e in stage['output']['exceptions'] if e['type'] == 'ValueError')
+    assert error['message'] == 'handled input error'
+    assert error['function'] == 'agent.trace_fixture.helper'
+    assert error['occurrences'] == 3
+    assert stage['level'] == 'DEFAULT'
