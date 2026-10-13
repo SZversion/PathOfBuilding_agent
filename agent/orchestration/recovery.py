@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from agent.error_registry import parent_error_ref
 
 
-SAFE_CONTEXT = ("reason", "missing_fields", "invalid_fields", "candidates", "current_context", "expected_format", "next_action", "confirmation_type")
+SAFE_CONTEXT = ("reason", "ambiguous_fields", "missing_fields", "invalid_fields", "candidates", "current_context", "expected_format", "next_action", "confirmation_type")
 DETAIL_FIELDS = (*SAFE_CONTEXT, "examples")
 EXHAUSTED_ANSWER = "재시도 횟수를 초과했습니다. 요청을 다시 시도해 주세요."
 SENSITIVE = {"api_key", "apikey", "authorization", "token", "secret", "rawxml", "xml", "prompt", "notes", "itemtext", "freetext", "password"}
@@ -60,6 +60,9 @@ def normalized_details(error):
             result[key] = _display_candidates(raw[key])
         else:
             result[key] = _safe_value(raw[key])
+    ambiguities = raw.get("ambiguous_fields", raw.get("ambiguities", []))
+    if isinstance(ambiguities, list):
+        result["ambiguous_fields"] = list(dict.fromkeys(item for item in ambiguities if isinstance(item, str) and item.strip()))
     if "next_action" not in result and isinstance(error, dict) and isinstance(error.get("next_action"), str):
         result["next_action"] = error["next_action"][:128]
     recovery_class = error.get("recovery_class") if isinstance(error, dict) else None
@@ -78,7 +81,7 @@ def standardize_error(result):
     if recovery_class not in {"ASK_USER", "REPAIR_INPUT"}:
         return result
     confirmation_type = details.get("confirmation_type") or ("ask" if recovery_class == "ASK_USER" else "repair")
-    details = {**details, "confirmation_type": confirmation_type}
+    details = {**details, "confirmation_type": confirmation_type, "ambiguous_fields": normalized_details(error).get("ambiguous_fields", [])}
     return {**result, "error": {**error, "recovery_class": "ASK_USER", "next_action": "ask_user", "details": details}}
 
 
@@ -107,9 +110,11 @@ def _template(error):
     action = error.get("next_action", "human_review")
     context = safe_context(error)
     missing = context.get("missing_fields") or []
+    ambiguous = context.get("ambiguous_fields") or []
     invalid = context.get("invalid_fields") or []
     examples = context.get("examples") or []
     field_hint = (f"필수 정보: {', '.join(map(str, missing))}. " if missing else "") + (f"잘못된 입력: {', '.join(map(str, invalid))}. " if invalid else "")
+    field_hint += f"모호한 항목: {', '.join(ambiguous)}. " if ambiguous else ""
     example_hint = f"예: {', '.join(map(str, examples))}." if examples else ""
     if context.get("confirmation_type") == "ask":
         candidates = context.get("candidates") or []
@@ -139,7 +144,10 @@ def recover_response(result, model=None, *, on_token=None):
             on_token(answer)
     else:
         prompt = json.dumps({"error": {"code": error.get("code"), "recovery_class": error.get("recovery_class"), "context": safe_context(error)}}, ensure_ascii=False)
-        messages = [{"role": "system", "content": "Write one concise Korean recovery instruction. Do not invent facts."}, {"role": "user", "content": prompt}]
+        instruction = "Write one concise Korean recovery instruction. Do not invent facts."
+        if presentation_class == "ask":
+            instruction += " Return JSON with question (Korean text), ambiguous_fields, and missing_fields. Copy both field lists exactly from the provided context; explain which fields the user must clarify."
+        messages = [{"role": "system", "content": instruction}, {"role": "user", "content": prompt}]
         try:
             if on_token and hasattr(model, "stream_chat"):
                 chunks = []
@@ -148,7 +156,12 @@ def recover_response(result, model=None, *, on_token=None):
                 answer = "".join(chunks)
             else:
                 answer = model.chat(messages)
+            if presentation_class == "ask" and isinstance(answer, str) and answer.lstrip().startswith("{"):
+                generated = json.loads(answer)
+                answer = generated.get("question") if isinstance(generated, dict) else None
             if not isinstance(answer, str) or not answer.strip() or answer.lstrip().startswith("{"):
+                answer = _template(error)
+            if presentation_class == "ask" and any(field not in answer for field in safe_context(error).get("ambiguous_fields", [])):
                 answer = _template(error)
             if on_token:
                 if "chunks" in locals() and answer == "".join(chunks):
@@ -160,7 +173,9 @@ def recover_response(result, model=None, *, on_token=None):
             answer = _template(error)
     updated_error = {**error, "details": normalized_details(error)}
     updated = {**result, "error": updated_error, "answer": answer}
+    if presentation_class == "ask":
+        updated["clarification"] = {"question": answer, "ambiguous_fields": updated_error["details"].get("ambiguous_fields", []), "missing_fields": updated_error["details"].get("missing_fields", [])}
     if isinstance(result.get("trace"), list):
         previous = result["trace"][-1] if result["trace"] and isinstance(result["trace"][-1], dict) else {}
-        updated["trace"] = [*result["trace"], {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": previous.get("run_id"), "request_id": previous.get("request_id"), "event": "recovery_response", "stage": "recovery_response", "timestamp_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "duration_ms": None, "status": "completed", "attempt": 1, "max_attempts": 1, "provider": previous.get("provider", {"mode": None, "model": None, "endpoint_ref": None}), "snapshot": previous.get("snapshot", {"revision": None, "build_id": None}), "tool": None, "step_index": None, "tool_call_count": None, "retry_of": None, "plan_ref": None, "query_ref": None, "safe_args_ref": None, "error_ref": parent_error_ref(error.get("code")), "error_code": error.get("code"), "error_details": {key: value for key, value in normalized_details(error).items() if key in {"missing_fields", "invalid_fields", "message", "expected_format", "next_action", "candidates", "reason"}}, "presentation_class": presentation_class, "result_ref": {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": None}]
+        updated["trace"] = [*result["trace"], {"schema_version": "1.0", "event_id": "evt-" + uuid.uuid4().hex, "run_id": previous.get("run_id"), "request_id": previous.get("request_id"), "event": "recovery_response", "stage": "recovery_response", "timestamp_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"), "duration_ms": None, "status": "completed", "attempt": 1, "max_attempts": 1, "provider": previous.get("provider", {"mode": None, "model": None, "endpoint_ref": None}), "snapshot": previous.get("snapshot", {"revision": None, "build_id": None}), "tool": None, "step_index": None, "tool_call_count": None, "retry_of": None, "plan_ref": None, "query_ref": None, "safe_args_ref": None, "error_ref": parent_error_ref(error.get("code")), "error_code": error.get("code"), "error_details": {key: value for key, value in normalized_details(error).items() if key in {"ambiguous_fields", "missing_fields", "invalid_fields", "message", "expected_format", "next_action", "candidates", "reason"}}, "presentation_class": presentation_class, "result_ref": {"facts_ref": None, "trace_ref": None, "sources_ref": None, "evidence_graph_ref": None}, "prompt_ref": None}]
     return updated
