@@ -64,6 +64,9 @@ def test_live_snapshot_projection_preserves_pob_values():
     assert sync["snapshot"]["calculatedSnapshot"]["outputs"]["TotalDPS"] == 100
     assert sync["snapshot"]["calculatedSnapshot"]["skills"][0]["name"] == "Arc"
     assert snapshot_revision(raw) == sync["snapshotRevision"]
+    assert "output" not in sync["snapshot"]["calculatedSnapshot"]["skills"][0]
+    raw["facts"]["skills"][0]["output"]["TotalDPS"] = 200
+    assert snapshot_revision(raw) != sync["snapshotRevision"]
 
 
 class FakeProvider:
