@@ -32,10 +32,13 @@
     },
     "ambiguities": {
       "type": "array",
+      "description": "JSON Pointer paths to ambiguous fields in this plan JSON, never game component names or instruction names. Use [] when no field needs clarification.",
       "minItems": 0,
+      "maxItems": 16,
+      "uniqueItems": true,
       "items": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^/(intent|operation|evidenceLevel|required_evidence/(0|[1-9][0-9]*)|stop_condition/[A-Za-z_][A-Za-z0-9_]*|steps/(0|[1-9][0-9]*)/(tool|expectedSnapshotRevision|arguments/[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z0-9_]+)*))$"
       }
     },
     "steps": {
