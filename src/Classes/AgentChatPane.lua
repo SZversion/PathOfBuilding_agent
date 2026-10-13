@@ -417,6 +417,10 @@ function AgentChatPaneClass:HandleInputEvent(event, cursorX, cursorY)
 	if not self.selControl then
 		return false
 	end
+	if event.type == "KeyDown" and event.key == "RETURN" and self.selControl == self.controls.input then
+		self:SendMessage()
+		return true
+	end
 	self:ProcessControlsInput({event}, main.viewPort)
 	return true
 end
