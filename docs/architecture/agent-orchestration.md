@@ -17,7 +17,10 @@ The external AI can plan multiple sequential operations, but one request is capp
 
 Common instructions are read from `agent/skills/common/SKILL.md`. Scenario
 skills are discovered under `agent/skills/*/SKILL.md`; their frontmatter uses
-single-line `name` and `description` values. Currently only `lookup` is available.
+single-line `name` and `description` values. Currently `lookup` and `compare` are
+available. Comparison instructions cover baseline/target conditions, numeric
+and composition differences, units and percentage points, evidence for causes,
+and the distinction between temporary comparisons and supported changes.
 The selection call receives those two metadata fields and the user's question
 and resolved context selections, without scenario bodies. Its JSON `skills`
 array is checked against the discovered registry; unavailable names and
