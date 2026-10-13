@@ -572,7 +572,7 @@ class AgentLoop:
         if context_overrides:
             planning_payload["explicitContextOverrides"] = context_overrides
         for name, field in (("skillSet", "activeSkillSet"), ("itemSet", "activeItemSet"), ("treeSpec", "activeSpec"), ("configSet", "activeConfigSet")):
-            selected = planning_payload["contextSelection"]["selected"].get(name, {})
+            selected = planning_payload.get("contextSelection", {}).get("selected", {}).get(name, {})
             if selected.get("source") == "사용자 질문":
                 context_overrides[field] = selected["id"]
         if context_overrides:
