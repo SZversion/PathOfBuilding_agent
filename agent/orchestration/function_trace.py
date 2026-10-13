@@ -35,9 +35,11 @@ _STAGES = {
 
 class _ContextSpan:
     """Propagate the client span through MCP without duplicating its observation."""
-    def __init__(self, session): self.session = session
+    def __init__(self, session):
+        self.session = session
+        self.id = session.parent_id or uuid.uuid4().hex[:16]
     def get_trace_id(self): return self.session.trace_id
-    def get_observation_id(self): return self.session.parent_id
+    def get_observation_id(self): return self.id
 
 
 class _QueuedSpan:
@@ -265,7 +267,7 @@ class FunctionTrace:
     def __enter__(self):
         self.token = _ACTIVE.set(self)
         try:
-            if self.name.startswith("agent.mcp."):
+            if self.name.startswith("agent.mcp.") and not self.name.startswith("agent.mcp.client."):
                 self.root = _ContextSpan(self)
             else:
                 self.exporter = LangfuseExporter.from_env()
