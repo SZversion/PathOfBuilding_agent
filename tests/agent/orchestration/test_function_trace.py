@@ -1,8 +1,18 @@
 import contextlib
 import sys
 import types
+import pytest
 
 from agent.orchestration.function_trace import trace_pipeline, current_trace, trace_headers
+
+
+@pytest.fixture(autouse=True)
+def fixture_stages(monkeypatch):
+    from agent.orchestration.function_trace import _STAGES
+    monkeypatch.setattr("agent.orchestration.function_trace._STAGES", {
+        **_STAGES, **{"agent.trace_fixture." + name: "agent.trace_fixture." + name
+                     for name in ("child", "parent", "chunks", "run", "worker", "callback")},
+    })
 
 
 class Span:
@@ -201,5 +211,51 @@ def test_cli_stream_fragments_are_not_lost_to_auth_token_redaction(monkeypatch):
     module = types.ModuleType("agent.cli")
     exec("def run(text):\n callback = lambda token: token\n return callback(text)", module.__dict__)
     assert trace_pipeline(module.run)("model fragment") == "model fragment"
-    fragment = next(s for s in client.spans if s["name"].endswith(".<lambda>"))
-    assert fragment["input"]["stream_fragment"] == "model fragment"
+    assert not any(s["name"].endswith(".<lambda>") for s in client.spans)
+    assert client.spans[0]["output"] == "model fragment"
+
+
+def test_only_pipeline_stages_and_generation_are_observed(monkeypatch):
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    provider_module = types.ModuleType("agent.providers.trace_fixture")
+    exec("""
+class Provider:
+    model = 'test-model'
+    def chat(self, messages): return '{"steps": [], "all": [null, {}, []]}'
+    def stream_chat(self, messages):
+        yield '4'
+        yield '2'
+""", provider_module.__dict__)
+    fixture = project_function("""
+def helper(value): return value
+def run(provider):
+    for index in range(100): helper(index)
+    plan = provider.chat([{'role': 'user', 'content': 'plan'}])
+    answer = ''.join(provider.stream_chat([{'role': 'user', 'content': 'answer'}]))
+    return {'plan': plan, 'answer': answer}
+""")
+    result = trace_pipeline(fixture.run)(provider_module.Provider())
+    assert result['answer'] == '42'
+    assert len(client.spans) == 4
+    assert not any(s['name'].endswith('.helper') for s in client.spans)
+    generations = [s for s in client.spans if s.get('as_type') == 'generation']
+    assert len(generations) == 2
+    assert all(s['name'] == 'generate' and s['model'] == 'test-model' for s in generations)
+    assert generations[0]['input'] == [{'role': 'user', 'content': 'plan'}]
+    assert generations[0]['output'] == {'steps': [], 'all': [None, {}, []]}
+    assert generations[1]['output'] == '42'
+    assert all(s['ended'] for s in generations)
+
+
+def test_mcp_context_does_not_duplicate_client_stages(monkeypatch):
+    from agent.orchestration.function_trace import FunctionTrace
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    with FunctionTrace('agent.mcp.request', run_id='run-mcp', parent_id='1234567890abcdef'):
+        headers = trace_headers()
+        assert headers['X-PoB-Trace-Run-Id'] == 'run-mcp'
+        assert headers['X-PoB-Trace-Parent-Id'] == '1234567890abcdef'
+    assert client.spans == []
