@@ -236,3 +236,10 @@ def test_planner_repairs_clarification_for_a_known_live_skill():
     result = AgentLoop(model).run("highest DPS skill", snapshot={"calculatedSnapshot": {"skills": [{"name": "Arc"}]}, "mainSkill": {"name": "Arc"}},
         handlers={"get_highest_dps_skill": lambda args: {"facts": {"skill": "Arc"}}})
     assert result["status"] == "ok" and model.calls == 2
+
+
+def test_duplicate_skill_names_preserve_planner_clarification():
+    from agent.orchestration.agent_loop import validate_context_ambiguities
+    plan = {"steps": [], "ambiguities": ["skill_id:Arc"]}
+    payload = {"context": {"calculatedSnapshot": {"skills": [{"name": "Arc"}, {"name": "Arc"}]}}}
+    assert validate_context_ambiguities(plan, payload) is plan
