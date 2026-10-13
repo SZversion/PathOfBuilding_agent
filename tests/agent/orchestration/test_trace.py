@@ -323,12 +323,12 @@ def test_step_limit_repair_feedback_uses_configured_limit(monkeypatch):
                 self.payloads.append(json.loads(messages[1]["content"]))
                 assert self.payloads[-1]["max_steps"] == 3
                 if len(self.payloads) == 1:
-                    return json.dumps({"intent": "stat", "steps": [{"tool": "get_skill_dps", "arguments": {}}] * 4})
+                    return json.dumps({"schema_version": "1.0", "intent": "stat", "operation": "read", "evidenceLevel": "calculated", "required_evidence": [], "stop_condition": {"type": "answer"}, "ambiguities": [], "steps": [{"tool": "get_skill_dps", "arguments": {"skillName": "Arc"}, "expectedSnapshotRevision": None}] * 4})
                 feedback = self.payloads[-1]["repair_feedback"]
                 assert feedback["details"]["expected"] == 3
                 assert feedback["details"]["actual"] == 4
                 assert "at most 3 steps" in feedback["instruction"]
-                return '{"intent":"stat","steps":[]}'
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{"type":"answer"},"ambiguities":[],"steps":[]}'
             return "복구 완료"
 
     model = Model()
