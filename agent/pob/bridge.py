@@ -86,6 +86,8 @@ def _sorted_ids(value, use_values=False):
 def project_snapshot(context, overrides=None):
     """Return a deterministic primitive-only snapshot projection."""
     context = context if isinstance(context, dict) else {}
+    if isinstance(context.get("facts"), dict) and "schemaVersion" in context["facts"]:
+        context = context["facts"]
     context = context.get("context") if isinstance(context.get("context"), dict) else context
     spec = context.get("activeSpec") if isinstance(context.get("activeSpec"), dict) else {}
     projected = {
@@ -105,6 +107,12 @@ def project_snapshot(context, overrides=None):
     }
     projected["activeSpec"]["id"] = _primitive_or_none(projected["activeSpec"]["id"])
     projected["activeSpec"]["title"] = _primitive_or_none(projected["activeSpec"]["title"])
+    if "schemaVersion" in context and "outputs" in context:
+        projected["calculatedSnapshot"] = {key: context[key] for key in (
+            "schemaVersion", "calculationVersion", "snapshotRevision", "characterLevel", "mainSkillIndex", "outputs", "skills"
+        ) if key in context}
+    elif isinstance(context.get("calculatedSnapshot"), dict):
+        projected["calculatedSnapshot"] = context["calculatedSnapshot"]
     if isinstance(overrides, dict) and overrides:
         provenance = {}
         option_names = {"activeSpec": "availableSpecs", "activeSkillSet": "availableSkillSets", "activeItemSet": "availableItemSets"}
