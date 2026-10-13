@@ -141,3 +141,21 @@ def test_streaming_clarification_emits_question_and_keeps_fields():
     recovered = recover_response(result, Model(), on_token=chunks.append)
     assert ''.join(chunks) == recovered["answer"]
     assert recovered["clarification"]["ambiguous_fields"] == ["skillSet"]
+
+
+def test_schema_capable_clarification_requires_field_lists():
+    import json
+    value = error("ASK_USER")
+    value["error"]["details"] = {"ambiguities": ["skillSet"]}
+    class Model:
+        supports_json_schema = True
+        def chat(self, messages, *, format=None):
+            assert format["properties"]["ambiguous_fields"]["const"] == ["skillSet"]
+            assert set(format["required"]) == {"question", "ambiguous_fields", "missing_fields"}
+            return json.dumps({"question": "skillSet를 선택해 주세요.", "ambiguous_fields": ["skillSet"], "missing_fields": []}, ensure_ascii=False)
+        def stream_chat(self, messages):
+            raise AssertionError("schema-capable clarification must generate JSON")
+    chunks = []
+    recovered = recover_response(value, Model(), on_token=chunks.append)
+    assert recovered["clarification"]["ambiguous_fields"] == ["skillSet"]
+    assert ''.join(chunks) == recovered["answer"]
