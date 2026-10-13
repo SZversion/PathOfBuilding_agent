@@ -396,6 +396,25 @@ def planner_query_projection(query, *, context=None):
     return projected
 
 
+def validate_context_ambiguities(plan, payload):
+    source = _context_source(payload.get("context"))
+    selection = payload.get("contextSelection", {}).get("selected", {})
+    known_skills = {skill.get("name", "").casefold() for skill in source.get("calculatedSnapshot", {}).get("skills", []) if isinstance(skill, dict)}
+    fields = {"skillSet": "skillSet", "skill_set": "skillSet", "itemSet": "itemSet", "item_set": "itemSet",
+              "treeSpec": "treeSpec", "configSet": "configSet", "config": "config"}
+    contradicted = []
+    for ambiguity in plan.get("ambiguities", []):
+        if not isinstance(ambiguity, str):
+            continue
+        field, separator, target = ambiguity.partition(":")
+        if (not separator and fields.get(field) in selection) or (separator and field in {"skill_id", "skillName", "gem_name"} and target.strip().casefold() in known_skills):
+            contradicted.append(ambiguity)
+    if contradicted:
+        raise PlanValidationError("planner clarification contradicts the supplied live context", code="PLAN_CONTEXT_CONFLICT",
+                                  details={"already_available": contradicted, "instruction": "Use the supplied active selections and skill names. skill_id is not required by PoB tools; use skillName or skillIndex. Ask only for genuinely missing or conflicting targets."})
+    return plan
+
+
 def _validate_completeness(plan, *, enforce_evidence=False):
     requirement = INTENT_REQUIREMENTS.get(plan.get("intent"))
     if not requirement:
@@ -599,10 +618,10 @@ class AgentLoop:
                 planner_input = dict(planning_payload)
                 if repair_feedback is not None:
                     planner_input["repair_feedback"] = repair_feedback
-                planned = validate_plan(_json_object(self._chat([
+                planned = validate_plan(validate_context_ambiguities(_json_object(self._chat([
                     {"role": "system", "content": planner_system},
                     {"role": "user", "content": json.dumps(planner_input, ensure_ascii=False)},
-                ], recorder=recorder, response_format=PLANNER_JSON_SCHEMA)))
+                ], recorder=recorder, response_format=PLANNER_JSON_SCHEMA)), planning_payload))
                 recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), plan_ref=recorder.plan_ref(planned), input_payload=query, output_payload=planned)
                 break
             except PlanValidationError as error:
