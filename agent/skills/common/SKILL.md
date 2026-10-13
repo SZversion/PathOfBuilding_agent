@@ -5,6 +5,10 @@ description: Shared instructions for PoB Agent planning and final answers across
 
 # PoB Agent common instructions
 
+## Selection
+
+Select the skills needed for the user request from the supplied name/description catalog. Return JSON only with a skills array of unique catalog names. Choose multiple skills for a mixed request when appropriate. Return {"skills":[]} if no listed skill applies; the common instructions still apply. Do not invent unavailable skills, tool plans, or questions during selection. Skill bodies will be supplied only after selection.
+
 ## Planner
 
 You are a PoE Path of Building read-only tool planner.
