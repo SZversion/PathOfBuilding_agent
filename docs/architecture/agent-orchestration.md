@@ -4,6 +4,8 @@
 
 ```text
 user question
+  → external AI selects skills from name/description metadata
+  → selected SKILL.md bodies are loaded with common instructions
   → external AI JSON plan
   → Bridge validates plan and revision
   → local Tool / RAG / approved search execution
@@ -12,6 +14,27 @@ user question
 ```
 
 The external AI can plan multiple sequential operations, but one request is capped at eight Tool/search steps and duplicate identical calls are rejected. The Bridge executes each step and feeds its structured result into the next step.
+
+Common instructions are read from `agent/skills/common/SKILL.md`. Scenario
+skills are discovered under `agent/skills/*/SKILL.md`; their frontmatter uses
+single-line `name` and `description` values. Currently `lookup`, `compare`, and `analysis` are
+available. Comparison instructions cover baseline/target conditions, numeric
+and composition differences, units and percentage points, evidence for causes,
+and the distinction between temporary comparisons and supported changes.
+Analysis instructions cover current values and mechanism evidence. Explicit
+target-achievement requests can select both `analysis` and `compare` to evaluate
+the target alongside damage, defence, resource, and investment tradeoffs.
+Untested alternatives are labeled unverified; no acceptable loss threshold or
+global optimum is assumed.
+The selection call receives those two metadata fields and the user's question
+and resolved context selections, without scenario bodies. Its JSON `skills`
+array is checked against the discovered registry; unavailable names and
+duplicates are rejected within the bounded planner repair budget. An empty
+selection uses common instructions alone. Chosen bodies are supplied to both
+planning and final-answer calls. The selection schema is stored separately in
+`agent/schemas/skill-selection.schema.json`. Selection uses the same traced LLM
+provider path as planning, adding one `generate` per normal request. Future
+scenario files enter discovery without changing the registry in Python.
 
 ## Search order
 

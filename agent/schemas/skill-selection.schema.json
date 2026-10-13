@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["skills"],
+  "additionalProperties": false,
+  "properties": {
+    "skills": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    }
+  }
+}

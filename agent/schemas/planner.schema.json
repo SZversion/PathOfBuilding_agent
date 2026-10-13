@@ -1,0 +1,98 @@
+{
+  "type": "object",
+  "required": [
+    "schema_version",
+    "intent",
+    "operation",
+    "evidenceLevel",
+    "steps"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "intent": {
+      "type": "string"
+    },
+    "operation": {
+      "type": "string"
+    },
+    "evidenceLevel": {
+      "type": "string"
+    },
+    "stop_condition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "ambiguities": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tool",
+          "arguments"
+        ],
+        "properties": {
+          "tool": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "object"
+          },
+          "expectedSnapshotRevision": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "stop_condition"
+        ],
+        "properties": {
+          "stop_condition": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "ask_user"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "ambiguities"
+        ],
+        "properties": {
+          "ambiguities": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

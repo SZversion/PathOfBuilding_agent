@@ -1,10 +1,12 @@
 import json
 import re
+from pathlib import Path
 
 from .runtime import SnapshotSync, execute_plan
 from .recovery import EXHAUSTED_ANSWER, is_exhausted
 from .trace import TraceRecorder
 from .function_trace import current_trace
+from .skills import discover_skills, selected_instructions, selection_instructions, selection_schema
 from agent.error_registry import parent_error_ref
 from agent.tool_catalog import ALLOWED_TOOLS
 
@@ -92,28 +94,32 @@ _PLANNER_CATALOG = json.dumps(
     {tool: TOOL_MIN_ARGUMENTS[tool] for tool in sorted(READ_ONLY_TOOLS)},
     ensure_ascii=False, sort_keys=True, separators=(",", ":"),
 )
-PLANNER_JSON_SCHEMA = {
-    "type": "object",
-    "required": ["schema_version", "intent", "operation", "evidenceLevel", "steps"],
-    "properties": {
-        "schema_version": {"type": "string", "const": "1.0"}, "intent": {"type": "string", "enum": sorted(INTENT_ENUM)},
-        "operation": {"type": "string", "enum": sorted(OPERATION_ENUM)},
-        "evidenceLevel": {"type": "string", "enum": sorted(EVIDENCE_LEVEL_ENUM)},
-        "stop_condition": {"type": "object", "properties": {"type": {"type": "string"}}, "additionalProperties": True},
-        "ambiguities": {"type": "array", "minItems": 0, "items": {"type": "string", "minLength": 1}},
-        "steps": {"type": "array", "items": {"type": "object", "required": ["tool", "arguments"], "properties": {
-            "tool": {"type": "string", "enum": sorted(READ_ONLY_TOOLS)},
-            "arguments": {"type": "object"},
-            "expectedSnapshotRevision": {"type": ["string", "null"]},
-        }, "additionalProperties": False}},
-    },
-    "allOf": [
-        {"if": {"required": ["stop_condition"], "properties": {"stop_condition": {"required": ["type"], "properties": {"type": {"const": "ask_user"}}}}},
-         "then": {"required": ["ambiguities"], "properties": {"ambiguities": {"minItems": 1}}}},
-    ],
-}
-PLANNER_SYSTEM = f"""You are a PoE Path of Building read-only tool planner. Return JSON only with schema_version, intent, operation, evidenceLevel, required_evidence, stop_condition, ambiguities, and steps. Each step has tool, arguments, and expectedSnapshotRevision. Use ONLY canonical Tool names and this registry: {_PLANNER_CATALOG}. Never invent, translate, or paraphrase Tool names. Never return mutation Tools, free-text commands, raw XML, or PoB numbers. For an explicit Config request, put only the requested fields in private arguments.configOverrides and use exact PoB values: enemyIsBoss is one of None/Boss/Pinnacle/Uber; resistancePenalty is 0, -30, or -60; conditionMoving, conditionFullLife, conditionLowLife, conditionFullMana, conditionLowMana, conditionFullEnergyShield, conditionLowEnergyShield, conditionHaveEnergyShield, conditionUnbrokenWard, conditionEnemyCursed, conditionEnemyBleeding, conditionEnemyPoisoned, conditionEnemyBurning, conditionEnemyIgnited, conditionEnemyChilled, conditionEnemyFrozen, conditionEnemyShocked, and usePowerCharges/useFrenzyCharges/useEnduranceCharges are booleans; conditionStationary and overridePowerCharges/overrideFrenzyCharges/overrideEnduranceCharges are nonnegative integers. Never invent a Config value; if the requested tier/value is ambiguous, stop with ask_user. Do not include unmentioned Config fields. Classify the user's request before deciding whether clarification is needed. Resolve an omitted subject from the supplied authoritative PoB context whenever possible; for example, a request for the highest DPS skill should use get_highest_dps_skill when the build snapshot is available. For character-wide totals such as total life, mana, or attributes, use get_character_stats. Use explain_stat only when the user asks for a specific stat's modifier trace; use the exact PoB output key and include skillName or skillIndex only when the stat is skill-specific. If required information is genuinely missing or conflicting, list EVERY missing or conflicting field you know in ambiguities as concrete field names (such as skill, skill set, config, or comparison target), then set intent=unknown and stop_condition={{\"type\":\"ask_user\"}}. The ambiguities array must contain at least one item for ask_user and must never contain vague phrases such as \"more information\" or \"unclear\". Do not ask for information that can be determined from the PoB context. Correct clarification example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[\"skill\",\"skill set\"]}}. Incorrect example: {{\"intent\":\"unknown\",\"stop_condition\":{{\"type\":\"ask_user\"}},\"ambiguities\":[]}}. Planner ambiguity is a plan-level stop condition, not an execution error. Execution errors use the two-level contract: error_ref is one of MISSING_CONTEXT, AMBIGUOUS_CONTEXT, CONFLICTING_CONTEXT, or UNSUPPORTED_REQUEST; error_code is the detailed leaf cause (for example USER_CONTEXT_MISSING or AMBIGUOUS_ALIAS). Never replace error_ref with the leaf error_code. Context errors always use recovery_class=ASK_USER and details.missing_fields must contain every missing field plus a safe details.message for the user. Example: {{\"tool\":\"get_curse_limit\",\"arguments\":{{}}}}."""
-ANSWER_SYSTEM = """Answer the user's PoE question using only the supplied Tool results and knowledge documents. By default, answer in Korean using friendly and clear wording. Distinguish calculated values, applied effects, and calculation evidence. If a result is unavailable or an input is ambiguous, state that plainly and do not guess. Answer Korean questions in Korean."""
+def _load_planner_schema():
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / "planner.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    properties = schema["properties"]
+    properties["intent"]["enum"] = sorted(INTENT_ENUM)
+    properties["operation"]["enum"] = sorted(OPERATION_ENUM)
+    properties["evidenceLevel"]["enum"] = sorted(EVIDENCE_LEVEL_ENUM)
+    properties["steps"]["items"]["properties"]["tool"]["enum"] = sorted(READ_ONLY_TOOLS)
+    return schema
+
+
+PLANNER_JSON_SCHEMA = _load_planner_schema()
+
+
+def _load_common_instructions():
+    skill_path = Path(__file__).resolve().parents[1] / "skills" / "common" / "SKILL.md"
+    text = skill_path.read_text(encoding="utf-8")
+    _, planner_and_answer = text.split("\n## Planner\n", 1)
+    planner, answer = planner_and_answer.split("\n## Answer\n", 1)
+    if not planner.strip() or not answer.strip():
+        raise ValueError("common SKILL.md requires nonempty Planner and Answer sections")
+    planner = planner.replace("{_PLANNER_CATALOG}", _PLANNER_CATALOG).replace("{MAX_STEPS}", str(MAX_STEPS))
+    return planner.strip(), answer.strip()
+
+
+PLANNER_SYSTEM, ANSWER_SYSTEM = _load_common_instructions()
 ENVELOPE_FIELDS = frozenset({"status", "version", "snapshotRevision", "side_effect", "operator_message", "facts", "conditions", "trace", "sources", "evidenceGraph", "uncertainty", "error"})
 
 
@@ -596,8 +602,7 @@ class AgentLoop:
                 context_overrides[field] = selected["id"]
         if context_overrides:
             planning_payload["explicitContextOverrides"] = context_overrides
-        planner_system = PLANNER_SYSTEM + "\nThe snapshot is the authoritative live pob_agent screen state. Explicit user mentions override only mentioned fields for this request; use active screen selections for every unmentioned skill, set, Config, buff and condition. contextSelection entries marked 사용자 질문 take priority. Put set changes in arguments.contextOverrides (activeSpec, activeSkillSet, activeItemSet, activeConfigSet), explicit skills in skillName and Config conditions in configOverrides. A highest-DPS-across-skills question requires neither a gem name nor a gem level. Ask only when an explicit target is missing or matches multiple candidates, or required information is genuinely unavailable."
-        planner_system += '\nExample for "현재 세팅에서 DPS가 가장 높은 스킬은?": {"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{},"ambiguities":[],"steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}. This tool examines the active build skills directly; no alias resolution, gem level, skill ID or specific skill selection is needed.'
+        planner_system = PLANNER_SYSTEM
         if tool_definitions is not None:
             available = [item for item in tool_definitions if isinstance(item, dict)
                          and item.get("name") in READ_ONLY_TOOLS]
@@ -614,8 +619,27 @@ class AgentLoop:
             return {"status": "error", "error": {"code": "AMBIGUOUS_CONTEXT", "error_ref": "AMBIGUOUS_CONTEXT", "recovery_class": "ASK_USER", "stage": "context_resolution", "retryable": False, "attempt": 1, "max_attempts": 1, "message": details["message"], "details": details, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
         last_error = None
         repair_feedback = None
+        skill_registry = discover_skills()
+        selected_skills = None
+        answer_system = ANSWER_SYSTEM
         for llm_attempt in range(1, MAX_PLANNER_ATTEMPTS + 1):
             try:
+                if selected_skills is None:
+                    selection_input = {"question": question_text, "contextSelection": planning_payload.get("contextSelection"),
+                                       "skills": [{"name": item["name"], "description": item["description"]}
+                                                  for item in skill_registry.values()]}
+                    if repair_feedback is not None:
+                        selection_input["repair_feedback"] = repair_feedback
+                    selection = _json_object(self._chat([
+                        {"role": "system", "content": selection_instructions()},
+                        {"role": "user", "content": json.dumps(selection_input, ensure_ascii=False)},
+                    ], recorder=recorder, response_format=selection_schema(skill_registry)))
+                    instructions = selected_instructions(selection, skill_registry)
+                    selected_skills = selection["skills"]
+                    planning_payload["selected_skills"] = selected_skills
+                    if instructions:
+                        planner_system += "\n\n" + instructions
+                        answer_system += "\n\n" + instructions
                 planner_input = dict(planning_payload)
                 if repair_feedback is not None:
                     planner_input["repair_feedback"] = repair_feedback
@@ -696,7 +720,7 @@ class AgentLoop:
         answer_payload = {"question": question_text, "results": _model_safe_execution(execution)}
         try:
             answer = self._chat([
-            {"role": "system", "content": ANSWER_SYSTEM},
+            {"role": "system", "content": answer_system},
             {"role": "user", "content": json.dumps(answer_payload, ensure_ascii=False)},
             ], recorder=recorder, stream=True, attempts=1, on_token=on_token)
             recorder.set_output(answer)
