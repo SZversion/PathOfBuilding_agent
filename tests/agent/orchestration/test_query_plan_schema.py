@@ -179,8 +179,49 @@ def test_unknown_or_ambiguity_without_ask_user_is_terminal():
         validate_plan({"schema_version": "1.0", "intent": "unknown", "steps": []})
     assert unknown.value.code == "AMBIGUOUS_ALIAS"
     with pytest.raises(PlanValidationError) as ambiguous:
-        validate_plan({"schema_version": "1.0", "intent": "stat", "ambiguities": ["which skill"], "steps": []})
+        validate_plan({"schema_version": "1.0", "intent": "stat", "ambiguities": ["/intent"], "steps": []})
     assert ambiguous.value.code == "AMBIGUOUS_ALIAS"
+
+
+@pytest.mark.parametrize("ambiguities", ["analysis", [None], ["analysis"], ["automation"], ["which skill"], ["/ambiguities/0"], ["/steps/9/tool"], ["/steps/0/arguments/missing"], ["/intent", "/intent"]])
+def test_invalid_ambiguity_paths_require_plan_repair(ambiguities):
+    plan = {"schema_version": "1.0", "intent": "unknown", "ambiguities": ambiguities,
+            "steps": [{"tool": "get_skill_dps", "arguments": {"skillName": None}}]}
+    with pytest.raises(PlanValidationError) as invalid:
+        validate_plan(plan)
+    assert invalid.value.code == "MODEL_SCHEMA_INVALID"
+
+
+def test_existing_ambiguity_field_path_requests_clarification():
+    plan = {"schema_version": "1.0", "intent": "stat", "ambiguities": ["/steps/0/arguments/skillName"],
+            "steps": [{"tool": "get_skill_dps", "arguments": {"skillName": None}}]}
+    with pytest.raises(PlanValidationError) as ambiguous:
+        validate_plan(plan)
+    assert ambiguous.value.code == "AMBIGUOUS_ALIAS"
+    assert ambiguous.value.details["ambiguities"] == ["/steps/0/arguments/skillName"]
+
+
+def test_invalid_ambiguity_is_repaired_before_tool_execution():
+    calls = []
+
+    class Model:
+        def chat(self, messages):
+            payload = json.loads(messages[1]["content"])
+            if "skills" in payload:
+                return '{"skills":[]}'
+            if "planner" in messages[0]["content"]:
+                calls.append(payload)
+                if len(calls) == 1:
+                    return '{"schema_version":"1.0","intent":"unknown","ambiguities":["analysis"],"steps":[]}'
+                assert payload["repair_feedback"]["code"] == "MODEL_SCHEMA_INVALID"
+                return '{"schema_version":"1.0","intent":"stat","ambiguities":[],"steps":[{"tool":"get_skill_dps","arguments":{"skillName":"Arc"}}]}'
+            return "Arc DPS"
+
+    seen = []
+    result = AgentLoop(Model()).run("Arc DPS", handlers={"get_skill_dps": lambda args: seen.append(args) or {"facts": {"value": 1}}})
+    assert result["status"] == "ok"
+    assert len(calls) == 2
+    assert seen == [{"skillName": "Arc"}]
 
 
 def test_live_envelope_defaults_and_explicit_set_priority():
