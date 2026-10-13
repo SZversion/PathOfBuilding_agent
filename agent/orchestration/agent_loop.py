@@ -407,7 +407,7 @@ def validate_context_ambiguities(plan, payload):
         if not isinstance(ambiguity, str):
             continue
         field, separator, target = ambiguity.partition(":")
-        if (not separator and fields.get(field) in selection) or (separator and field in {"skill_id", "skillName", "gem_name"} and known_skills.count(target.strip().casefold()) == 1):
+        if (not separator and fields.get(field) in selection) or (separator and field in {"skill_id", "skillName", "skillAlias", "skill_alias", "gem_name"} and known_skills.count(target.strip().casefold()) == 1):
             contradicted.append(ambiguity)
     if contradicted:
         raise PlanValidationError("planner clarification contradicts the supplied live context", code="PLAN_CONTEXT_CONFLICT",
@@ -597,6 +597,7 @@ class AgentLoop:
         if context_overrides:
             planning_payload["explicitContextOverrides"] = context_overrides
         planner_system = PLANNER_SYSTEM + "\nThe snapshot is the authoritative live pob_agent screen state. Explicit user mentions override only mentioned fields for this request; use active screen selections for every unmentioned skill, set, Config, buff and condition. contextSelection entries marked 사용자 질문 take priority. Put set changes in arguments.contextOverrides (activeSpec, activeSkillSet, activeItemSet, activeConfigSet), explicit skills in skillName and Config conditions in configOverrides. A highest-DPS-across-skills question requires neither a gem name nor a gem level. Ask only when an explicit target is missing or matches multiple candidates, or required information is genuinely unavailable."
+        planner_system += '\nExample for "현재 세팅에서 DPS가 가장 높은 스킬은?": {"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{},"ambiguities":[],"steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}. This tool examines the active build skills directly; no alias resolution, gem level, skill ID or specific skill selection is needed.'
         if tool_definitions is not None:
             available = [item for item in tool_definitions if isinstance(item, dict)
                          and item.get("name") in READ_ONLY_TOOLS]
