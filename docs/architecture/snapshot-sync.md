@@ -13,6 +13,15 @@ The first request sends a normalized snapshot containing:
 
 The raw XML is not sent to the external server.
 
+The live `pob_agent` snapshot includes the currently selected Tree Spec, Skill Set,
+Item Set, Config Set, main skill, enabled gems, Config values, and ordered set
+catalogs together with PoB's calculated outputs. Unmentioned request fields use
+these active selections. Explicit user mentions take priority for that request;
+set IDs are resolved from the supplied catalogs, and temporary calculation
+overrides are restored after the Tool call. Missing or ambiguous requested
+targets require clarification. A planner clarification contradicted by supplied
+live context is retried within the existing bounded planner repair budget.
+
 ## Diff
 
 Later requests send `{baseRevision, revision, changes}`. Changes are limited to normalized item, skill, passive, Config, enabled-state, or selected-context fields. The Bridge recaptures the current PoB state before every request so direct user edits are included.

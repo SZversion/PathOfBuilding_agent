@@ -79,3 +79,17 @@ except PobBridgeError as error:
 else:
     raise AssertionError("ambiguous alias was not preserved")
 print("pob bridge self-check passed")
+
+
+def test_live_snapshot_keeps_current_selections_and_catalogs():
+    projected = project_snapshot({"facts": {"schemaVersion": 1, "outputs": {"Life": 5000},
+        "activeSkillSet": {"id": 7, "title": "Mapping"}, "activeConfigSet": {"id": 2, "title": "Boss"},
+        "mainSkill": {"name": "Arc"}, "config": {"enemyIsBoss": "Pinnacle"},
+        "availableSkillSets": [{"id": 7, "title": "Mapping"}, {"id": 3, "title": "Boss"}],
+        "availableConfigSets": [{"id": 2, "title": "Boss"}]}})
+    assert projected["activeSkillSet"]["id"] == 7
+    assert projected["mainSkill"]["name"] == "Arc"
+    assert projected["config"]["enemyIsBoss"] == "Pinnacle"
+    assert [item["id"] for item in projected["skillSets"]] == [7, 3]
+    assert projected["configSets"][0]["id"] == 2
+    assert projected["calculatedSnapshot"]["outputs"]["Life"] == 5000

@@ -152,7 +152,7 @@ def _repair_feedback(error):
     details = getattr(error, "details", {})
     safe_details = {}
     if isinstance(details, dict):
-        for key in ("fields", "argument", "arguments", "tool", "expected", "actual"):
+        for key in ("fields", "argument", "arguments", "tool", "expected", "actual", "already_available"):
             value = details.get(key)
             if isinstance(value, (str, int, float, bool)) or value is None:
                 safe_details[key] = value
@@ -162,7 +162,7 @@ def _repair_feedback(error):
         "code": code,
         "message": str(error)[:240] if isinstance(error, PlanValidationError) else "planner response failed the JSON/schema contract",
         "details": safe_details,
-        "instruction": "Return a new plan using only canonical Tool names, object arguments, and the declared argument schema. Do not repeat the invalid field.",
+        "instruction": details.get("instruction") if code == "PLAN_CONTEXT_CONFLICT" else "Return a new plan using only canonical Tool names, object arguments, and the declared argument schema. Do not repeat the invalid field.",
     }
 
 
@@ -188,8 +188,9 @@ def extract_context_overrides(question):
             raise PlanValidationError("item set override is ambiguous", code="AMBIGUOUS_ALIAS", details={"field": "activeItemSet", "values": sorted(set(item_values))})
         result["activeItemSet"] = item_values[0]
     for field, patterns in {
-        "activeSkillSet": (r"(?:스킬\s*셋|skill\s*set)\s*([0-9]+)",),
-        "activeSpec": (r"(?:스펙|spec|패시브\s*트리|passive\s*tree)\s*([0-9]+)",),
+        "activeSkillSet": (r"(?:스킬\s*셋|skill\s*set)\s*([0-9]+)", r"([0-9]+)\s*번\s*스킬\s*셋"),
+        "activeSpec": (r"(?:스펙|spec|패시브\s*트리|passive\s*tree)\s*([0-9]+)", r"([0-9]+)\s*번\s*(?:트리|스펙)"),
+        "activeConfigSet": (r"(?:config|설정)\s*(?:셋|세트|set)\s*([0-9]+)", r"([0-9]+)\s*번\s*(?:config|설정)\s*(?:셋|세트|set)"),
     }.items():
         values = [int(value) for pattern in patterns for value in re.findall(pattern, text, re.I)]
         if values:
@@ -305,20 +306,44 @@ def _context_entries(value):
     return []
 
 
+def _context_source(context):
+    source = context if isinstance(context, dict) else {}
+    for key in ("facts", "context", "snapshot"):
+        if isinstance(source.get(key), dict):
+            source = source[key]
+    source = dict(source)
+    for key, catalog in (("skillSets", "availableSkillSets"), ("itemSets", "availableItemSets"), ("specs", "availableSpecs"), ("configSets", "availableConfigSets")):
+        if key not in source and catalog in source:
+            source[key] = source[catalog]
+    return source
+
+
 def request_context_overrides(text, context):
     """Parse only explicit, request-local set selectors; never mutate PoB."""
-    source = context.get("snapshot") if isinstance(context, dict) and isinstance(context.get("snapshot"), dict) else context
-    source = source if isinstance(source, dict) else {}
+    source = _context_source(context)
     overrides, conflicts = {}, []
     patterns = (("itemSet", "itemSets", r"(\d+)\s*번\s*(?:장비|아이템)\s*셋"),
                 ("skillSet", "skillSets", r"(\d+)\s*번\s*스킬\s*셋"),
-                ("treeSpec", "specs", r"(\d+)\s*번\s*(?:트리|스펙)"))
+                ("treeSpec", "specs", r"(\d+)\s*번\s*(?:트리|스펙)"),
+                ("configSet", "configSets", r"(\d+)\s*번\s*(?:config|설정)\s*(?:셋|세트|set)"))
+    explicit = extract_context_overrides(text)
+    fields = {"itemSet": "activeItemSet", "skillSet": "activeSkillSet", "treeSpec": "activeSpec", "configSet": "activeConfigSet"}
+    labels = {"itemSet": r"(?:장비|아이템)\s*(?:셋|세트)|item\s*set", "skillSet": r"스킬\s*(?:셋|세트)|skill\s*set", "treeSpec": r"트리|스펙|spec", "configSet": r"(?:config|설정)\s*(?:셋|세트|set)"}
     for name, key, pattern in patterns:
-        match = re.search(pattern, text or "", flags=re.IGNORECASE)
-        if not match:
-            continue
         candidates = _context_entries(source.get(key))
-        index = int(match.group(1))
+        match = re.search(pattern, text or "", flags=re.IGNORECASE)
+        index = int(match.group(1)) if match else explicit.get(fields[name])
+        if index is None:
+            matches = [candidate for candidate in candidates if isinstance(candidate.get("title"), str)
+                       and re.search(rf'(?:{re.escape(candidate["title"])}\s+(?:{labels[name]})|(?:{labels[name]})\s+{re.escape(candidate["title"])})(?!\w)', text or "", re.I)]
+            if not matches:
+                continue
+            if len(matches) != 1:
+                conflicts.append(name)
+                continue
+            candidate = matches[0]
+            overrides[name] = {"id": candidate.get("id"), "title": candidate.get("title"), "source": "사용자 질문"}
+            continue
         if index < 1 or index > len(candidates):
             conflicts.append(name)
             continue
@@ -329,11 +354,10 @@ def request_context_overrides(text, context):
 
 def resolve_active_context(context, *, text=None):
     """Select unambiguous PoB context without classifying the build."""
-    source = context.get("snapshot") if isinstance(context, dict) and isinstance(context.get("snapshot"), dict) else context
-    source = source if isinstance(source, dict) else {}
+    source = _context_source(context)
     selected, conflicts = {}, []
 
-    for name, candidates_key, active_key in (("skillSet", "skillSets", "activeSkillSet"), ("itemSet", "itemSets", "activeItemSet"), ("treeSpec", "specs", "activeSpec")):
+    for name, candidates_key, active_key in (("skillSet", "skillSets", "activeSkillSet"), ("itemSet", "itemSets", "activeItemSet"), ("treeSpec", "specs", "activeSpec"), ("configSet", "configSets", "activeConfigSet")):
         candidates = _context_entries(source.get(candidates_key))
         active = source.get(active_key)
         if len(candidates) == 1:
@@ -350,6 +374,10 @@ def resolve_active_context(context, *, text=None):
             selected[name] = {"id": active_id, "title": active_title, "source": "PoB 활성 상태"}
     request = request_context_overrides(text, source) if isinstance(text, str) else {"overrides": {}, "conflicts": []}
     selected.update(request["overrides"])
+    conflicts = [name for name in conflicts if name not in request["overrides"]]
+    for name in ("mainSkill", "config"):
+        if isinstance(source.get(name), dict) and source[name]:
+            selected[name] = {**source[name], "source": "PoB 활성 상태"}
     conflicts.extend(item for item in request["conflicts"] if item not in conflicts)
     return {"selected": selected, "conflicts": conflicts}
 
@@ -366,6 +394,25 @@ def planner_query_projection(query, *, context=None):
         projected["context"] = context
         projected["contextSelection"] = resolve_active_context(context, text=query["text"])
     return projected
+
+
+def validate_context_ambiguities(plan, payload):
+    source = _context_source(payload.get("context"))
+    selection = payload.get("contextSelection", {}).get("selected", {})
+    known_skills = [skill["name"].casefold() for skill in source.get("calculatedSnapshot", {}).get("skills", []) if isinstance(skill, dict) and isinstance(skill.get("name"), str)]
+    fields = {"skillSet": "skillSet", "skill_set": "skillSet", "itemSet": "itemSet", "item_set": "itemSet",
+              "treeSpec": "treeSpec", "configSet": "configSet", "config": "config"}
+    contradicted = []
+    for ambiguity in plan.get("ambiguities", []):
+        if not isinstance(ambiguity, str):
+            continue
+        field, separator, target = ambiguity.partition(":")
+        if (not separator and fields.get(field) in selection) or (separator and field in {"skill_id", "skillName", "skillAlias", "skill_alias", "gem_name"} and known_skills.count(target.strip().casefold()) == 1):
+            contradicted.append(ambiguity)
+    if contradicted:
+        raise PlanValidationError("planner clarification contradicts the supplied live context", code="PLAN_CONTEXT_CONFLICT",
+                                  details={"already_available": contradicted, "instruction": "Use the supplied active selections and skill names. skill_id is not required by PoB tools; use skillName or skillIndex. Ask only for genuinely missing or conflicting targets."})
+    return plan
 
 
 def _validate_completeness(plan, *, enforce_evidence=False):
@@ -543,9 +590,14 @@ class AgentLoop:
         planning_payload = planner_query_projection(query, context=sync)
         if context_overrides:
             planning_payload["explicitContextOverrides"] = context_overrides
-        if isinstance(snapshot, dict):
-            planning_payload["contextSelection"] = resolve_active_context(snapshot, text=query["text"])
-        planner_system = PLANNER_SYSTEM
+        for name, field in (("skillSet", "activeSkillSet"), ("itemSet", "activeItemSet"), ("treeSpec", "activeSpec"), ("configSet", "activeConfigSet")):
+            selected = planning_payload.get("contextSelection", {}).get("selected", {}).get(name, {})
+            if selected.get("source") == "사용자 질문":
+                context_overrides[field] = selected["id"]
+        if context_overrides:
+            planning_payload["explicitContextOverrides"] = context_overrides
+        planner_system = PLANNER_SYSTEM + "\nThe snapshot is the authoritative live pob_agent screen state. Explicit user mentions override only mentioned fields for this request; use active screen selections for every unmentioned skill, set, Config, buff and condition. contextSelection entries marked 사용자 질문 take priority. Put set changes in arguments.contextOverrides (activeSpec, activeSkillSet, activeItemSet, activeConfigSet), explicit skills in skillName and Config conditions in configOverrides. A highest-DPS-across-skills question requires neither a gem name nor a gem level. Ask only when an explicit target is missing or matches multiple candidates, or required information is genuinely unavailable."
+        planner_system += '\nExample for "현재 세팅에서 DPS가 가장 높은 스킬은?": {"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{},"ambiguities":[],"steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}. This tool examines the active build skills directly; no alias resolution, gem level, skill ID or specific skill selection is needed.'
         if tool_definitions is not None:
             available = [item for item in tool_definitions if isinstance(item, dict)
                          and item.get("name") in READ_ONLY_TOOLS]
@@ -567,10 +619,10 @@ class AgentLoop:
                 planner_input = dict(planning_payload)
                 if repair_feedback is not None:
                     planner_input["repair_feedback"] = repair_feedback
-                planned = validate_plan(_json_object(self._chat([
+                planned = validate_plan(validate_context_ambiguities(_json_object(self._chat([
                     {"role": "system", "content": planner_system},
                     {"role": "user", "content": json.dumps(planner_input, ensure_ascii=False)},
-                ], recorder=recorder, response_format=PLANNER_JSON_SCHEMA)))
+                ], recorder=recorder, response_format=PLANNER_JSON_SCHEMA)), planning_payload))
                 recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), plan_ref=recorder.plan_ref(planned), input_payload=query, output_payload=planned)
                 break
             except PlanValidationError as error:

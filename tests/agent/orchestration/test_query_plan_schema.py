@@ -181,3 +181,65 @@ def test_unknown_or_ambiguity_without_ask_user_is_terminal():
     with pytest.raises(PlanValidationError) as ambiguous:
         validate_plan({"schema_version": "1.0", "intent": "stat", "ambiguities": ["which skill"], "steps": []})
     assert ambiguous.value.code == "AMBIGUOUS_ALIAS"
+
+
+def test_live_envelope_defaults_and_explicit_set_priority():
+    context = {"facts": {"activeSkillSet": {"id": 7, "title": "Mapping"},
+        "activeConfigSet": {"id": 2, "title": "Boss"}, "mainSkill": {"name": "Arc"},
+        "config": {"enemyIsBoss": "Pinnacle"},
+        "availableSkillSets": [{"id": 7, "title": "Mapping"}, {"id": 3, "title": "Boss"}],
+        "availableConfigSets": [{"id": 2, "title": "Boss"}]}}
+    defaults = resolve_active_context(context, text="highest DPS skill")
+    assert defaults["selected"]["skillSet"]["id"] == 7
+    assert defaults["selected"]["mainSkill"]["name"] == "Arc"
+    assert defaults["selected"]["config"]["enemyIsBoss"] == "Pinnacle"
+    explicit = resolve_active_context(context, text="2번 스킬셋 DPS")
+    assert explicit["selected"]["skillSet"]["id"] == 3
+    assert explicit["selected"]["configSet"]["id"] == 2
+    assert explicit["conflicts"] == []
+    named = resolve_active_context(context, text="Boss skill set DPS")
+    assert named["selected"]["skillSet"]["id"] == 3
+    missing = resolve_active_context(context, text="99번 스킬셋 DPS")
+    assert missing["conflicts"] == ["skillSet"]
+
+
+def test_explicit_set_reaches_tool_without_changing_other_defaults():
+    calls = []
+    class Model:
+        def chat(self, messages, **kwargs):
+            if "planner" in messages[0]["content"]:
+                payload = json.loads(messages[1]["content"])
+                assert payload["contextSelection"]["selected"]["skillSet"]["id"] == 3
+                assert payload["contextSelection"]["selected"]["mainSkill"]["name"] == "Arc"
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}'
+            return "Arc"
+    result = AgentLoop(Model()).run("2번 스킬셋 DPS", snapshot={"activeSkillSet": {"id": 7},
+        "mainSkill": {"name": "Arc"}, "availableSkillSets": [{"id": 7}, {"id": 3}]},
+        handlers={"get_highest_dps_skill": lambda args: calls.append(args) or {"facts": {"skill": "Arc"}}})
+    assert result["status"] == "ok"
+    assert calls[0]["contextOverrides"] == {"activeSkillSet": 3}
+
+
+def test_planner_repairs_clarification_for_a_known_live_skill():
+    class Model:
+        calls = 0
+        def chat(self, messages, **kwargs):
+            if "planner" in messages[0]["content"]:
+                self.calls += 1
+                payload = json.loads(messages[1]["content"])
+                if self.calls == 1:
+                    return '{"steps":[],"ambiguities":["skill_id:Arc"]}'
+                assert payload["repair_feedback"]["details"]["already_available"] == ["skill_id:Arc"]
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}'
+            return "Arc"
+    model = Model()
+    result = AgentLoop(model).run("highest DPS skill", snapshot={"calculatedSnapshot": {"skills": [{"name": "Arc"}]}, "mainSkill": {"name": "Arc"}},
+        handlers={"get_highest_dps_skill": lambda args: {"facts": {"skill": "Arc"}}})
+    assert result["status"] == "ok" and model.calls == 2
+
+
+def test_duplicate_skill_names_preserve_planner_clarification():
+    from agent.orchestration.agent_loop import validate_context_ambiguities
+    plan = {"steps": [], "ambiguities": ["skill_id:Arc"]}
+    payload = {"context": {"calculatedSnapshot": {"skills": [{"name": "Arc"}, {"name": "Arc"}]}}}
+    assert validate_context_ambiguities(plan, payload) is plan

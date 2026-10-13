@@ -148,6 +148,14 @@ local function apply_calculation_context(build, selectors)
 		if type(itemsTab.SetActiveItemSet) ~= "function" then return nil, "Item Set selector cannot be applied" end
 		itemsTab:SetActiveItemSet(selected.activeItemSet.id)
 	end
+	if selectors.activeConfigSet ~= nil then
+		local configTab = build.configTab
+		if not configTab or type(configTab.SetActiveConfigSet) ~= "function" then return nil, "Config Set selector cannot be applied" end
+		local configSet, configId = resolve_title_selector(selectors.activeConfigSet, configTab.configSets, configTab.configSetOrderList, "Config Set")
+		if not configSet then return nil, configId end
+		selected.activeConfigSet = { id = configId, title = configSet.title or "Default" }
+		configTab:SetActiveConfigSet(configId)
+	end
 	return selected
 end
 

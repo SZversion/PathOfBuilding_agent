@@ -123,9 +123,18 @@ def project_snapshot(context, overrides=None):
             ]
     elif isinstance(context.get("calculatedSnapshot"), dict):
         projected["calculatedSnapshot"] = context["calculatedSnapshot"]
+    if isinstance(context.get("activeConfigSet"), dict):
+        projected["activeConfigSet"] = _primitive_fields(context["activeConfigSet"])
+    for field, catalog in (("specs", "availableSpecs"), ("skillSets", "availableSkillSets"),
+                           ("itemSets", "availableItemSets"), ("configSets", "availableConfigSets")):
+        options = context.get(field, context.get(catalog))
+        if isinstance(options, list):
+            projected[field] = [_primitive_fields(option) for option in options if isinstance(option, dict)]
+        elif isinstance(options, dict):
+            projected[field] = [{"id": key, **_primitive_fields(option)} for key, option in options.items() if isinstance(option, dict)]
     if isinstance(overrides, dict) and overrides:
         provenance = {}
-        option_names = {"activeSpec": "availableSpecs", "activeSkillSet": "availableSkillSets", "activeItemSet": "availableItemSets"}
+        option_names = {"activeSpec": "availableSpecs", "activeSkillSet": "availableSkillSets", "activeItemSet": "availableItemSets", "activeConfigSet": "availableConfigSets"}
         for field, requested in overrides.items():
             if field not in option_names:
                 continue

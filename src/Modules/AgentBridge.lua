@@ -99,6 +99,19 @@ local function title(entry)
 	return scalar(value)
 end
 
+local function orderedSets(entries, order)
+	local result = {}
+	for _, id in ipairs(order or {}) do
+		local entry = entries and entries[id]
+		if entry then result[#result + 1] = { id = id, title = title(entry) } end
+	end
+	if #result == 0 then
+		for id, entry in pairs(entries or {}) do result[#result + 1] = { id = id, title = title(entry) } end
+		table.sort(result, function(a, b) return tostring(a.id) < tostring(b.id) end)
+	end
+	return result
+end
+
 local function activeContext(build)
 	local tree = build and build.treeTab
 	local skills = build and build.skillsTab
@@ -108,7 +121,10 @@ local function activeContext(build)
 	local itemId = items and (items.activeItemSetId or items.activeItemSet)
 	local spec = tree and tree.specList and tree.specList[specId]
 	local itemSet = items and items.itemSets and items.itemSets[itemId]
-	local config = primitiveMap(build and build.configTab and build.configTab.input)
+	local configTab = build and build.configTab
+	local configId = configTab and configTab.activeConfigSetId
+	local configSet = configTab and configTab.configSets and configTab.configSets[configId]
+	local config = primitiveMap(configTab and configTab.input)
 	local groups = {}
 	for index, group in ipairs(skills and skills.socketGroupList or {}) do
 		local gems = {}
@@ -138,7 +154,8 @@ local function activeContext(build)
 		activeSpec = activeSpecState,
 		activeSkillSet = { id = skillId, title = title(skillSet) },
 		activeItemSet = { id = itemId, title = title(itemSet) },
-		mainSkill = { name = mainEffect and mainEffect.name or (mainSkill and (mainSkill.name or mainSkill.baseName)), skillPart = mainSkill and mainSkill.skillPartName },
+		activeConfigSet = { id = configId, title = title(configSet) },
+		mainSkill = { socketGroup = build and build.mainSocketGroup, name = mainEffect and mainEffect.name or (mainSkill and (mainSkill.name or mainSkill.baseName)), skillPart = mainSkill and mainSkill.skillPartName },
 		gems = groups, socketGroups = groups, config = config, activeBuffs = activeBuffs, enemyConditions = enemyConditions,
 		gamePatch = build and build.gamePatch or build and build.targetVersion,
 		pobVersion = build and build.pobVersion or build and build.version,
@@ -148,16 +165,9 @@ local function activeContext(build)
 			for id, entry in ipairs(tree and tree.specList or {}) do result[#result + 1] = { id = id, title = title(entry) } end
 			return result
 		end)(),
-		availableSkillSets = (function()
-			local result = {}
-			for id, entry in pairs(skills and skills.skillSets or {}) do result[#result + 1] = { id = id, title = title(entry) } end
-			return result
-		end)(),
-		availableItemSets = (function()
-			local result = {}
-			for id, entry in pairs(items and items.itemSets or {}) do result[#result + 1] = { id = id, title = title(entry) } end
-			return result
-		end)(),
+		availableSkillSets = orderedSets(skills and skills.skillSets, skills and skills.skillSetOrderList),
+		availableItemSets = orderedSets(items and items.itemSets, items and items.itemSetOrderList),
+		availableConfigSets = orderedSets(configTab and configTab.configSets, configTab and configTab.configSetOrderList),
 	}, skillErr
 end
 
@@ -174,11 +184,12 @@ local function capture(build, provenance, preserveRevision)
 		for key, value in pairs(provenance) do if (key == "activeSpec" or key == "activeSkillSet" or key == "activeItemSet") and type(value) ~= "table" then rawOverride = true end end
 	end
 	if rawOverride then
-		local previous = { activeSpec = build.treeTab and build.treeTab.activeSpec, activeSkillSet = build.skillsTab and build.skillsTab.activeSkillSetId, activeItemSet = build.itemsTab and build.itemsTab.activeItemSetId }
+		local previous = { activeSpec = build.treeTab and build.treeTab.activeSpec, activeSkillSet = build.skillsTab and build.skillsTab.activeSkillSetId, activeItemSet = build.itemsTab and build.itemsTab.activeItemSetId, activeConfigSet = build.configTab and build.configTab.activeConfigSetId }
 		local function restore()
 			if build.treeTab and previous.activeSpec ~= nil and build.treeTab.SetActiveSpec then build.treeTab:SetActiveSpec(previous.activeSpec) end
 			if build.skillsTab and previous.activeSkillSet ~= nil and build.skillsTab.SetActiveSkillSet then build.skillsTab:SetActiveSkillSet(previous.activeSkillSet) end
 			if build.itemsTab and previous.activeItemSet ~= nil and build.itemsTab.SetActiveItemSet then build.itemsTab:SetActiveItemSet(previous.activeItemSet) end
+		if build.configTab and previous.activeConfigSet ~= nil and build.configTab.SetActiveConfigSet then build.configTab:SetActiveConfigSet(previous.activeConfigSet) end
 		end
 		local selected, applyErr = context.apply_calculation_context(build, provenance)
 		if not selected then
@@ -228,15 +239,16 @@ local function dispatch(build, request, tools, dispatcher)
 	local overrides = args.contextOverrides
 	if overrides ~= nil and type(overrides) ~= "table" then return nil, errorEnvelope("INPUT_INVALID", "REPAIR_INPUT", "context_override", "contextOverrides must be an object", "repair_input") end
 	overrides = overrides or {}
-	local allowedOverrides = { activeSpec = true, activeSkillSet = true, activeItemSet = true }
+	local allowedOverrides = { activeSpec = true, activeSkillSet = true, activeItemSet = true, activeConfigSet = true }
 	for key in pairs(overrides) do if not allowedOverrides[key] then return nil, errorEnvelope("INPUT_INVALID", "REPAIR_INPUT", "context_override", "unsupported context override: " .. tostring(key), "repair_input") end end
-	local previous = { activeSpec = build.treeTab and build.treeTab.activeSpec, activeSkillSet = build.skillsTab and build.skillsTab.activeSkillSetId, activeItemSet = build.itemsTab and build.itemsTab.activeItemSetId }
+	local previous = { activeSpec = build.treeTab and build.treeTab.activeSpec, activeSkillSet = build.skillsTab and build.skillsTab.activeSkillSetId, activeItemSet = build.itemsTab and build.itemsTab.activeItemSetId, activeConfigSet = build.configTab and build.configTab.activeConfigSetId }
 	local configRestore, appliedConfig
 	local function restore()
 		if not next(overrides) and not configRestore then return end
 		if build.treeTab and previous.activeSpec ~= nil and build.treeTab.SetActiveSpec then build.treeTab:SetActiveSpec(previous.activeSpec) end
 		if build.skillsTab and previous.activeSkillSet ~= nil and build.skillsTab.SetActiveSkillSet then build.skillsTab:SetActiveSkillSet(previous.activeSkillSet) end
 		if build.itemsTab and previous.activeItemSet ~= nil and build.itemsTab.SetActiveItemSet then build.itemsTab:SetActiveItemSet(previous.activeItemSet) end
+		if build.configTab and previous.activeConfigSet ~= nil and build.configTab.SetActiveConfigSet then build.configTab:SetActiveConfigSet(previous.activeConfigSet) end
 		if configRestore then configRestore(); configRestore = nil end
 	end
 	local applied = {}

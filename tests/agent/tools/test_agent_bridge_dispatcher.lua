@@ -112,3 +112,22 @@ assert(not mutation and mutationErr.code == "MUTATION_NOT_PERSISTENT")
 local invalid, invalidErr = bridge.dispatch(build, { tool = "get_character_stats" }, tools)
 assert(not invalid and invalidErr.code == "INPUT_INVALID")
 print("test_agent_bridge_dispatcher: ok")
+
+local originalConfig = build.configTab.input
+build.configTab.activeConfigSetId = 1
+build.configTab.configSetOrderList = { 1, 9 }
+build.configTab.configSets = { [1] = { title = "Mapping", input = originalConfig }, [9] = { title = "Boss", input = { enemyIsBoss = "Pinnacle" } } }
+function build.configTab:SetActiveConfigSet(id)
+	self.activeConfigSetId = id
+	self.input = self.configSets[id].input
+end
+local selectedConfig = assert(bridge.capture(build))
+assert(selectedConfig.context.activeConfigSet.id == 1)
+assert(selectedConfig.context.availableConfigSets[2].id == 9)
+local configResult = assert(bridge.dispatch(build, { tool = "get_character_stats", arguments = { contextOverrides = { activeConfigSet = 9 } } }, nil, function(current)
+	assert(current.configTab.activeConfigSetId == 9)
+	assert(current.configTab.input.enemyIsBoss == "Pinnacle")
+	return { facts = { value = 1 } }
+end))
+assert(configResult.conditions.context.activeConfigSet.id == 9)
+assert(build.configTab.activeConfigSetId == 1 and build.configTab.input == originalConfig)
