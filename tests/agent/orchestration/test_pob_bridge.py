@@ -27,7 +27,7 @@ assert "allocNodes" not in projected["activeSpec"] and "cycle" not in projected[
 assert project_snapshot({"activeSpec": {"id": {"bad": True}, "title": ["bad"]}, "gamePatch": {"bad": True}})["activeSpec"] == {"id": None, "title": None, "allocatedNodeIds": [], "jewelIds": []}
 assert serialize_snapshot(snapshot_a) == serialize_snapshot(snapshot_b)
 mixed_keys = serialize_snapshot({"config": {"a": 1, 2: "x"}})
-assert mixed_keys == '{"activeBuffs":{},"activeItemSet":{},"activeSkillSet":{},"activeSpec":{"allocatedNodeIds":[],"id":null,"jewelIds":[],"title":null},"config":{"a":1},"dataRevision":null,"enemyConditions":{},"gamePatch":null,"mainSkill":{},"pobVersion":null,"socketGroups":[]}'
+assert mixed_keys == '{"activeBuffs":{},"activeConfigSet":{},"activeItemSet":{},"activeSkillSet":{},"activeSpec":{"allocatedNodeIds":[],"id":null,"jewelIds":[],"title":null},"config":{"a":1},"dataRevision":null,"enemyConditions":{},"gamePatch":null,"mainSkill":{},"pobVersion":null,"socketGroups":[]}'
 
 baseline = json.load(open("tests/fixtures/bridge/capture_baseline.json", encoding="utf-8"))
 large = {"activeSpec": {"id": 1, "allocNodes": {index: {"linked": list(range(20)), "graph": {"node": index}} for index in range(1, 5001)}, "jewels": {index: index for index in range(9000, 9100)}}}
@@ -79,3 +79,17 @@ except PobBridgeError as error:
 else:
     raise AssertionError("ambiguous alias was not preserved")
 print("pob bridge self-check passed")
+
+
+def test_live_snapshot_keeps_current_selections_and_catalogs():
+    projected = project_snapshot({"facts": {"schemaVersion": 1, "outputs": {"Life": 5000},
+        "activeSkillSet": {"id": 7, "title": "Mapping"}, "activeConfigSet": {"id": 2, "title": "Boss"},
+        "mainSkill": {"name": "Arc"}, "config": {"enemyIsBoss": "Pinnacle"},
+        "availableSkillSets": [{"id": 7, "title": "Mapping"}, {"id": 3, "title": "Boss"}],
+        "availableConfigSets": [{"id": 2, "title": "Boss"}]}})
+    assert projected["activeSkillSet"]["id"] == 7
+    assert projected["mainSkill"]["name"] == "Arc"
+    assert projected["config"]["enemyIsBoss"] == "Pinnacle"
+    assert [item["id"] for item in projected["skillSets"]] == [7, 3]
+    assert projected["configSets"][0]["id"] == 2
+    assert projected["calculatedSnapshot"]["outputs"]["Life"] == 5000
