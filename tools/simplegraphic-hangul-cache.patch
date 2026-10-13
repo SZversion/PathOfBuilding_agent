@@ -741,3 +741,42 @@ index 0000000..02b3c01
 +	struct impl;
 +	std::unique_ptr<impl> data;
 +};
+
+diff --git a/ui_main.cpp b/ui_main.cpp
+index 09e59be..48e785d 100644
+--- a/ui_main.cpp
++++ b/ui_main.cpp
+@@ -552,7 +552,32 @@ void ui_main_c::CallKeyHandler(const char* hname, int key, bool dblclk)
+ 	if (extraArgs < 0) {
+ 		return;
+ 	}
+-	if (key < 128) {
++	if (!strcmp(hname, "OnChar") && key >= 128) {
++		unsigned int codepoint = static_cast<unsigned int>(key);
++		char utf8[4];
++		size_t length = 0;
++		if (codepoint <= 0x7FF) {
++			utf8[0] = static_cast<char>(0xC0 | (codepoint >> 6));
++			utf8[1] = static_cast<char>(0x80 | (codepoint & 0x3F));
++			length = 2;
++		} else if (codepoint <= 0xFFFF && !(codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
++			utf8[0] = static_cast<char>(0xE0 | (codepoint >> 12));
++			utf8[1] = static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
++			utf8[2] = static_cast<char>(0x80 | (codepoint & 0x3F));
++			length = 3;
++		} else if (codepoint <= 0x10FFFF) {
++			utf8[0] = static_cast<char>(0xF0 | (codepoint >> 18));
++			utf8[1] = static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
++			utf8[2] = static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
++			utf8[3] = static_cast<char>(0x80 | (codepoint & 0x3F));
++			length = 4;
++		}
++		if (length) {
++			lua_pushlstring(L, utf8, length);
++		} else {
++			lua_pushstring(L, "?");
++		}
++	} else if (key < 128) {
+ 		lua_pushfstring(L, "%c", key);
+ 	} else {
+ 		lua_pushstring(L, NameForKey(key));
