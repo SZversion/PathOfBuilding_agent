@@ -30,9 +30,9 @@ AgentLoop, and MCP calls share a run ID and parent span context through the
 CLI environment and MCP request headers.
 
 Trace observations cover major stages instead of every Python function:
-request validation, MCP connection and tool discovery, snapshot capture,
-query normalization, snapshot preparation, plan validation, plan execution,
-and individual tool calls. HTTP/streaming and CLI pipeline spans group these
+`input` (user request and validation), MCP connection and tool discovery,
+snapshot capture/preparation, plan validation/execution, individual tool calls,
+`generate` (each executed LLM call), and `output` (the final user response). HTTP/streaming and CLI pipeline spans group these
 stages. A normal single-tool request has approximately 10–15 observations;
 early failures have fewer, and additional tool calls or model retries may
 have more. MCP server callbacks propagate the client context without creating
@@ -47,8 +47,24 @@ validation rejects it; failed calls and retries remain separate generations.
 Stages that did not execute are not fabricated. Standalone lifecycle exports
 also represent completed/failed provider calls as generations.
 
-Selected stages retain their complete bound arguments and return/error
-payloads, including nested JSON fields, arrays, and empty values. Root output
+The tracing contract is:
+
+1. The user request is recorded as the `input` observation input, including the
+   original question and build selection; validation results/errors are its output.
+2. Normal requests expose roughly 10–15 major stages, without helper spans.
+3. Every stage records inputs, outputs, and an explicit error list.
+4. Every actual LLM call records messages and output as a `generate` generation.
+5. Returned error envelopes and raised failures mark their observation `ERROR`
+   and preserve the specific error code, message, and available details.
+6. The final response is recorded as `output`, including rejected/failed runs
+   and streaming transport failures.
+7. Exceptions, including handled exceptions inside project helpers, are recorded
+   with type, message, source function, details, and cause on their owning stage.
+   Repeated identical exceptions include an occurrence count. MCP-side failures
+   produce an error observation under the client stage; normal protocol iteration
+   is not a failure. No per-helper spans are created.
+
+Selected stages retain nested JSON fields, arrays, and empty values. Root output
 retains `llm_outputs` and the complete AgentLoop `response`. The returned
 application trace event list is unchanged. Authentication fields, configured
 credentials, and authentication/cookie headers are redacted.
