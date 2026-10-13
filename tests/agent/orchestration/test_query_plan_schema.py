@@ -265,12 +265,14 @@ def test_planner_repairs_clarification_for_a_known_live_skill():
     class Model:
         calls = 0
         def chat(self, messages, **kwargs):
+            if "skills" in json.loads(messages[1]["content"]):
+                return '{"skills":[]}'
             if "planner" in messages[0]["content"]:
                 self.calls += 1
                 payload = json.loads(messages[1]["content"])
                 if self.calls == 1:
-                    return '{"steps":[],"ambiguities":["skill_id:Arc"]}'
-                assert payload["repair_feedback"]["details"]["already_available"] == ["skill_id:Arc"]
+                    return '{"steps":[{"tool":"get_skill_dps","arguments":{"skillName":"Arc"}}],"ambiguities":["/steps/0/arguments/skillName"]}'
+                assert payload["repair_feedback"]["details"]["already_available"] == ["/steps/0/arguments/skillName"]
                 return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}'
             return "Arc"
     model = Model()
@@ -281,6 +283,6 @@ def test_planner_repairs_clarification_for_a_known_live_skill():
 
 def test_duplicate_skill_names_preserve_planner_clarification():
     from agent.orchestration.agent_loop import validate_context_ambiguities
-    plan = {"steps": [], "ambiguities": ["skill_id:Arc"]}
+    plan = {"steps": [{"tool": "get_skill_dps", "arguments": {"skillName": "Arc"}}], "ambiguities": ["/steps/0/arguments/skillName"]}
     payload = {"context": {"calculatedSnapshot": {"skills": [{"name": "Arc"}, {"name": "Arc"}]}}}
     assert validate_context_ambiguities(plan, payload) is plan
