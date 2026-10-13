@@ -114,6 +114,8 @@ def _read_url(url):
     if parsed.scheme != "https" or parsed.hostname not in APPROVED_HOSTS:
         raise ValueError("external search URL is outside the approved sites")
     request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json,text/html;q=0.9,*/*;q=0.1"})
+    if parsed.hostname == urlparse(POEDB_CDN).hostname:
+        request.add_header("Referer", POEDB_HOME)
     with _urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
         final = urlparse(response.geturl())
         if final.scheme != "https" or final.hostname not in APPROVED_HOSTS:
