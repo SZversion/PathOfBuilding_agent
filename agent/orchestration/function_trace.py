@@ -1,6 +1,6 @@
-"""Request-scoped function-boundary tracing for the Python agent pipeline."""
+"""Request-scoped tracing of the major Python agent pipeline stages."""
 
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 import contextvars
 import dis
 import functools
@@ -20,15 +20,34 @@ from .langfuse_exporter import LangfuseExporter, ExportResult, _bounded_call
 _ACTIVE = contextvars.ContextVar("pob_function_trace", default=None)
 _LOCAL = threading.local()
 _EXCLUDED = {__name__, "agent.orchestration.trace", "agent.orchestration.langfuse_exporter"}
+_STAGES = {
+    "agent.http_backend._build_path": "request.validate",
+    "agent.mcp.client.McpToolClient.start": "mcp.connect",
+    "agent.mcp.client.McpToolClient.list_tools": "mcp.tools",
+    "agent.mcp.client.McpToolClient.read_resource": "snapshot.capture",
+    "agent.orchestration.agent_loop.normalize_query": "query.normalize",
+    "agent.orchestration.runtime.SnapshotSync.prepare": "snapshot.prepare",
+    "agent.orchestration.agent_loop.validate_plan": "plan.validate",
+    "agent.orchestration.runtime.execute_plan": "tools.execute",
+    "agent.mcp.client.McpToolClient.call_tool": "tool.execute",
+}
+
+
+class _ContextSpan:
+    """Propagate the client span through MCP without duplicating its observation."""
+    def __init__(self, session): self.session = session
+    def get_trace_id(self): return self.session.trace_id
+    def get_observation_id(self): return self.session.parent_id
 
 
 class _QueuedSpan:
-    def __init__(self, session, name, arguments, parent):
+    def __init__(self, session, name, arguments, parent, as_type="span", model=None):
         self.session = session
         self.id = uuid.uuid4().hex[:16]
         self.started = time.monotonic()
         self.event = {"event_id": self.id, "run_id": session.run_id, "event": name,
-                      "stage": "function", "status": "started", "input_payload": _value(arguments),
+                      "stage": as_type, "status": "started", "input_payload": _value(arguments),
+                      "provider": {"model": model},
                       "parent_event_id": parent}
 
     def get_trace_id(self): return self.session.trace_id
@@ -130,6 +149,10 @@ def _trace(frame, event, value):
     module = _module(frame.f_globals)
     if session is None or session.root is None or session.closed or not module.startswith("agent.") or module in _EXCLUDED:
         return None
+    function = module + "." + frame.f_code.co_qualname
+    generation = module.startswith("agent.providers.") and frame.f_code.co_name in {"chat", "stream_chat"}
+    if function not in _STAGES and not generation:
+        return None
     try:
         session.record(frame, event, value)
     except Exception as error:
@@ -164,20 +187,22 @@ class FunctionTrace:
         self.warnings = []
         self.closed = False
 
-    def _start(self, name, arguments, parent=None):
+    def _start(self, name, arguments, parent=None, *, as_type="span", model=None):
         client = self.exporter.client
         if client is None:
-            return _QueuedSpan(self, name, arguments, parent or self.parent_id)
+            return _QueuedSpan(self, name, arguments, parent or self.parent_id, as_type, model)
         trace_context = {"trace_id": self.trace_id, "parent_span_id": parent or self.parent_id}
+        generation = {"model": model} if as_type == "generation" else {}
         if hasattr(client, "_otel_tracer"):
             from opentelemetry import trace
             remote = client._create_remote_parent_span(**trace_context)
             with trace.use_span(remote):
                 span = client._otel_tracer.start_span(name=name)
             return client._create_observation_from_otel_span(
-                otel_span=span, as_type="span", input=_value(arguments),
-                metadata={"run_id": self.run_id, "function": name})
-        return client.start_observation(name=name, input=_value(arguments),
+                otel_span=span, as_type=as_type, input=_value(arguments),
+                metadata={"run_id": self.run_id, "function": name}, **generation)
+        return client.start_observation(name=name, as_type=as_type, input=_value(arguments),
+                                        **generation,
                                         metadata={"run_id": self.run_id}, trace_context=trace_context)
 
     def parent_span(self, frame=None):
@@ -205,8 +230,14 @@ class FunctionTrace:
             parent = self.parent_span(frame.f_back)
             parent_id = _span_ids(parent)[1] if parent else None
             name = _module(frame.f_globals) + "." + frame.f_code.co_qualname
-            span = self._start(name, payload, parent_id)
-            self.frames[key] = {"span": span, "exceptions": [], "yields": []}
+            generation = _module(frame.f_globals).startswith("agent.providers.") and frame.f_code.co_name in {"chat", "stream_chat"}
+            stage = "generate" if generation else _STAGES[name]
+            if stage == "tool.execute":
+                stage = "tool." + str(frame.f_locals.get("name", "execute"))
+            span = self._start(stage, payload.get("messages") if generation else payload, parent_id,
+                               as_type="generation" if generation else "span",
+                               model=getattr(frame.f_locals.get("self"), "model", None))
+            self.frames[key] = {"span": span, "exceptions": [], "yields": [], "generation": generation}
         elif key in self.frames:
             entry = self.frames[key]
             if event == "exception":
@@ -216,13 +247,16 @@ class FunctionTrace:
                 if opcode in {"YIELD_VALUE", "YIELD_FROM"}:
                     # Coroutine await suspensions are not function returns.
                     if not frame.f_code.co_flags & inspect.CO_COROUTINE:
-                        entry["yields"].append(_value(value))
+                        entry["yields"].append(value if entry["generation"] else _value(value))
                     return
                 returned = ({"type": type(value).__name__, "object_id": f"{id(value):016x}"}
                             if "self" in frame.f_locals and value is frame.f_locals["self"] else _value(value))
                 output = {"return": returned, "exceptions": entry["exceptions"]}
                 if entry["yields"]:
                     output["yields"] = entry["yields"]
+                if entry["generation"]:
+                    entry["span"].update(metadata={"run_id": self.run_id, "exceptions": entry["exceptions"]})
+                    output = _value("".join(entry["yields"])) if entry["yields"] else returned
                 escaped = bool(entry["exceptions"]) and opcode not in {"RETURN_VALUE", "RETURN_CONST"}
                 entry["span"].update(output=output, level="ERROR" if escaped else "DEFAULT")
                 entry["span"].end()
@@ -231,14 +265,17 @@ class FunctionTrace:
     def __enter__(self):
         self.token = _ACTIVE.set(self)
         try:
-            self.exporter = LangfuseExporter.from_env()
-            try:
-                self.root = self._start("pipeline:" + self.name, self.arguments)
-            except Exception as error:
-                self.warnings.append(type(error).__name__)
-                if hasattr(self.exporter, "_queue"):
-                    self.exporter.client = None
+            if self.name.startswith("agent.mcp."):
+                self.root = _ContextSpan(self)
+            else:
+                self.exporter = LangfuseExporter.from_env()
+                try:
                     self.root = self._start("pipeline:" + self.name, self.arguments)
+                except Exception as error:
+                    self.warnings.append(type(error).__name__)
+                    if hasattr(self.exporter, "_queue"):
+                        self.exporter.client = None
+                        self.root = self._start("pipeline:" + self.name, self.arguments)
             if self.root is not None:
                 if getattr(_LOCAL, "users", 0) == 0:
                     _LOCAL.previous = sys.gettrace()
@@ -259,6 +296,9 @@ class FunctionTrace:
             _LOCAL.users -= 1
             if not _LOCAL.users:
                 sys.settrace(_LOCAL.previous)
+            if isinstance(self.root, _ContextSpan):
+                _ACTIVE.reset(self.token)
+                return False
             try:
                 for entry in list(self.frames.values()):
                     entry["span"].update(output={"exceptions": entry["exceptions"], "yields": entry["yields"],
@@ -267,15 +307,9 @@ class FunctionTrace:
                 self.root.update(output=_value(self.output), level="ERROR" if error else "DEFAULT",
                                  metadata={"run_id": self.run_id, "exception": _value(error),
                                            "tracing_warnings": self.warnings})
-                if self.events and self.exporter.client is not None:
-                    from opentelemetry import trace
-                    with (trace.use_span(self.root._otel_span) if hasattr(self.root, "_otel_span") else nullcontext()):
-                        for event in self.events:
-                            with self.exporter._record_event(self.exporter.client, event):
-                                pass
                 self.root.end()
                 if self.exporter.client is None:
-                    self.exporter._queue(self.queue_records + self.events, self.exporter.reason)
+                    self.exporter._queue(self.queue_records, self.exporter.reason)
                 else:
                     _bounded_call(self.exporter.client.flush, 2.0)
             except Exception as failure:
