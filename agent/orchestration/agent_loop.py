@@ -93,26 +93,20 @@ _PLANNER_CATALOG = json.dumps(
     {tool: TOOL_MIN_ARGUMENTS[tool] for tool in sorted(READ_ONLY_TOOLS)},
     ensure_ascii=False, sort_keys=True, separators=(",", ":"),
 )
-PLANNER_JSON_SCHEMA = {
-    "type": "object",
-    "required": ["schema_version", "intent", "operation", "evidenceLevel", "steps"],
-    "properties": {
-        "schema_version": {"type": "string", "const": "1.0"}, "intent": {"type": "string", "enum": sorted(INTENT_ENUM)},
-        "operation": {"type": "string", "enum": sorted(OPERATION_ENUM)},
-        "evidenceLevel": {"type": "string", "enum": sorted(EVIDENCE_LEVEL_ENUM)},
-        "stop_condition": {"type": "object", "properties": {"type": {"type": "string"}}, "additionalProperties": True},
-        "ambiguities": {"type": "array", "minItems": 0, "items": {"type": "string", "minLength": 1}},
-        "steps": {"type": "array", "items": {"type": "object", "required": ["tool", "arguments"], "properties": {
-            "tool": {"type": "string", "enum": sorted(READ_ONLY_TOOLS)},
-            "arguments": {"type": "object"},
-            "expectedSnapshotRevision": {"type": ["string", "null"]},
-        }, "additionalProperties": False}},
-    },
-    "allOf": [
-        {"if": {"required": ["stop_condition"], "properties": {"stop_condition": {"required": ["type"], "properties": {"type": {"const": "ask_user"}}}}},
-         "then": {"required": ["ambiguities"], "properties": {"ambiguities": {"minItems": 1}}}},
-    ],
-}
+def _load_planner_schema():
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / "planner.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    properties = schema["properties"]
+    properties["intent"]["enum"] = sorted(INTENT_ENUM)
+    properties["operation"]["enum"] = sorted(OPERATION_ENUM)
+    properties["evidenceLevel"]["enum"] = sorted(EVIDENCE_LEVEL_ENUM)
+    properties["steps"]["items"]["properties"]["tool"]["enum"] = sorted(READ_ONLY_TOOLS)
+    return schema
+
+
+PLANNER_JSON_SCHEMA = _load_planner_schema()
+
+
 def _load_common_instructions():
     skill_path = Path(__file__).resolve().parents[1] / "skills" / "common" / "SKILL.md"
     text = skill_path.read_text(encoding="utf-8")
