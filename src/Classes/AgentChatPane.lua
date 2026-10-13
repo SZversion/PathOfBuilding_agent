@@ -417,7 +417,7 @@ function AgentChatPaneClass:HandleInputEvent(event, cursorX, cursorY)
 	if not self.selControl then
 		return false
 	end
-	if event.type == "KeyDown" and event.key == "RETURN" and self.selControl == self.controls.input then
+	if event.type == "KeyDown" and event.key == "RETURN" and self.selControl == self.controls.input and not IsKeyDown("SHIFT") then
 		self:SendMessage()
 		return true
 	end
