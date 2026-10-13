@@ -17,8 +17,105 @@ local HEADER_HEIGHT = 24
 local INPUT_HEIGHT = 20
 local SEND_HEIGHT = 20
 local INPUT_FONT_SIZE = 14
+local INPUT_MAX_LINES = 5
 local MESSAGE_FONT_SIZE = 14
 local MESSAGE_LINE_HEIGHT = 16
+
+local function inputLayout(input)
+	if input.displayLayout then
+		return input.displayLayout
+	end
+	local width = input:GetSize()
+	local textWidth = m_max(1, width - 20)
+	if input.wrapLayout and input.wrapLayout.raw == input.buf and input.wrapLayout.width == textWidth then
+		return input.wrapLayout
+	end
+	local layout = { raw = input.buf, width = textWidth, toDisplay = { }, toRaw = { }, lines = 1 }
+	local pieces, line, rawPos, displayPos = { }, "", 1, 1
+	for char in input.buf:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+		if char ~= "\n" and line ~= "" and DrawStringWidth(INPUT_FONT_SIZE, input.font, line .. char) > textWidth then
+			pieces[#pieces + 1] = "\n"
+			layout.toRaw[displayPos] = rawPos
+			displayPos = displayPos + 1
+			layout.lines = layout.lines + 1
+			line = ""
+		end
+		for index = 0, #char - 1 do
+			layout.toDisplay[rawPos + index] = displayPos + index
+			layout.toRaw[displayPos + index] = rawPos + index
+		end
+		pieces[#pieces + 1] = char
+		rawPos, displayPos = rawPos + #char, displayPos + #char
+		if char == "\n" then
+			layout.lines = layout.lines + 1
+			line = ""
+		else
+			line = line .. char
+		end
+	end
+	layout.toDisplay[rawPos], layout.toRaw[displayPos] = displayPos, rawPos
+	layout.text = table.concat(pieces)
+	input.wrapLayout = layout
+	return layout
+end
+
+local function withInputLayout(input, callback, ...)
+	if input.displayLayout then
+		return callback(input, ...)
+	end
+	local layout = inputLayout(input)
+	local raw = input.buf
+	input.buf = layout.text
+	input.caret = layout.toDisplay[input.caret] or #layout.text + 1
+	input.sel = input.sel and layout.toDisplay[input.sel]
+	input.displayLayout = layout
+	local ok, result = pcall(callback, input, ...)
+	input.caret = layout.toRaw[input.caret] or #raw + 1
+	input.sel = input.sel and layout.toRaw[input.sel]
+	input.buf = raw
+	input.displayLayout = nil
+	if input.lastUndoState then
+		input.lastUndoState.caret = input.caret
+	end
+	if not ok then
+		error(result)
+	end
+	return result
+end
+
+local function configureChatInput(input)
+	input.allowZoom = false
+	input.textYOffset = 1
+	input.controls.scrollBarH.shown = false
+	input.controls.scrollBarV.width = 6
+	input.controls.scrollBarV.height = function()
+		local _, height = input:GetSize()
+		return height - 2
+	end
+	input.controls.scrollBarV.shown = function()
+		return inputLayout(input).lines > INPUT_MAX_LINES
+	end
+	input.UpdateScrollBars = function(self)
+		local width, height = self:GetSize()
+		self.controls.scrollBarH:SetContentDimension(0, width)
+		self.controls.scrollBarV:SetContentDimension(inputLayout(self).lines * INPUT_FONT_SIZE, height - 4)
+	end
+	local draw = input.Draw
+	input.Draw = function(self, ...)
+		return withInputLayout(self, draw, ...)
+	end
+	local scrollCaret = input.ScrollCaretIntoView
+	input.ScrollCaretIntoView = function(self)
+		return withInputLayout(self, scrollCaret)
+	end
+	local keyDown = input.OnKeyDown
+	input.OnKeyDown = function(self, key, ...)
+		if key == "LEFTBUTTON" or key == "UP" or key == "DOWN" or key == "HOME" or key == "END" or key == "PAGEUP" or key == "PAGEDOWN" then
+			return withInputLayout(self, keyDown, key, ...)
+		end
+		return keyDown(self, key, ...)
+	end
+end
 
 local function wrapText(text, width)
 	local lines = { }
@@ -61,6 +158,7 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.input = new("EditControl", {"BOTTOMLEFT", self, "BOTTOMLEFT"}, {8, -8, 0, INPUT_HEIGHT}, "", nil, "^%C\t\n", 1000, nil, INPUT_FONT_SIZE, true)
 	self.controls.input.placeholder = "Type a message..."
 	self.controls.input.textYOffset = math.floor((INPUT_HEIGHT - 4 - INPUT_FONT_SIZE) / 2)
+	configureChatInput(self.controls.input)
 	self.controls.input.width = function()
 		local width = self:GetSize()
 		local sendWidth = self.controls.send and self.controls.send:GetSize() or 48
@@ -78,7 +176,7 @@ local AgentChatPaneClass = newClass("AgentChatPane", "Control", "ControlHost", f
 	self.controls.historyScroll = new("ScrollBarControl", {"TOPRIGHT", self, "TOPRIGHT"}, {-3, HEADER_HEIGHT + 6, 14, 0}, MESSAGE_LINE_HEIGHT * 3, "VERTICAL", true)
 	self.controls.historyScroll.height = function()
 		local _, height = self:GetSize()
-		return m_max(0, height - HEADER_HEIGHT - SEND_HEIGHT - 28)
+		return m_max(0, height - HEADER_HEIGHT - self.controls.input.height - 28)
 	end
 end)
 
@@ -343,7 +441,7 @@ function AgentChatPaneClass:IsMouseInConversation(cursorX, cursorY)
 	local x, y = self.overlayX, self.overlayY
 	local width, height = self:GetSize()
 	local conversationTop = y + HEADER_HEIGHT + 6
-	local conversationBottom = y + height - SEND_HEIGHT - 18
+	local conversationBottom = y + height - self.controls.input.height - 18
 	return cursorX >= x + 4 and cursorX < x + width - 18
 		and cursorY >= conversationTop and cursorY < conversationBottom
 end
@@ -502,6 +600,15 @@ function AgentChatPaneClass:DrawOverlay(viewPort)
 	local x, y = self.overlayX, self.overlayY
 	local width, height = self:GetSize()
 	SetDrawLayer(12)
+	local input = self.controls.input
+	local layout = inputLayout(input)
+	local visibleLines = m_min(INPUT_MAX_LINES, layout.lines)
+	local inputHeight = INPUT_HEIGHT + (visibleLines - 1) * INPUT_FONT_SIZE
+	if input.sizedLayout ~= layout or input.height ~= inputHeight then
+		input.height = inputHeight
+		input:ScrollCaretIntoView()
+		input.sizedLayout = layout
+	end
 	SetDrawColor(0.08, 0.08, 0.08, 0.97)
 	DrawImage(nil, x, y, width, height)
 	SetDrawColor(0.5, 0.5, 0.5)
@@ -519,14 +626,13 @@ function AgentChatPaneClass:DrawOverlay(viewPort)
 	local conversationX = x + 4
 	local conversationY = y + HEADER_HEIGHT + 6
 	local conversationWidth = width - 22
-	local conversationHeight = m_max(1, height - HEADER_HEIGHT - SEND_HEIGHT - 22)
+	local conversationHeight = m_max(1, height - HEADER_HEIGHT - input.height - 22)
 	SetDrawColor(0.03, 0.03, 0.03)
 	DrawImage(nil, conversationX, conversationY, conversationWidth, conversationHeight)
 	self:DrawConversation(conversationX, conversationY, conversationWidth, conversationHeight)
 
 	self.controls.input.x = 8
 	self.controls.input.y = -8
-	self.controls.input.height = INPUT_HEIGHT
 	self.controls.send.y = -8
 	self.controls.historyScroll.y = HEADER_HEIGHT + 6
 	self.controls.historyScroll.height = conversationHeight
