@@ -21,16 +21,27 @@ _ACTIVE = contextvars.ContextVar("pob_function_trace", default=None)
 _LOCAL = threading.local()
 _EXCLUDED = {__name__, "agent.orchestration.trace", "agent.orchestration.langfuse_exporter"}
 _STAGES = {
-    "agent.http_backend._build_path": "request.validate",
     "agent.mcp.client.McpToolClient.start": "mcp.connect",
     "agent.mcp.client.McpToolClient.list_tools": "mcp.tools",
     "agent.mcp.client.McpToolClient.read_resource": "snapshot.capture",
-    "agent.orchestration.agent_loop.normalize_query": "query.normalize",
+    "agent.orchestration.agent_loop.normalize_query": "input",
+    "agent.cli._emit": "output",
     "agent.orchestration.runtime.SnapshotSync.prepare": "snapshot.prepare",
     "agent.orchestration.agent_loop.validate_plan": "plan.validate",
     "agent.orchestration.runtime.execute_plan": "tools.execute",
     "agent.mcp.client.McpToolClient.call_tool": "tool.execute",
 }
+
+
+def _errors(value):
+    if not isinstance(value, dict):
+        return []
+    errors = [value["error"]] if value.get("error") else []
+    for key in ("response", "execution"):
+        errors.extend(_errors(value.get(key)))
+    for step in value.get("steps", []) if isinstance(value.get("steps"), list) else []:
+        errors.extend(_errors(step))
+    return errors
 
 
 class _ContextSpan:
@@ -60,6 +71,8 @@ class _QueuedSpan:
             self.event["output_payload"] = values["output"]
         if values.get("level") == "ERROR":
             self.event["status"] = "failed"
+        if "metadata" in values:
+            self.event["error_details"] = {key: values["metadata"][key] for key in ("errors", "exceptions") if key in values["metadata"]}
 
     def end(self):
         self.event["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
@@ -153,8 +166,19 @@ def _trace(frame, event, value):
         return None
     function = module + "." + frame.f_code.co_qualname
     generation = module.startswith("agent.providers.") and frame.f_code.co_name in {"chat", "stream_chat"}
+    if event == "call":
+        frame.f_trace_lines = False
+    if event == "exception":
+        try:
+            session.record_exception(value[1], function, frame)
+        except Exception as error:
+            session.warnings.append("exception:" + type(error).__name__)
     if function not in _STAGES and not generation:
-        return None
+        return _trace
+    if function in {"agent.orchestration.agent_loop.normalize_query", "agent.cli._emit"} and session.parent_id:
+        return _trace
+    if function == "agent.orchestration.agent_loop.normalize_query" and session.input_value is not None:
+        return _trace
     try:
         session.record(frame, event, value)
     except Exception as error:
@@ -188,6 +212,67 @@ class FunctionTrace:
         self.output = None
         self.warnings = []
         self.closed = False
+        self.input_span = None
+        self.input_value = None
+        self.output_recorded = False
+        self.errors = []
+        self.exceptions = []
+        self.input_exceptions = []
+
+    def record_exception(self, error, function, frame):
+        if isinstance(self.root, _ContextSpan) and isinstance(error, (StopIteration, StopAsyncIteration, GeneratorExit)):
+            return
+        record = {**_value(error), "function": function, "file": frame.f_code.co_filename, "line": frame.f_lineno}
+        target = self.input_exceptions if self.input_span is not None else self.exceptions
+        while frame:
+            if id(frame) in self.frames:
+                target = self.frames[id(frame)]["exceptions"]
+                break
+            frame = frame.f_back
+        for previous in target:
+            if all(previous.get(key) == value for key, value in record.items()):
+                previous["occurrences"] += 1
+                return
+        target.append({**record, "occurrences": 1})
+
+    def record_error(self, error):
+        self.errors.append(_value(error))
+
+    def record_input(self, value):
+        try:
+            self.input_value = _value(value)
+            self.root.update(input=self.input_value)
+            self.input_span = self._start("input", self.input_value, _span_ids(self.root)[1])
+        except Exception as error:
+            self.warnings.append("input:" + type(error).__name__)
+
+    def complete_input(self, value=None, error=None):
+        if self.input_span is None:
+            return
+        try:
+            errors = [_value(error)] if error else []
+            self.input_span.update(output={"return": _value(value) if value is not None else self.input_value,
+                                           "errors": errors, "exceptions": self.input_exceptions}, level="ERROR" if errors else "DEFAULT",
+                                   metadata={"run_id": self.run_id, "errors": errors, "exceptions": self.input_exceptions})
+            self.input_span.end()
+        except Exception as failure:
+            self.warnings.append("input:" + type(failure).__name__)
+        finally:
+            self.input_span = None
+
+    def record_output(self, value):
+        if self.output_recorded:
+            return
+        try:
+            errors = _errors(value) + self.errors
+            span = self._start("output", self.input_value or self.arguments, _span_ids(self.root)[1])
+            span.update(output=_value(value), level="ERROR" if errors else "DEFAULT",
+                        metadata={"run_id": self.run_id, "errors": _value(errors), "exceptions": self.exceptions})
+            span.end()
+            self.output = {**(self.output or {}), "response": value} if isinstance(self.output, dict) and "llm_outputs" in self.output else value
+            self.output_recorded = True
+        except Exception as failure:
+            self.warnings.append("output:" + type(failure).__name__)
 
     def _start(self, name, arguments, parent=None, *, as_type="span", model=None):
         client = self.exporter.client
@@ -239,11 +324,11 @@ class FunctionTrace:
             span = self._start(stage, payload.get("messages") if generation else payload, parent_id,
                                as_type="generation" if generation else "span",
                                model=getattr(frame.f_locals.get("self"), "model", None))
-            self.frames[key] = {"span": span, "exceptions": [], "yields": [], "generation": generation}
+            self.frames[key] = {"span": span, "exceptions": [], "yields": [], "generation": generation, "stage": stage}
         elif key in self.frames:
             entry = self.frames[key]
             if event == "exception":
-                entry["exceptions"].append(_value(value[1]))
+                pass  # Recorded above, including exceptions handled in helper functions.
             elif event == "return":
                 opcode = dis.opname[frame.f_code.co_code[frame.f_lasti]]
                 if opcode in {"YIELD_VALUE", "YIELD_FROM"}:
@@ -253,14 +338,24 @@ class FunctionTrace:
                     return
                 returned = ({"type": type(value).__name__, "object_id": f"{id(value):016x}"}
                             if "self" in frame.f_locals and value is frame.f_locals["self"] else _value(value))
+                if entry["stage"] == "output":
+                    returned = _value(frame.f_locals.get("value", value))
+                    self.output_recorded = True
+                    self.output = {**(self.output or {}), "response": returned} if isinstance(self.output, dict) and "llm_outputs" in self.output else returned
+                errors = _errors(returned)
+                escaped = bool(entry["exceptions"]) and opcode not in {"RETURN_VALUE", "RETURN_CONST"}
+                if escaped:
+                    errors.append(entry["exceptions"][-1])
                 output = {"return": returned, "exceptions": entry["exceptions"]}
+                output["errors"] = errors
                 if entry["yields"]:
                     output["yields"] = entry["yields"]
                 if entry["generation"]:
-                    entry["span"].update(metadata={"run_id": self.run_id, "exceptions": entry["exceptions"]})
                     output = _value("".join(entry["yields"])) if entry["yields"] else returned
-                escaped = bool(entry["exceptions"]) and opcode not in {"RETURN_VALUE", "RETURN_CONST"}
-                entry["span"].update(output=output, level="ERROR" if escaped else "DEFAULT")
+                    if escaped:
+                        output = {"error": errors[-1], "partial_output": output}
+                entry["span"].update(output=output, level="ERROR" if errors else "DEFAULT",
+                                     metadata={"run_id": self.run_id, "errors": errors, "exceptions": entry["exceptions"]})
                 entry["span"].end()
                 del self.frames[key]
 
@@ -299,15 +394,37 @@ class FunctionTrace:
             if not _LOCAL.users:
                 sys.settrace(_LOCAL.previous)
             if isinstance(self.root, _ContextSpan):
+                if self.exceptions:
+                    try:
+                        self.exporter = LangfuseExporter.from_env()
+                        span = self._start("error", self.arguments, self.parent_id)
+                        span.update(output={"exceptions": self.exceptions}, level="ERROR",
+                                    metadata={"run_id": self.run_id, "exceptions": self.exceptions})
+                        span.end()
+                        if self.exporter.client is None:
+                            self.exporter._queue(self.queue_records, self.exporter.reason)
+                        else:
+                            _bounded_call(self.exporter.client.flush, 2.0)
+                    except Exception as failure:
+                        self.warnings.append("exception:" + type(failure).__name__)
                 _ACTIVE.reset(self.token)
                 return False
             try:
+                self.complete_input(error=error)
+                if not self.output_recorded and (error is not None or (self.output is not None and not self.parent_id)):
+                    result = {"status": "error", "error": _value(error)} if error else self.output
+                    self.record_output(result.get("response", result) if isinstance(result, dict) else result)
                 for entry in list(self.frames.values()):
                     entry["span"].update(output={"exceptions": entry["exceptions"], "yields": entry["yields"],
-                                                 "incomplete": True})
+                                                 "incomplete": True, "errors": [_value(error)] if error else []},
+                                         level="ERROR" if error else "DEFAULT",
+                                         metadata={"run_id": self.run_id, "exceptions": entry["exceptions"]})
                     entry["span"].end()
-                self.root.update(output=_value(self.output), level="ERROR" if error else "DEFAULT",
+                errors = _errors(self.output) + self.errors + ([_value(error)] if error else [])
+                self.root.update(output=_value(self.output), level="ERROR" if errors else "DEFAULT",
                                  metadata={"run_id": self.run_id, "exception": _value(error),
+                                           "exceptions": self.exceptions,
+                                           "errors": errors,
                                            "tracing_warnings": self.warnings})
                 self.root.end()
                 if self.exporter.client is None:
