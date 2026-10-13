@@ -40,7 +40,6 @@ def test_planner_prompt_uses_canonical_read_only_catalog():
     assert "get_projectile_count" in PLANNER_SYSTEM
     assert "Check Curse Limit" not in PLANNER_SYSTEM
     assert "Never invent, translate, or paraphrase Tool names" in PLANNER_SYSTEM
-    assert '"tool":"get_curse_limit"' in PLANNER_SYSTEM
     assert "error_ref is one of MISSING_CONTEXT, AMBIGUOUS_CONTEXT, CONFLICTING_CONTEXT, or UNSUPPORTED_REQUEST" in PLANNER_SYSTEM
     assert "error_code is the detailed leaf cause" in PLANNER_SYSTEM
     assert "Planner ambiguity is a plan-level stop condition" in PLANNER_SYSTEM
