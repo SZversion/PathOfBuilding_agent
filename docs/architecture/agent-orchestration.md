@@ -47,6 +47,12 @@ validation rejects it; failed calls and retries remain separate generations.
 Stages that did not execute are not fabricated. Standalone lifecycle exports
 also represent completed/failed provider calls as generations.
 
+Clarification generation receives the planner's ambiguous field names as
+`ambiguous_fields`. Schema-capable models return JSON containing `question`,
+`ambiguous_fields`, and `missing_fields`. The final response preserves these
+values under `clarification`, and the recovery event records them in
+`error_details`. Model omissions never remove the original field lists.
+
 The tracing contract is:
 
 1. The user request is recorded as the `input` observation input, including the
