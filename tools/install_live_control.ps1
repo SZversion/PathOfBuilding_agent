@@ -1,5 +1,5 @@
 param(
-	[string]$InstallRoot = (Join-Path $env:APPDATA 'Path of Building Community')
+	[string]$InstallRoot = (Join-Path $PSScriptRoot '..\src')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -101,7 +101,9 @@ foreach ($moduleName in $moduleNames) {
 
 try {
 	foreach ($moduleName in $moduleNames) {
-		Copy-Item -LiteralPath (Join-Path $sourceModulesRoot $moduleName) -Destination (Join-Path $modulesRoot $moduleName) -Force
+		if ($sourceModulesRoot -ne $modulesRoot) {
+			Copy-Item -LiteralPath (Join-Path $sourceModulesRoot $moduleName) -Destination (Join-Path $modulesRoot $moduleName) -Force
+		}
 	}
 	$encoding = [System.Text.UTF8Encoding]::new($false)
 	[System.IO.File]::WriteAllText($mainPath, $patchedMain, $encoding)
