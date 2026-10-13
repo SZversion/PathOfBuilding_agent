@@ -218,3 +218,21 @@ def test_explicit_set_reaches_tool_without_changing_other_defaults():
         handlers={"get_highest_dps_skill": lambda args: calls.append(args) or {"facts": {"skill": "Arc"}}})
     assert result["status"] == "ok"
     assert calls[0]["contextOverrides"] == {"activeSkillSet": 3}
+
+
+def test_planner_repairs_clarification_for_a_known_live_skill():
+    class Model:
+        calls = 0
+        def chat(self, messages, **kwargs):
+            if "planner" in messages[0]["content"]:
+                self.calls += 1
+                payload = json.loads(messages[1]["content"])
+                if self.calls == 1:
+                    return '{"steps":[],"ambiguities":["skill_id:Arc"]}'
+                assert payload["repair_feedback"]["details"]["already_available"] == ["skill_id:Arc"]
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}'
+            return "Arc"
+    model = Model()
+    result = AgentLoop(model).run("highest DPS skill", snapshot={"calculatedSnapshot": {"skills": [{"name": "Arc"}]}, "mainSkill": {"name": "Arc"}},
+        handlers={"get_highest_dps_skill": lambda args: {"facts": {"skill": "Arc"}}})
+    assert result["status"] == "ok" and model.calls == 2
