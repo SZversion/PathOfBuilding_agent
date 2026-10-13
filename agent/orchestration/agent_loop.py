@@ -6,6 +6,7 @@ from .runtime import SnapshotSync, execute_plan
 from .recovery import EXHAUSTED_ANSWER, is_exhausted
 from .trace import TraceRecorder
 from .function_trace import current_trace
+from .skills import discover_skills, selected_instructions, selection_instructions, selection_schema
 from agent.error_registry import parent_error_ref
 from agent.tool_catalog import ALLOWED_TOOLS
 
@@ -618,8 +619,27 @@ class AgentLoop:
             return {"status": "error", "error": {"code": "AMBIGUOUS_CONTEXT", "error_ref": "AMBIGUOUS_CONTEXT", "recovery_class": "ASK_USER", "stage": "context_resolution", "retryable": False, "attempt": 1, "max_attempts": 1, "message": details["message"], "details": details, "next_action": "ask_user", "side_effect": "none", "operator_message": None, "secondary_causes": []}, "trace": recorder.events}
         last_error = None
         repair_feedback = None
+        skill_registry = discover_skills()
+        selected_skills = None
+        answer_system = ANSWER_SYSTEM
         for llm_attempt in range(1, MAX_PLANNER_ATTEMPTS + 1):
             try:
+                if selected_skills is None:
+                    selection_input = {"question": question_text, "contextSelection": planning_payload.get("contextSelection"),
+                                       "skills": [{"name": item["name"], "description": item["description"]}
+                                                  for item in skill_registry.values()]}
+                    if repair_feedback is not None:
+                        selection_input["repair_feedback"] = repair_feedback
+                    selection = _json_object(self._chat([
+                        {"role": "system", "content": selection_instructions()},
+                        {"role": "user", "content": json.dumps(selection_input, ensure_ascii=False)},
+                    ], recorder=recorder, response_format=selection_schema(skill_registry)))
+                    instructions = selected_instructions(selection, skill_registry)
+                    selected_skills = selection["skills"]
+                    planning_payload["selected_skills"] = selected_skills
+                    if instructions:
+                        planner_system += "\n\n" + instructions
+                        answer_system += "\n\n" + instructions
                 planner_input = dict(planning_payload)
                 if repair_feedback is not None:
                     planner_input["repair_feedback"] = repair_feedback
@@ -700,7 +720,7 @@ class AgentLoop:
         answer_payload = {"question": question_text, "results": _model_safe_execution(execution)}
         try:
             answer = self._chat([
-            {"role": "system", "content": ANSWER_SYSTEM},
+            {"role": "system", "content": answer_system},
             {"role": "user", "content": json.dumps(answer_payload, ensure_ascii=False)},
             ], recorder=recorder, stream=True, attempts=1, on_token=on_token)
             recorder.set_output(answer)
