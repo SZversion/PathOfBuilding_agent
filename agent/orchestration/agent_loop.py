@@ -1,6 +1,9 @@
 import json
 import re
+from copy import deepcopy
 from pathlib import Path
+
+from jsonschema import Draft202012Validator
 
 from .runtime import SnapshotSync, execute_plan
 from .recovery import EXHAUSTED_ANSWER, is_exhausted
@@ -8,7 +11,7 @@ from .trace import TraceRecorder
 from .function_trace import current_trace
 from .skills import discover_skills, selected_instructions, selection_instructions, selection_schema
 from agent.error_registry import parent_error_ref
-from agent.tool_catalog import ALLOWED_TOOLS
+from agent.tool_catalog import ALLOWED_TOOLS, TOOL_CATALOG
 
 
 TOOL_ALIASES = {tool.replace("_", ""): tool for tool in ALLOWED_TOOLS}
@@ -94,15 +97,44 @@ _PLANNER_CATALOG = json.dumps(
     {tool: TOOL_MIN_ARGUMENTS[tool] for tool in sorted(READ_ONLY_TOOLS)},
     ensure_ascii=False, sort_keys=True, separators=(",", ":"),
 )
-def _load_planner_schema():
+def _load_planner_schema(snapshot_revision=None):
     schema_path = Path(__file__).resolve().parents[1] / "schemas" / "planner.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     properties = schema["properties"]
     properties["intent"]["enum"] = sorted(INTENT_ENUM)
     properties["operation"]["enum"] = sorted(OPERATION_ENUM)
     properties["evidenceLevel"]["enum"] = sorted(EVIDENCE_LEVEL_ENUM)
+    properties["required_evidence"]["items"]["enum"] = sorted(EVIDENCE_LEVEL_ENUM - {"any"})
     properties["steps"]["maxItems"] = MAX_STEPS
-    properties["steps"]["items"]["properties"]["tool"]["enum"] = sorted(READ_ONLY_TOOLS)
+    step_schema = properties["steps"]["items"]
+    step_schema["properties"]["tool"]["enum"] = sorted(READ_ONLY_TOOLS)
+    step_schema["required"] = ["tool", "arguments", "expectedSnapshotRevision"]
+    revision = step_schema["properties"]["expectedSnapshotRevision"]
+    revision["minLength"] = 1
+    revision["pattern"] = r"\S"
+    if snapshot_revision is not None:
+        revision["enum"] = [None, snapshot_revision]
+    normal_steps = []
+    clarification_steps = []
+    for tool in sorted(READ_ONLY_TOOLS):
+        arguments = deepcopy(TOOL_CATALOG[tool].input_schema)
+        for field in arguments["properties"].values():
+            if field.get("type") == "string":
+                field.update(minLength=1, pattern=r"\S")
+        normal = deepcopy(step_schema)
+        normal["properties"]["tool"] = {"const": tool}
+        normal["properties"]["arguments"] = arguments
+        normal_steps.append(normal)
+        clarification = deepcopy(normal)
+        for key, field in arguments["properties"].items():
+            clarification["properties"]["arguments"]["properties"][key] = {"anyOf": [deepcopy(field), {"type": "null"}]}
+        clarification_steps.append(clarification)
+    schema["oneOf"] = [
+        {"properties": {"intent": {"enum": sorted(INTENT_ENUM - {"unknown"})}, "stop_condition": {"properties": {"type": {"const": "answer"}}},
+                        "ambiguities": {"maxItems": 0}, "steps": {"items": {"oneOf": normal_steps}}}},
+        {"properties": {"intent": {"const": "unknown"}, "stop_condition": {"properties": {"type": {"const": "ask_user"}}},
+                        "ambiguities": {"minItems": 1}, "steps": {"items": {"oneOf": clarification_steps}}}},
+    ]
     return schema
 
 
@@ -159,7 +191,7 @@ def _repair_feedback(error):
     details = getattr(error, "details", {})
     safe_details = {}
     if isinstance(details, dict):
-        for key in ("fields", "argument", "arguments", "tool", "expected", "actual", "already_available"):
+        for key in ("fields", "argument", "arguments", "tool", "expected", "actual", "already_available", "constraint"):
             value = details.get(key)
             if isinstance(value, (str, int, float, bool)) or value is None:
                 safe_details[key] = value
@@ -447,6 +479,43 @@ def validate_context_ambiguities(plan, payload):
     return plan
 
 
+def _validate_planner_output(plan, *, snapshot_revision=None):
+    """Validate raw model output before defaults, clarification, or execution."""
+    schema = _load_planner_schema(snapshot_revision)
+    branches = schema.pop("oneOf")
+    clarification = isinstance(plan, dict) and plan.get("stop_condition") == {"type": "ask_user"}
+    for key, constraints in branches[int(clarification)]["properties"].items():
+        schema["properties"][key].update(constraints)
+    steps = plan.get("steps") if isinstance(plan, dict) else None
+    if isinstance(steps, list):
+        step_schema = schema["properties"]["steps"]
+        choices = step_schema["items"]["oneOf"]
+        step_schema["prefixItems"] = [next((choice for choice in choices if isinstance(step, dict) and choice["properties"]["tool"]["const"] == step.get("tool")), step_schema["items"]) for step in steps]
+        step_schema["items"] = False
+    error = next(Draft202012Validator(schema).iter_errors(plan), None)
+    if error is not None:
+        path = "/" + "/".join(str(part).replace("~", "~0").replace("/", "~1") for part in error.absolute_path)
+        expected = error.validator_value
+        if error.validator == "required":
+            missing = next(key for key in expected if key not in error.instance)
+            path = path.rstrip("/") + "/" + missing
+            expected = "required field"
+        actual = error.instance if isinstance(error.instance, (str, int, float, bool)) or error.instance is None else None
+        raise PlanValidationError("planner output violates its JSON schema", code="MODEL_SCHEMA_INVALID", details={
+            "fields": [path], "constraint": error.validator, "expected": expected,
+            "actual": actual[:200] if isinstance(actual, str) else actual,
+            "instruction": f"Repair the plan field at {path} to satisfy {error.validator}. Follow the supplied JSON schema and Tool-specific argument schemas; do not turn schema errors into user ambiguities.",
+        })
+    _validate_ambiguity_paths(plan)
+    if clarification:
+        for index, step in enumerate(plan["steps"]):
+            for key, value in step["arguments"].items():
+                path = f"/steps/{index}/arguments/{key}"
+                if value is None and path not in plan["ambiguities"]:
+                    raise PlanValidationError("unresolved argument must be identified in ambiguities", code="MODEL_SCHEMA_INVALID", details={"fields": [path]})
+    return plan
+
+
 def _validate_completeness(plan, *, enforce_evidence=False):
     requirement = INTENT_REQUIREMENTS.get(plan.get("intent"))
     if not requirement:
@@ -673,10 +742,12 @@ class AgentLoop:
                 planner_input = dict(planning_payload)
                 if repair_feedback is not None:
                     planner_input["repair_feedback"] = repair_feedback
-                planned = validate_plan(validate_context_ambiguities(_json_object(self._chat([
+                planned = _json_object(self._chat([
                     {"role": "system", "content": planner_system},
                     {"role": "user", "content": json.dumps(planner_input, ensure_ascii=False)},
-                ], recorder=recorder, response_format=_load_planner_schema())), planning_payload))
+                ], recorder=recorder, response_format=_load_planner_schema((sync or {}).get("snapshotRevision"))))
+                planned = _validate_planner_output(planned, snapshot_revision=(sync or {}).get("snapshotRevision"))
+                planned = validate_plan(validate_context_ambiguities(planned, planning_payload))
                 recorder.emit("planner_completed", "planner", "ok", attempt=llm_attempt, max_attempts=MAX_PLANNER_ATTEMPTS, query_ref=recorder.query_ref(query), plan_ref=recorder.plan_ref(planned), input_payload=query, output_payload=planned)
                 break
             except PlanValidationError as error:
