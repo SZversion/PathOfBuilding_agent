@@ -399,7 +399,7 @@ def planner_query_projection(query, *, context=None):
 def validate_context_ambiguities(plan, payload):
     source = _context_source(payload.get("context"))
     selection = payload.get("contextSelection", {}).get("selected", {})
-    known_skills = {skill.get("name", "").casefold() for skill in source.get("calculatedSnapshot", {}).get("skills", []) if isinstance(skill, dict)}
+    known_skills = [skill["name"].casefold() for skill in source.get("calculatedSnapshot", {}).get("skills", []) if isinstance(skill, dict) and isinstance(skill.get("name"), str)]
     fields = {"skillSet": "skillSet", "skill_set": "skillSet", "itemSet": "itemSet", "item_set": "itemSet",
               "treeSpec": "treeSpec", "configSet": "configSet", "config": "config"}
     contradicted = []
@@ -407,7 +407,7 @@ def validate_context_ambiguities(plan, payload):
         if not isinstance(ambiguity, str):
             continue
         field, separator, target = ambiguity.partition(":")
-        if (not separator and fields.get(field) in selection) or (separator and field in {"skill_id", "skillName", "gem_name"} and target.strip().casefold() in known_skills):
+        if (not separator and fields.get(field) in selection) or (separator and field in {"skill_id", "skillName", "gem_name"} and known_skills.count(target.strip().casefold()) == 1):
             contradicted.append(ambiguity)
     if contradicted:
         raise PlanValidationError("planner clarification contradicts the supplied live context", code="PLAN_CONTEXT_CONFLICT",
