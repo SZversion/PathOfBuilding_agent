@@ -41,6 +41,21 @@ def test_local_enabled_does_not_change_remote_default():
     assert not isinstance(provider, OllamaDevelopmentProvider)
 
 
+@pytest.mark.parametrize("stream", [False, True])
+def test_ollama_uses_full_context_without_output_token_cap(monkeypatch, stream):
+    requests = []
+    response = object()
+
+    def urlopen(request, timeout):
+        requests.append(json.loads(request.data))
+        return response
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    assert OllamaDevelopmentProvider()._native_request([], stream=stream) is response
+    assert requests[0]["options"]["num_ctx"] == 40960
+    assert requests[0]["options"]["num_predict"] == -1
+
+
 def test_malformed_provider_response_maps_to_registered_schema_error(monkeypatch):
     class Response:
         def __enter__(self):
