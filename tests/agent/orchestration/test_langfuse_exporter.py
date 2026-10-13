@@ -156,9 +156,11 @@ def test_agent_loop_exports_root_and_provider_input_output():
     assert root["output"]["llm_outputs"][-1] == "최종 답변"
     planner = next(item for item in client.observations if item["name"] == "planner_started")
     assert planner["input"]["text"] == "입출력 확인"
-    completed = next(item for item in client.observations if item["name"] == "run_completed")
+    completed = next(item for item in client.observations if item["name"] == "output")
     assert completed["input"]["question"] == "입출력 확인"
-    assert completed["output"] == root["output"]
+    assert completed["output"] == result
+    user_input = next(item for item in client.observations if item["name"] == "input")
+    assert user_input["input"]["question"] == "입출력 확인"
     provider_outputs = [item for item in client.observations if item["name"] == "generate"]
     assert all(item["as_type"] == "generation" for item in provider_outputs)
     assert any(item["output"] == "최종 답변" for item in provider_outputs)
