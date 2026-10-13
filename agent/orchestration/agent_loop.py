@@ -152,7 +152,7 @@ def _repair_feedback(error):
     details = getattr(error, "details", {})
     safe_details = {}
     if isinstance(details, dict):
-        for key in ("fields", "argument", "arguments", "tool", "expected", "actual"):
+        for key in ("fields", "argument", "arguments", "tool", "expected", "actual", "already_available"):
             value = details.get(key)
             if isinstance(value, (str, int, float, bool)) or value is None:
                 safe_details[key] = value
@@ -162,7 +162,7 @@ def _repair_feedback(error):
         "code": code,
         "message": str(error)[:240] if isinstance(error, PlanValidationError) else "planner response failed the JSON/schema contract",
         "details": safe_details,
-        "instruction": "Return a new plan using only canonical Tool names, object arguments, and the declared argument schema. Do not repeat the invalid field.",
+        "instruction": details.get("instruction") if code == "PLAN_CONTEXT_CONFLICT" else "Return a new plan using only canonical Tool names, object arguments, and the declared argument schema. Do not repeat the invalid field.",
     }
 
 
