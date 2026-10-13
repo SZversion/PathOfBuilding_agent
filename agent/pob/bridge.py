@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 import subprocess
 from pathlib import Path
@@ -111,6 +112,15 @@ def project_snapshot(context, overrides=None):
         projected["calculatedSnapshot"] = {key: context[key] for key in (
             "schemaVersion", "calculationVersion", "snapshotRevision", "characterLevel", "mainSkillIndex", "outputs", "skills"
         ) if key in context}
+        if isinstance(context.get("skills"), list):
+            projected["calculatedSnapshot"]["skills"] = [
+                {**{key: value for key, value in skill.items() if key not in {"output", "breakdown"}},
+                 "outputRevision": hashlib.sha256(json.dumps(
+                     {key: skill.get(key) for key in ("output", "breakdown")},
+                     ensure_ascii=False, sort_keys=True, separators=(",", ":")
+                 ).encode("utf-8")).hexdigest()}
+                for skill in context["skills"] if isinstance(skill, dict)
+            ]
     elif isinstance(context.get("calculatedSnapshot"), dict):
         projected["calculatedSnapshot"] = context["calculatedSnapshot"]
     if isinstance(overrides, dict) and overrides:
