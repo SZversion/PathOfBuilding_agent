@@ -212,9 +212,9 @@ def test_invalid_ambiguity_is_repaired_before_tool_execution():
             if "planner" in messages[0]["content"]:
                 calls.append(payload)
                 if len(calls) == 1:
-                    return '{"schema_version":"1.0","intent":"unknown","ambiguities":["analysis"],"steps":[]}'
+                    return '{"schema_version":"1.0","intent":"unknown","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{"type":"ask_user"},"ambiguities":["analysis"],"steps":[]}'
                 assert payload["repair_feedback"]["code"] == "MODEL_SCHEMA_INVALID"
-                return '{"schema_version":"1.0","intent":"stat","ambiguities":[],"steps":[{"tool":"get_skill_dps","arguments":{"skillName":"Arc"}}]}'
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{"type":"answer"},"ambiguities":[],"steps":[{"tool":"get_skill_dps","arguments":{"skillName":"Arc"},"expectedSnapshotRevision":null}]}'
             return "Arc DPS"
 
     seen = []
@@ -271,9 +271,9 @@ def test_planner_repairs_clarification_for_a_known_live_skill():
                 self.calls += 1
                 payload = json.loads(messages[1]["content"])
                 if self.calls == 1:
-                    return '{"steps":[{"tool":"get_skill_dps","arguments":{"skillName":"Arc"}}],"ambiguities":["/steps/0/arguments/skillName"]}'
+                    return '{"schema_version":"1.0","intent":"unknown","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{"type":"ask_user"},"steps":[{"tool":"get_skill_dps","arguments":{"skillName":"Arc"},"expectedSnapshotRevision":null}],"ambiguities":["/steps/0/arguments/skillName"]}'
                 assert payload["repair_feedback"]["details"]["already_available"] == ["/steps/0/arguments/skillName"]
-                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}'
+                return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","required_evidence":[],"stop_condition":{"type":"answer"},"ambiguities":[],"steps":[{"tool":"get_highest_dps_skill","arguments":{},"expectedSnapshotRevision":null}]}'
             return "Arc"
     model = Model()
     result = AgentLoop(model).run("highest DPS skill", snapshot={"calculatedSnapshot": {"skills": [{"name": "Arc"}]}, "mainSkill": {"name": "Arc"}},
