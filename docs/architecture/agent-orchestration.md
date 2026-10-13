@@ -22,40 +22,38 @@ PoB output and breakdown are authoritative for current-build numbers. Local RAG 
 The final answer separates calculated values, applied effects, rules, sources, and uncertainty. It is Korean by default. Missing user context triggers a question; missing evidence after allowed search rejects a definitive answer.
 
 
-## Local function tracing
+## Local pipeline tracing
 
 The local Langfuse service is exposed at `http://localhost:13000`; Compose
 services use `http://langfuse-web:3000`. HTTP requests, the CLI subprocess,
-AgentLoop, model providers, parsing and validation, execution, MCP dispatch,
-and Python PoB transport/handler calls share a run ID and parent span context.
-The CLI environment and MCP request headers propagate that context.
+AgentLoop, and MCP calls share a run ID and parent span context through the
+CLI environment and MCP request headers.
 
-Request-scoped tracing records each executed project Python function under
-its qualified name. Input contains the complete bound arguments, including
-keyword/default arguments. Output contains `return`, all `exceptions`
-(including handled failures), and generator `yields` when applicable. Nested
-JSON fields, arrays, empty values, and long strings are preserved. Objects
-are serialized through their model data or attributes; bound receivers
-(`self`/`cls`), cycles, and native runtime handles are represented by identifiers
-and types, without copying unrelated receiver state. Tracing infrastructure is excluded
-to avoid tracing itself. Third-party library internals and Lua function locals
-are not instrumented; the Python transport records the PoB request/response
-boundary. Function locals are not collected.
+Trace observations cover major stages instead of every Python function:
+request validation, MCP connection and tool discovery, snapshot capture,
+query normalization, snapshot preparation, plan validation, plan execution,
+and individual tool calls. HTTP/streaming and CLI pipeline spans group these
+stages. A normal single-tool request has approximately 10–15 observations;
+early failures have fewer, and additional tool calls or model retries may
+have more. MCP server callbacks propagate the client context without creating
+duplicate server/protocol observations. Helper functions, comprehensions,
+token callbacks, and duplicated lifecycle events are not separate spans.
 
-Functions are traced during execution, with actual call nesting and elapsed
-time; coroutine awaits and generator yields do not end the function span.
-MCP worker calls retain the request context. Detached protocol callbacks
-restore it from the authenticated request headers; closed inherited contexts
-are not reused. Functions started with `python -m` retain their canonical
-package names. CLI stream callback text is also exposed as `stream_fragment`
-to distinguish it from authentication tokens. LLM provider function returns and
-`provider_completed` both expose model output; model output is recorded even
-when later JSON validation or Tool execution rejects the request. Tool and
-final lifecycle events also retain their full result or error payload.
+Every executed LLM provider `chat` or `stream_chat` call is a Langfuse
+`generation` observation named `generate`, with the model name, complete
+messages, model output, actual elapsed time, and exceptions. Streaming chunks
+are joined into the complete output. Planner JSON remains visible when plan
+validation rejects it; failed calls and retries remain separate generations.
+Stages that did not execute are not fabricated. Standalone lifecycle exports
+also represent completed/failed provider calls as generations.
 
-Authentication fields, configured credentials, and authentication/cookie
-headers are redacted. A trace failure must not change the function result or
-exception. When the SDK/configuration is unavailable, full function payloads
-use the existing bounded local queue. An unfinished function at request termination is marked
-`incomplete`; tracing warnings remain on the pipeline span. Earlier traces
-are not rewritten.
+Selected stages retain their complete bound arguments and return/error
+payloads, including nested JSON fields, arrays, and empty values. Root output
+retains `llm_outputs` and the complete AgentLoop `response`. The returned
+application trace event list is unchanged. Authentication fields, configured
+credentials, and authentication/cookie headers are redacted.
+
+Trace failures must not change application results or exceptions. The existing
+bounded local queue retains stage inputs, outputs, generation type, and model
+metadata if the SDK/service is unavailable. Unfinished stages are marked
+`incomplete`. Earlier traces are not rewritten.
