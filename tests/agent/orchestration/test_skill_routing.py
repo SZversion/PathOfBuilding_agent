@@ -6,7 +6,7 @@ from agent.orchestration.agent_loop import AgentLoop
 from agent.orchestration.skills import discover_skills, selected_instructions
 
 
-@pytest.mark.parametrize("names", [["lookup"], ["compare"], ["lookup", "compare"], []])
+@pytest.mark.parametrize("names", [["lookup"], ["compare"], ["analysis"], ["lookup", "compare"], ["analysis", "compare"], []])
 def test_selection_receives_only_metadata_and_injects_selected_body(names):
     class Model:
         supports_json_schema = True
@@ -20,17 +20,20 @@ def test_selection_receives_only_metadata_and_injects_selected_body(names):
                 payload = json.loads(messages[1]["content"])
                 assert set(payload["skills"][0]) == {"name", "description"}
                 assert "Use get_highest_dps_skill" not in json.dumps(messages)
+                assert "# Analysis, mechanisms, and requested targets" not in json.dumps(messages)
                 assert kwargs["format"]["properties"]["skills"]["items"]["enum"] == sorted(discover_skills())
                 return json.dumps({"skills": names})
             if len(self.messages) == 2:
                 assert ("Use get_highest_dps_skill" in messages[0]["content"]) == ("lookup" in names)
                 assert ("# Changes and comparisons" in messages[0]["content"]) == ("compare" in names)
+                assert ("# Analysis, mechanisms, and requested targets" in messages[0]["content"]) == ("analysis" in names)
                 assert json.loads(messages[1]["content"])["selected_skills"] == names
                 return json.dumps({"schema_version": "1.0", "intent": "stat", "operation": "read",
                                    "evidenceLevel": "calculated", "ambiguities": [],
                                    "steps": [{"tool": "get_character_stats", "arguments": {}}]})
             assert ("Use get_highest_dps_skill" in messages[0]["content"]) == ("lookup" in names)
             assert ("# Changes and comparisons" in messages[0]["content"]) == ("compare" in names)
+            assert ("# Analysis, mechanisms, and requested targets" in messages[0]["content"]) == ("analysis" in names)
             return "Life: 100"
 
     model = Model()
