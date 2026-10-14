@@ -28,7 +28,7 @@ for _, text in ipairs({ "QA", "arc 스킬은 시전속도가 얼마야?" }) do
 	class.HandleInputEvent(pane, main.inputEvents[1], 0, 0)
 	assert(input.buf == text, "queued Ctrl+V lost its clipboard text")
 end
-input.buf, input.sel = "old", 1
+input.buf, input.sel, input.caret = "old", 1, 4
 main.inputEvents = { }
 ctrl, clipboard = true, "replacement"
 main:OnKeyDown("v", false)
