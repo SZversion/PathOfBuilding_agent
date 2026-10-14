@@ -215,7 +215,7 @@ def _field_description(name: str, field: str) -> str:
         "source": "External source selection: PoEDB, PoE Wiki, or both.",
         "skillIndex": "One-based skill index in the selected Skill Set.",
         "skillName": "Skill name used to resolve the active skill context.",
-        "skillSetSelector": "Optional Skill Set selector; defaults to the active set.",
+        "skillSetSelector": "Optional Skill Set selector; omit or use 'active' for the current active Skill Set, or supply a set title.",
         "itemId": "PoB item identifier from the current build snapshot.",
         "durationType": "Duration field to explain, such as skill or debuff duration.",
         "stat": "PoB stat identifier or supported stat name to trace.",
