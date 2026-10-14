@@ -87,9 +87,22 @@ def test_live_snapshot_keeps_current_selections_and_catalogs():
         "mainSkill": {"name": "Arc"}, "config": {"enemyIsBoss": "Pinnacle"},
         "availableSkillSets": [{"id": 7, "title": "Mapping"}, {"id": 3, "title": "Boss"}],
         "availableConfigSets": [{"id": 2, "title": "Boss"}]}})
-    assert projected["activeSkillSet"]["id"] == 7
+    assert projected["activeSkillSet"]["id"] == "7"
     assert projected["mainSkill"]["name"] == "Arc"
     assert projected["config"]["enemyIsBoss"] == "Pinnacle"
-    assert [item["id"] for item in projected["skillSets"]] == [7, 3]
-    assert projected["configSets"][0]["id"] == 2
+    assert [item["id"] for item in projected["skillSets"]] == ["7", "3"]
+    assert projected["configSets"][0]["id"] == "2"
     assert projected["calculatedSnapshot"]["outputs"]["Life"] == 5000
+
+
+def test_selection_ids_are_strings_while_passive_ids_remain_integers():
+    source = {"activeSpec": {"id": 2, "allocatedNodeIds": [12], "jewelIds": [90]},
+              "activeItemSet": {"id": 3}, "specs": [{"id": 2}], "itemSets": [{"id": 3}]}
+    projected = project_snapshot(source)
+    assert projected["activeSpec"]["id"] == "2"
+    assert projected["activeItemSet"]["id"] == "3"
+    assert projected["specs"][0]["id"] == "2"
+    assert projected["itemSets"][0]["id"] == "3"
+    assert projected["activeSpec"]["allocatedNodeIds"] == [12]
+    assert projected["activeSpec"]["jewelIds"] == [90]
+    assert source["activeSpec"]["id"] == 2
