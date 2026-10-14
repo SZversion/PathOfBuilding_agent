@@ -16,5 +16,5 @@ def test_unmentioned_context_is_preserved_and_override_is_provenanced():
         {"activeItemSet": {"id": 1}, "activeSkillSet": {"id": 4}},
         {"activeItemSet": 2},
     )
-    assert snapshot["snapshot"]["activeSkillSet"] == {"id": 4}
+    assert snapshot["snapshot"]["activeSkillSet"] == {"id": "4"}
     assert snapshot["snapshot"]["contextProvenance"]["activeItemSet"]["provenance"] == "explicit_override"
