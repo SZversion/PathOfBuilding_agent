@@ -110,6 +110,14 @@ local function configureChatInput(input)
 	end
 	local keyDown = input.OnKeyDown
 	input.OnKeyDown = function(self, key, ...)
+		if key == "BACK" and self.caret > 1 and not IsKeyDown("CTRL")
+			and (not self.sel or self.sel == self.caret) then
+			local start = self.caret - 1
+			while start > 1 and self.buf:byte(start) >= 128 and self.buf:byte(start) < 192 do
+				start = start - 1
+			end
+			self.sel = start
+		end
 		if key == "LEFTBUTTON" or key == "UP" or key == "DOWN" or key == "HOME" or key == "END" or key == "PAGEUP" or key == "PAGEDOWN" then
 			return withInputLayout(self, keyDown, key, ...)
 		end
