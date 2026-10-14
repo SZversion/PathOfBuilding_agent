@@ -132,6 +132,11 @@ def project_snapshot(context, overrides=None):
             projected[field] = [_primitive_fields(option) for option in options if isinstance(option, dict)]
         elif isinstance(options, dict):
             projected[field] = [{"id": key, **_primitive_fields(option)} for key, option in options.items() if isinstance(option, dict)]
+    for field in ("activeSpec", "activeSkillSet", "activeItemSet", "activeConfigSet", "specs", "skillSets", "itemSets", "configSets"):
+        entries = projected.get(field, [])
+        for entry in entries if isinstance(entries, list) else [entries]:
+            if isinstance(entry, dict) and isinstance(entry.get("id"), (str, int)) and not isinstance(entry["id"], bool):
+                entry["id"] = str(entry["id"])
     if isinstance(overrides, dict) and overrides:
         provenance = {}
         option_names = {"activeSpec": "availableSpecs", "activeSkillSet": "availableSkillSets", "activeItemSet": "availableItemSets", "activeConfigSet": "availableConfigSets"}
@@ -146,8 +151,10 @@ def project_snapshot(context, overrides=None):
                         continue
                     if option.get("id") == requested or str(option.get("id")) == str(requested) or _normalize_name(option.get("title")) == _normalize_name(requested):
                         resolved = {key: option.get(key) for key in ("id", "title") if key in option}
+                        if resolved.get("id") is not None:
+                            resolved["id"] = str(resolved["id"])
                         break
-            provenance[field] = {"provenance": "explicit_override", "requested": requested, "resolved": resolved,
+            provenance[field] = {"provenance": "explicit_override", "requested": str(requested), "resolved": resolved,
                                  "resolution": "catalog" if resolved is not None else "unresolved"}
         projected["contextProvenance"] = provenance
     groups = context.get("socketGroups", context.get("gems", []))
