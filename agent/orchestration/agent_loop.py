@@ -390,13 +390,13 @@ def request_context_overrides(text, context):
                 conflicts.append(name)
                 continue
             candidate = matches[0]
-            overrides[name] = {"id": candidate.get("id"), "title": candidate.get("title"), "source": "사용자 질문"}
+            overrides[name] = {"id": str(candidate["id"]) if candidate.get("id") is not None else None, "title": candidate.get("title"), "source": "사용자 질문"}
             continue
         if index < 1 or index > len(candidates):
             conflicts.append(name)
             continue
         candidate = candidates[index - 1]
-        overrides[name] = {"id": candidate.get("id"), "title": candidate.get("title") or candidate.get("label"), "source": "사용자 질문"}
+        overrides[name] = {"id": str(candidate["id"]) if candidate.get("id") is not None else None, "title": candidate.get("title") or candidate.get("label"), "source": "사용자 질문"}
     return {"overrides": overrides, "conflicts": conflicts}
 
 
@@ -413,13 +413,16 @@ def resolve_active_context(context, *, text=None):
             continue
         active_id = active.get("id") if isinstance(active, dict) else active
         active_title = (active.get("title") or active.get("label")) if isinstance(active, dict) else None
-        matches = [item for item in candidates if (active_id is not None and item.get("id") == active_id) or (active_title and (item.get("title") or item.get("label")) == active_title)]
+        matches = [item for item in candidates if (active_id is not None and str(item.get("id")) == str(active_id)) or (active_title and (item.get("title") or item.get("label")) == active_title)]
         if len(candidates) > 1 and len(matches) == 1:
             selected[name] = {"id": matches[0].get("id"), "title": matches[0].get("title") or matches[0].get("label"), "source": "PoB 활성 상태"}
         elif len(candidates) > 1:
             conflicts.append(name)
         elif active_id is not None or active_title:
             selected[name] = {"id": active_id, "title": active_title, "source": "PoB 활성 상태"}
+    for entry in selected.values():
+        if entry.get("id") is not None:
+            entry["id"] = str(entry["id"])
     request = request_context_overrides(text, source) if isinstance(text, str) else {"overrides": {}, "conflicts": []}
     selected.update(request["overrides"])
     conflicts = [name for name in conflicts if name not in request["overrides"]]
