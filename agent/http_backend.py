@@ -43,7 +43,7 @@ def _execute(build: Path, question: str):
     command = [sys.executable, "-m", "agent.cli", "--build", str(build), "--cache-root", cache,
                "--once", "--json", "--no-stream", question]
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=600,
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=1800,
                                    cwd=Path(__file__).resolve().parents[1], check=False, env=trace_environment())
     except subprocess.TimeoutExpired as error:
         raise HTTPException(status_code=504, detail="agent run timed out") from error
@@ -95,7 +95,7 @@ def _stream_execute(build: Path, question: str):
     timed_out = False
     try:
         while not reader_finished:
-            if time.monotonic() - started > 600:
+            if time.monotonic() - started > 1800:
                 timed_out = True
                 if session:
                     session.record_error({"code": "TIMEOUT", "message": "agent run timed out"})
