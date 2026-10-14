@@ -16,7 +16,7 @@ from .openai_compatible import ExternalModelError, OpenAICompatibleClient
 DEFAULT_OLLAMA_ENDPOINT = "http://127.0.0.1:11434/v1"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
 OLLAMA_CONTEXT_LENGTH = 40960
-DEFAULT_OLLAMA_TIMEOUT = 300
+DEFAULT_OLLAMA_TIMEOUT = 600
 
 
 class OllamaDevelopmentProvider(OpenAICompatibleClient):
