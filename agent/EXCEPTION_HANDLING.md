@@ -183,7 +183,7 @@ The validator is deterministic and must be tested with synthetic failures before
 Defaults:
 
 - LLM output repair: maximum 2 LLM attempts total. LLM attempts are tracked separately from Tool calls.
-- External model transient failure: maximum 2 LLM attempts with bounded backoff.
+- External model transient failure: maximum 3 LLM attempts with bounded backoff. Streaming is retried only before any output has been emitted.
 - `tool_call_count <= 8` for each user request. This is the single hard limit for PoB, RAG, and approved-search Tool calls; retries are counted in the same total and there is no separate retry allowance.
 - Tool timeout/transient failures: one initial attempt plus at most 3 retries (4 total attempts). Each retry cancels/discards the failed execution context before starting the next attempt; the limit is hard and there is no unbounded loop.
 - User-input errors (`MISSING_CONTEXT`/`AMBIGUOUS_CONTEXT`/`ASK_USER`; legacy `REPAIR_INPUT`), grounding missing or conflict, snapshot/mutation conflicts, and other non-transient failures are never retried automatically.
