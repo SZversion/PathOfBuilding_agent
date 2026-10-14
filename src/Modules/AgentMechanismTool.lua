@@ -139,7 +139,7 @@ local function skillSetFor(build, selector)
 	local tab = build and build.skillsTab
 	if not tab or not tab.skillSets then return nil, "Skill Set state is unavailable" end
 	local id
-	if selector == nil then
+	if selector == nil or (type(selector) == "string" and selector:lower() == "active") then
 		id = tab.activeSkillSetId or (tab.skillSetOrderList and tab.skillSetOrderList[1])
 	elseif type(selector) == "number" then
 		id = tab.skillSets[selector] and selector or (tab.skillSetOrderList and tab.skillSetOrderList[selector])
