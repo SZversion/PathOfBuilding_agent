@@ -359,8 +359,10 @@ class FunctionTrace:
                 entry["span"].end()
                 del self.frames[key]
 
-    def __enter__(self):
-        self.token = _ACTIVE.set(self)
+    def __enter__(self, manage_context=True):
+        self.manage_context = manage_context
+        if manage_context:
+            self.token = _ACTIVE.set(self)
         try:
             if self.name.startswith("agent.mcp.") and not self.name.startswith("agent.mcp.client."):
                 self.root = _ContextSpan(self)
@@ -373,7 +375,7 @@ class FunctionTrace:
                     if hasattr(self.exporter, "_queue"):
                         self.exporter.client = None
                         self.root = self._start("pipeline:" + self.name, self.arguments)
-            if self.root is not None:
+            if self.root is not None and manage_context:
                 if getattr(_LOCAL, "users", 0) == 0:
                     _LOCAL.previous = sys.gettrace()
                     sys.settrace(_trace)
@@ -390,9 +392,10 @@ class FunctionTrace:
     def __exit__(self, error_type, error, traceback):
         self.closed = True
         if self.root is not None:
-            _LOCAL.users -= 1
-            if not _LOCAL.users:
-                sys.settrace(_LOCAL.previous)
+            if self.manage_context:
+                _LOCAL.users -= 1
+                if not _LOCAL.users:
+                    sys.settrace(_LOCAL.previous)
             if isinstance(self.root, _ContextSpan):
                 if self.exceptions:
                     try:
@@ -407,7 +410,8 @@ class FunctionTrace:
                             _bounded_call(self.exporter.client.flush, 2.0)
                     except Exception as failure:
                         self.warnings.append("exception:" + type(failure).__name__)
-                _ACTIVE.reset(self.token)
+                if self.manage_context:
+                    _ACTIVE.reset(self.token)
                 return False
             try:
                 self.complete_input(error=error)
@@ -433,7 +437,8 @@ class FunctionTrace:
                     _bounded_call(self.exporter.client.flush, 2.0)
             except Exception as failure:
                 self.warnings.append(type(failure).__name__)
-        _ACTIVE.reset(self.token)
+        if self.manage_context:
+            _ACTIVE.reset(self.token)
         return False
 
 
@@ -465,14 +470,50 @@ def trace_pipeline(function=None, *, context_provider=None):
             headers = trace_headers()
 
             def iterate():
-                if current_trace() is parent and parent is not None:
-                    with _trace_thread():
-                        yield from function(*args, **kwargs)
-                    return
-                with FunctionTrace(name, inspect.signature(function).bind(*args, **kwargs).arguments,
-                                   run_id=headers.get("X-PoB-Trace-Run-Id"),
-                                   parent_id=headers.get("X-PoB-Trace-Parent-Id")) as session:
-                    yield from function(*args, **kwargs)
+                owned = parent is None or parent.closed
+                session = (FunctionTrace(name, inspect.signature(function).bind(*args, **kwargs).arguments,
+                                         run_id=headers.get("X-PoB-Trace-Run-Id"),
+                                         parent_id=headers.get("X-PoB-Trace-Parent-Id")) if owned else parent)
+                stream = function(*args, **kwargs)
+                failure = (None, None, None)
+                action, value = stream.send, None
+                token = _ACTIVE.set(session)
+                try:
+                    if owned:
+                        session.__enter__(manage_context=False)
+                finally:
+                    _ACTIVE.reset(token)
+                try:
+                    while True:
+                        token = _ACTIVE.set(session)
+                        try:
+                            with _trace_thread():
+                                chunk = action(value)
+                        except StopIteration as stopped:
+                            return stopped.value
+                        finally:
+                            _ACTIVE.reset(token)
+                        try:
+                            value = yield chunk
+                            action = stream.send
+                        except GeneratorExit:
+                            raise
+                        except BaseException as error:
+                            action, value = stream.throw, error
+                except BaseException:
+                    failure = sys.exc_info()
+                    raise
+                finally:
+                    token = _ACTIVE.set(session)
+                    try:
+                        with _trace_thread():
+                            try:
+                                stream.close()
+                            finally:
+                                if owned:
+                                    session.__exit__(*failure)
+                    finally:
+                        _ACTIVE.reset(token)
             return iterate()
     else:
         @functools.wraps(function)
