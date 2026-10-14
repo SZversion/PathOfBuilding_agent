@@ -479,7 +479,15 @@ function main:OnFrame()
 end
 
 function main:OnKeyDown(key, doubleClick)
-	t_insert(self.inputEvents, { type = "KeyDown", key = key, doubleClick = doubleClick })
+	local event = { type = "KeyDown", key = key, doubleClick = doubleClick }
+	local build = self.modes.BUILD
+	local pane = build and build.agentChatPane
+	if key == "v" and IsKeyDown("CTRL") and self.mode == "BUILD" and pane and pane.isOverlay
+		and pane.selControl == pane.controls.input then
+		-- Clipboard and modifiers may change before the queued event is processed.
+		event.pasteText = Paste() or ""
+	end
+	t_insert(self.inputEvents, event)
 end
 
 function main:OnKeyUp(key)
