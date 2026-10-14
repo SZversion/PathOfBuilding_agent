@@ -15,7 +15,8 @@ from .openai_compatible import ExternalModelError, OpenAICompatibleClient
 
 DEFAULT_OLLAMA_ENDPOINT = "http://127.0.0.1:11434/v1"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
-OLLAMA_CONTEXT_LENGTH = 40960
+OLLAMA_CONTEXT_LENGTH = 32000
+OLLAMA_OUTPUT_LENGTH = 2000
 DEFAULT_OLLAMA_TIMEOUT = 1800
 
 
@@ -33,7 +34,7 @@ class OllamaDevelopmentProvider(OpenAICompatibleClient):
 
     def _native_request(self, messages, *, format=None, stream=False):
         body = {"model": self.model, "messages": messages, "stream": stream,
-                "options": {"temperature": 0, "num_ctx": OLLAMA_CONTEXT_LENGTH, "num_predict": -1}}
+                "options": {"temperature": 0, "num_ctx": OLLAMA_CONTEXT_LENGTH, "num_predict": OLLAMA_OUTPUT_LENGTH}}
         if format is not None:
             body["format"] = format
         request = urllib.request.Request(self._native_url(), data=json.dumps(body).encode("utf-8"), headers={"Content-Type": "application/json"})
