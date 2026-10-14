@@ -95,7 +95,7 @@ TOOL_MIN_ARGUMENTS["compare_build_states"] = {"required": ["beforeState", "after
 TOOL_MIN_ARGUMENTS["search_external"] = {"required": ["query"], "types": {"query": "string", "source": "poedb|poewiki|both (default both)", "limit": "integer 1..3 (default 3)"}}
 
 _PLANNER_CATALOG = json.dumps(
-    {tool: TOOL_MIN_ARGUMENTS[tool] for tool in sorted(READ_ONLY_TOOLS)},
+    {tool: TOOL_CATALOG[tool].description for tool in sorted(READ_ONLY_TOOLS)},
     ensure_ascii=False, sort_keys=True, separators=(",", ":"),
 )
 def _load_planner_schema(snapshot_revision=None):
@@ -717,7 +717,7 @@ class AgentLoop:
             if {item.get("name") for item in available} != set(READ_ONLY_TOOLS):
                 raise PlanValidationError("MCP read-only tool catalog does not match the planner allowlist",
                                           code="TOOL_CATALOG_MISMATCH")
-            planner_system += "\nMCP tool descriptions and input schemas (source of truth): " + json.dumps(available, ensure_ascii=False, separators=(",", ":"))
+            planner_system += "\nMCP tool purposes: " + json.dumps([{key: item[key] for key in ("name", "description") if key in item} for item in available], ensure_ascii=False, separators=(",", ":"))
         if sync is not None:
             recorder.set_snapshot((sync or {}).get("snapshotRevision"), snapshot.get("buildId") if isinstance(snapshot, dict) else None)
         selection_conflicts = (planning_payload.get("contextSelection") or {}).get("conflicts", [])
