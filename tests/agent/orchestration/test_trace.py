@@ -88,6 +88,39 @@ def test_agent_loop_connects_plan_tool_final_trace_without_sensitive_payload():
     assert "PRIVATE" not in text and "secret@example" not in text and "itemText" not in text
 
 
+def test_model_communication_succeeds_on_third_attempt():
+    class Model:
+        calls = 0
+
+        def chat(self, messages):
+            self.calls += 1
+            if self.calls < 3:
+                raise ExternalModelError("temporary", code="MODEL_TRANSIENT")
+            return "ok"
+
+    model = Model()
+    assert AgentLoop(model)._chat([]) == "ok"
+    assert model.calls == 3
+
+
+def test_model_communication_stops_after_three_attempts():
+    class Model:
+        calls = 0
+
+        def chat(self, messages):
+            self.calls += 1
+            raise ExternalModelError("temporary", code="MODEL_TRANSIENT")
+
+    model = Model()
+    try:
+        AgentLoop(model)._chat([])
+    except ExternalModelError as error:
+        assert error.error["max_attempts"] == 3
+    else:
+        raise AssertionError("transient failure must be raised")
+    assert model.calls == 3
+
+
 def test_trace_records_provider_retry_and_tool_failure():
     class RetryModel:
         model = "retry-model"
