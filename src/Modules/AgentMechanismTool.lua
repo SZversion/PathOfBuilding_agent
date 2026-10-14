@@ -144,10 +144,12 @@ local function skillSetFor(build, selector)
 	elseif type(selector) == "number" then
 		id = tab.skillSets[selector] and selector or (tab.skillSetOrderList and tab.skillSetOrderList[selector])
 	elseif type(selector) == "string" then
+		local numeric = selector:match("^%d+$") and tonumber(selector)
+		if numeric then id = tab.skillSets[numeric] and numeric or (tab.skillSetOrderList and tab.skillSetOrderList[numeric]) end
 		local needle = selector:lower()
 		for candidateId, set in pairs(tab.skillSets) do
 			if type(set.title) == "string" and set.title:lower() == needle then
-				if id then return nil, "Skill Set selector is ambiguous" end
+				if id and id ~= candidateId then return nil, "Skill Set selector is ambiguous" end
 				id = candidateId
 			end
 		end
