@@ -53,6 +53,7 @@ build.calcsTab.BuildOutput = function() end
 
 local setResult = assert(tool.get_skill_set(build, "6) endgame setup"))
 assert(setResult.facts.title == "6) endgame setup")
+assert(tool.get_skill_set(build, "2").facts.title == "6) endgame setup")
 local activeSetResult = assert(tool.get_skill_set(build, "active"))
 assert(activeSetResult.facts.title == "Leveling")
 local chainResult = assert(tool.get_skill_chain(build, "6) endgame setup", "Poisonous Concoction of Bouncing"))
