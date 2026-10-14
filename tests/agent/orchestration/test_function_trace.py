@@ -88,6 +88,39 @@ def run():
     assert trace_headers() == {}
 
 
+def test_stream_resumes_in_distinct_contexts_without_leaking_trace(monkeypatch):
+    import contextvars
+    from concurrent.futures import ThreadPoolExecutor
+    client = Client()
+    monkeypatch.setattr("agent.orchestration.function_trace.LangfuseExporter.from_env",
+                        lambda: types.SimpleNamespace(client=client))
+    fixture = project_function("""
+def chunks():
+    from agent.orchestration.function_trace import trace_headers
+    yield trace_headers()
+    yield trace_headers()
+""")
+    stream = trace_pipeline(fixture.chunks)()
+
+    def advance():
+        before = sys.gettrace()
+        try:
+            return next(stream)
+        finally:
+            assert current_trace() is None
+            assert sys.gettrace() is before
+
+    with ThreadPoolExecutor(max_workers=1) as worker:
+        first = worker.submit(contextvars.Context().run, advance).result()
+        second = worker.submit(contextvars.Context().run, advance).result()
+        assert first == second
+        with pytest.raises(StopIteration):
+            worker.submit(contextvars.Context().run, advance).result()
+    roots = [s for s in client.spans if s["name"].startswith("pipeline:")]
+    assert len(roots) == 1
+    assert all(s["ended"] for s in client.spans)
+
+
 def test_tracing_failure_never_changes_function_result(monkeypatch):
     class Broken(Client):
         def start_observation(self, **values): raise RuntimeError('offline')
