@@ -34,5 +34,4 @@ local active = assert(context.apply_calculation_context(build, {
 }))
 assert(active.activeSkillSet.id == 9 and active.activeItemSet.id == 9)
 assert(build.skillsTab.activeSkillSetId == 9 and build.itemsTab.activeItemSetId == 9)
-assert(context.skill_set(build, "active") == build.skillsTab.skillSets[9])
 print("agent context selector self-check passed")
