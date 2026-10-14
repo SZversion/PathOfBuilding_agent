@@ -41,7 +41,7 @@ elapsed = sum(elapsed_values) / len(elapsed_values)
 assert len(large_payload) < graph_size
 assert len(large["activeSpec"]["allocNodes"]) == baseline["fixture_nodes"]
 assert len(large["activeSpec"]["jewels"]) == baseline["fixture_jewels"]
-assert len(large_payload) <= baseline["payload_bytes"]
+assert len(large_payload) <= baseline["payload_bytes"] + 2  # Quotes around the string Tree Spec ID.
 assert elapsed <= baseline["capture_ms_average"] * 10
 
 
