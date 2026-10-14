@@ -137,8 +137,9 @@ def test_final_answer_receives_identical_planner_context(use_tool):
         def chat(self, messages):
             payload = json.loads(messages[1]["content"])
             if "skills" in payload:
-                return '{"skills":[]}'
+                return '{"skills":["lookup"]}'
             if "planner" in messages[0]["content"]:
+                assert "# Status, lookup, and values" in messages[0]["content"]
                 payloads["planner"] = payload
                 value = plan("get_skill_dps", {"skillName": "Arc of Oscillating"})
                 value.update(intent="skill_stat", operation="read" if use_tool else "answer", evidenceLevel="calculated")
@@ -146,6 +147,7 @@ def test_final_answer_receives_identical_planner_context(use_tool):
                     value["steps"] = []
                 return json.dumps(value)
             payloads["answer"] = payload
+            assert messages[0]["content"] == agent_loop.ANSWER_SYSTEM
             assert payload["context"] == payloads["planner"]["context"]
             assert payload["contextSelection"] == payloads["planner"]["contextSelection"]
             assert payload["context"]["snapshot"]["calculatedSnapshot"]["outputs"]["CritMultiplier"] == 4.77
