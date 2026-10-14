@@ -25,6 +25,7 @@ def test_ollama_defaults_are_development_only():
     assert provider.endpoint == "http://127.0.0.1:11434/v1"
     assert provider.model == "qwen3:8b"
     assert provider.mode == "development"
+    assert provider.timeout == 300
     with pytest.raises(ValueError):
         OllamaDevelopmentProvider(mode="production")
 
@@ -34,6 +35,7 @@ def test_factory_keeps_remote_default_and_rejects_local_in_production():
     with pytest.raises(ValueError):
         create_provider(config("local"), environment="production")
     assert isinstance(create_provider(config("local"), environment="development"), OllamaDevelopmentProvider)
+    assert create_provider(config("local"), environment="development").timeout == 300
 
 
 def test_local_enabled_does_not_change_remote_default():
