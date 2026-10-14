@@ -717,7 +717,7 @@ class AgentLoop:
             if {item.get("name") for item in available} != set(READ_ONLY_TOOLS):
                 raise PlanValidationError("MCP read-only tool catalog does not match the planner allowlist",
                                           code="TOOL_CATALOG_MISMATCH")
-            planner_system += "\nMCP tool purposes: " + json.dumps([{key: item[key] for key in ("name", "description") if key in item} for item in available], ensure_ascii=False, separators=(",", ":"))
+            planner_system = planner_system.replace(_PLANNER_CATALOG, json.dumps({item["name"]: item.get("description", "") for item in available}, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
         if sync is not None:
             recorder.set_snapshot((sync or {}).get("snapshotRevision"), snapshot.get("buildId") if isinstance(snapshot, dict) else None)
         selection_conflicts = (planning_payload.get("contextSelection") or {}).get("conflicts", [])
