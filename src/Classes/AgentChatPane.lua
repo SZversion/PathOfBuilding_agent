@@ -515,6 +515,15 @@ function AgentChatPaneClass:HandleInputEvent(event, cursorX, cursorY)
 	if not self.selControl then
 		return false
 	end
+	if event.type == "KeyDown" and event.pasteText ~= nil and self.selControl == self.controls.input then
+		local input = self.controls.input
+		if input.sel and input.sel ~= input.caret then
+			input:ReplaceSel(event.pasteText)
+		else
+			input:Insert(event.pasteText)
+		end
+		return true
+	end
 	if event.type == "KeyDown" and event.key == "RETURN" and self.selControl == self.controls.input and not IsKeyDown("SHIFT") then
 		self:SendMessage()
 		return true
