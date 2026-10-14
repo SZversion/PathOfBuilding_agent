@@ -231,15 +231,15 @@ def test_live_envelope_defaults_and_explicit_set_priority():
         "availableSkillSets": [{"id": 7, "title": "Mapping"}, {"id": 3, "title": "Boss"}],
         "availableConfigSets": [{"id": 2, "title": "Boss"}]}}
     defaults = resolve_active_context(context, text="highest DPS skill")
-    assert defaults["selected"]["skillSet"]["id"] == 7
+    assert defaults["selected"]["skillSet"]["id"] == "7"
     assert defaults["selected"]["mainSkill"]["name"] == "Arc"
     assert defaults["selected"]["config"]["enemyIsBoss"] == "Pinnacle"
     explicit = resolve_active_context(context, text="2번 스킬셋 DPS")
-    assert explicit["selected"]["skillSet"]["id"] == 3
-    assert explicit["selected"]["configSet"]["id"] == 2
+    assert explicit["selected"]["skillSet"]["id"] == "3"
+    assert explicit["selected"]["configSet"]["id"] == "2"
     assert explicit["conflicts"] == []
     named = resolve_active_context(context, text="Boss skill set DPS")
-    assert named["selected"]["skillSet"]["id"] == 3
+    assert named["selected"]["skillSet"]["id"] == "3"
     missing = resolve_active_context(context, text="99번 스킬셋 DPS")
     assert missing["conflicts"] == ["skillSet"]
 
@@ -250,7 +250,7 @@ def test_explicit_set_reaches_tool_without_changing_other_defaults():
         def chat(self, messages, **kwargs):
             if "planner" in messages[0]["content"]:
                 payload = json.loads(messages[1]["content"])
-                assert payload["contextSelection"]["selected"]["skillSet"]["id"] == 3
+                assert payload["contextSelection"]["selected"]["skillSet"]["id"] == "3"
                 assert payload["contextSelection"]["selected"]["mainSkill"]["name"] == "Arc"
                 return '{"schema_version":"1.0","intent":"stat","operation":"read","evidenceLevel":"calculated","steps":[{"tool":"get_highest_dps_skill","arguments":{}}]}'
             return "Arc"
@@ -258,7 +258,7 @@ def test_explicit_set_reaches_tool_without_changing_other_defaults():
         "mainSkill": {"name": "Arc"}, "availableSkillSets": [{"id": 7}, {"id": 3}]},
         handlers={"get_highest_dps_skill": lambda args: calls.append(args) or {"facts": {"skill": "Arc"}}})
     assert result["status"] == "ok"
-    assert calls[0]["contextOverrides"] == {"activeSkillSet": 3}
+    assert calls[0]["contextOverrides"] == {"activeSkillSet": "3"}
 
 
 def test_planner_repairs_clarification_for_a_known_live_skill():
