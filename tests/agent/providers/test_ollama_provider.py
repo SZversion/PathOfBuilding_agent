@@ -44,7 +44,7 @@ def test_local_enabled_does_not_change_remote_default():
 
 
 @pytest.mark.parametrize("stream", [False, True])
-def test_ollama_uses_full_context_without_output_token_cap(monkeypatch, stream):
+def test_ollama_limits_total_context_and_generated_tokens(monkeypatch, stream):
     requests = []
     response = object()
 
@@ -54,8 +54,8 @@ def test_ollama_uses_full_context_without_output_token_cap(monkeypatch, stream):
 
     monkeypatch.setattr("urllib.request.urlopen", urlopen)
     assert OllamaDevelopmentProvider()._native_request([], stream=stream) is response
-    assert requests[0]["options"]["num_ctx"] == 40960
-    assert requests[0]["options"]["num_predict"] == -1
+    assert requests[0]["options"]["num_ctx"] == 32000
+    assert requests[0]["options"]["num_predict"] == 2000
 
 
 def test_malformed_provider_response_maps_to_registered_schema_error(monkeypatch):
