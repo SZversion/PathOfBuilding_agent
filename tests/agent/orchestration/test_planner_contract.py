@@ -124,3 +124,36 @@ def test_model_receives_strict_schema_and_repairs_invalid_source():
     assert result["status"] == "ok"
     assert len(seen) == 2
     assert calls == [{"skillName": "Arc"}]
+
+
+@pytest.mark.parametrize("use_tool", [False, True])
+def test_final_answer_receives_identical_planner_context(use_tool):
+    payloads = {}
+    snapshot = {"mainSkill": {"name": "Arc of Oscillating", "socketGroup": 1},
+                "config": {"enemyIsBoss": "Pinnacle"},
+                "calculatedSnapshot": {"outputs": {"CritMultiplier": 4.77}}}
+
+    class Model:
+        def chat(self, messages):
+            payload = json.loads(messages[1]["content"])
+            if "skills" in payload:
+                return '{"skills":[]}'
+            if "planner" in messages[0]["content"]:
+                payloads["planner"] = payload
+                value = plan("get_skill_dps", {"skillName": "Arc of Oscillating"})
+                value.update(intent="skill_stat", operation="read" if use_tool else "answer", evidenceLevel="calculated")
+                if not use_tool:
+                    value["steps"] = []
+                return json.dumps(value)
+            payloads["answer"] = payload
+            assert payload["context"] == payloads["planner"]["context"]
+            assert payload["contextSelection"] == payloads["planner"]["contextSelection"]
+            assert payload["context"]["snapshot"]["calculatedSnapshot"]["outputs"]["CritMultiplier"] == 4.77
+            assert payload["context"]["snapshot"]["config"]["enemyIsBoss"] == "Pinnacle"
+            return "crit multiplier: 4.77"
+
+    result = AgentLoop(Model()).run("Arc of Oscillating crit multiplier?", snapshot=snapshot,
+                                    handlers={"get_skill_dps": lambda args: {"facts": {"value": 1}}})
+    assert result["status"] == "ok"
+    assert payloads["answer"]["results"]["tool_call_count"] == int(use_tool)
+    assert snapshot["calculatedSnapshot"]["outputs"]["CritMultiplier"] == 4.77
