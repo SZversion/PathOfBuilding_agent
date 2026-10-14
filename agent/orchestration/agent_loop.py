@@ -828,6 +828,7 @@ class AgentLoop:
             return {"status": "partial", "plan": planned, "execution": execution, "answer": answer, "uncertainty": uncertainty, "trace": recorder.events}
         recorder.emit("final_started", "final", "started", plan_ref=recorder.plan_ref(planned), input_payload={"question": question_text, "execution": execution})
         answer_payload = {"question": question_text, "results": _model_safe_execution(execution)}
+        answer_payload.update({key: planning_payload[key] for key in ("context", "contextSelection", "explicitContextOverrides") if key in planning_payload})
         try:
             answer = self._chat([
             {"role": "system", "content": answer_system},
