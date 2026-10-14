@@ -747,7 +747,6 @@ class AgentLoop:
                     planning_payload["selected_skills"] = selected_skills
                     if instructions:
                         planner_system += "\n\n" + instructions
-                        answer_system += "\n\n" + instructions
                 planner_input = dict(planning_payload)
                 if repair_feedback is not None:
                     planner_input["repair_feedback"] = repair_feedback
