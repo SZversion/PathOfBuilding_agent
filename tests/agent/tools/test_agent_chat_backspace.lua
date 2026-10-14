@@ -1,5 +1,7 @@
 local previousNewClass = newClass
 local previousJson = package.loaded.dkjson
+local previousCpath = package.cpath
+package.cpath = "runtime/?.dll;" .. package.cpath
 newClass = function(...) return { constructor = select(select("#", ...), ...) } end
 package.loaded.dkjson = { }
 local edit = dofile("src/Classes/EditControl.lua")
@@ -48,4 +50,5 @@ input.buf, input.caret, input.sel = "가나", 1, nil
 input:OnKeyDown("BACK")
 assert(input.buf == "가나" and input.caret == 1)
 newClass, package.loaded.dkjson = previousNewClass, previousJson
+package.cpath = previousCpath
 print("Agent UTF-8 Backspace and selection checks passed")
