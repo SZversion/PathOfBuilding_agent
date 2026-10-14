@@ -8,7 +8,7 @@ import urllib.request
 class ExternalModelError(RuntimeError):
     def __init__(self, message, *, code="MODEL_TRANSIENT", retryable=True, details=None):
         super().__init__(message)
-        self.error = {"code": code, "recovery_class": "RETRY_LLM" if retryable else "REJECT", "stage": "model_request", "retryable": retryable, "attempt": 1, "max_attempts": 2 if retryable else 1, "message": message, "details": details or {}, "next_action": "retry_llm" if retryable else "reject_request", "secondary_causes": [], "side_effect": "none", "operator_message": None}
+        self.error = {"code": code, "recovery_class": "RETRY_LLM" if retryable else "REJECT", "stage": "model_request", "retryable": retryable, "attempt": 1, "max_attempts": 3 if retryable else 1, "message": message, "details": details or {}, "next_action": "retry_llm" if retryable else "reject_request", "secondary_causes": [], "side_effect": "none", "operator_message": None}
 
 
 def _validate_endpoint(endpoint, *, allow_local=False):
