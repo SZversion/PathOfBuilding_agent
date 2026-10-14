@@ -16,10 +16,11 @@ from .openai_compatible import ExternalModelError, OpenAICompatibleClient
 DEFAULT_OLLAMA_ENDPOINT = "http://127.0.0.1:11434/v1"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
 OLLAMA_CONTEXT_LENGTH = 40960
+DEFAULT_OLLAMA_TIMEOUT = 300
 
 
 class OllamaDevelopmentProvider(OpenAICompatibleClient):
-    def __init__(self, endpoint=DEFAULT_OLLAMA_ENDPOINT, model=DEFAULT_OLLAMA_MODEL, timeout=120, *, mode="development"):
+    def __init__(self, endpoint=DEFAULT_OLLAMA_ENDPOINT, model=DEFAULT_OLLAMA_MODEL, timeout=DEFAULT_OLLAMA_TIMEOUT, *, mode="development"):
         if mode != "development":
             raise ValueError("Ollama is available only in explicit development mode")
         self.mode = "development"
