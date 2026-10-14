@@ -623,7 +623,7 @@ class AgentLoop:
             trace_exporter = current_trace() or LangfuseExporter.from_env()
         self.trace_exporter = trace_exporter
 
-    def _chat(self, messages, *, attempts=2, recorder=None, stream=False, on_token=None, response_format=None):
+    def _chat(self, messages, *, attempts=3, recorder=None, stream=False, on_token=None, response_format=None):
         last = None
         for attempt in range(1, attempts + 1):
             started = __import__("time").monotonic()
@@ -664,7 +664,7 @@ class AgentLoop:
                 detail = getattr(error, "error", {})
                 if isinstance(error, TimeoutError):
                     detail = {"retryable": True}
-                if detail.get("retryable") is not True or attempt >= attempts:
+                if detail.get("retryable") is not True or attempt >= attempts or getattr(error, "_partial_text", ""):
                     raise
         raise last
 
@@ -835,7 +835,7 @@ class AgentLoop:
             answer = self._chat([
             {"role": "system", "content": answer_system},
             {"role": "user", "content": json.dumps(answer_payload, ensure_ascii=False)},
-            ], recorder=recorder, stream=True, attempts=1, on_token=on_token)
+            ], recorder=recorder, stream=True, on_token=on_token)
             recorder.set_output(answer)
         except Exception as error:
             detail = getattr(error, "error", None) or {"code": "RETRY_LLM", "recovery_class": "RETRY_LLM", "stage": "model_answer", "retryable": True, "attempt": 1, "max_attempts": 2, "message": str(error), "details": {}, "next_action": "retry_llm", "side_effect": "none", "operator_message": None, "secondary_causes": []}
