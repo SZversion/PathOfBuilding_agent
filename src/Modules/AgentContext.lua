@@ -169,10 +169,10 @@ local function skill_set(build, selector)
 	if selector == nil or (type(selector) == "string" and selector:lower() == "active") then
 		id = tab.activeSkillSetId or (tab.skillSetOrderList and tab.skillSetOrderList[1])
 	elseif type(selector) == "number" then
-		id = tab.skillSetOrderList and tab.skillSetOrderList[selector]
+		id = tab.skillSets[selector] and selector or (tab.skillSetOrderList and tab.skillSetOrderList[selector])
 	elseif type(selector) == "string" then
-		local numeric = tonumber(selector)
-		if numeric then id = tab.skillSetOrderList and tab.skillSetOrderList[numeric] end
+		local numeric = selector:match("^%d+$") and tonumber(selector)
+		if numeric then id = tab.skillSets[numeric] and numeric or (tab.skillSetOrderList and tab.skillSetOrderList[numeric]) end
 		for candidateId, candidate in pairs(tab.skillSets) do
 			if normalize_name(candidate.title) == normalize_name(selector) then
 				if id and id ~= candidateId then return nil, "Skill Set selector is ambiguous" end
