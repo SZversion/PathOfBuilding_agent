@@ -1,6 +1,6 @@
 """Explicit provider selection; no automatic fallback is permitted."""
 
-from .ollama import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, OllamaDevelopmentProvider
+from .ollama import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, DEFAULT_OLLAMA_TIMEOUT, OllamaDevelopmentProvider
 from .openai_compatible import OpenAICompatibleClient
 
 
@@ -17,5 +17,5 @@ def create_provider(config, *, environment="production"):
         local = config.get("local")
         if environment != "development" or not isinstance(local, dict) or local.get("enabled") is not True:
             raise ValueError("local Ollama provider requires explicit development mode and local.enabled=true")
-        return OllamaDevelopmentProvider(endpoint=local.get("endpoint", DEFAULT_OLLAMA_ENDPOINT), model=local.get("model", DEFAULT_OLLAMA_MODEL), timeout=local.get("timeout", 120), mode="development")
+        return OllamaDevelopmentProvider(endpoint=local.get("endpoint", DEFAULT_OLLAMA_ENDPOINT), model=local.get("model", DEFAULT_OLLAMA_MODEL), timeout=local.get("timeout", DEFAULT_OLLAMA_TIMEOUT), mode="development")
     raise ValueError("unknown provider mode: " + str(mode))
