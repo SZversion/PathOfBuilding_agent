@@ -54,13 +54,16 @@ end
 -- Resolve and apply the three pieces of PoB state that affect a calculation.
 -- Set ids are stable keys in PoB's tables; numeric selectors therefore prefer
 -- an id and fall back to the corresponding position in the ordered list.
-local function resolve_title_selector(value, entries, order, label)
+local function resolve_title_selector(value, entries, order, label, activeId)
 	local function invalid(message)
 		return nil, message or (label .. " selector is invalid")
 	end
 	if value == nil then
 		local id = order and order[1]
 		return id and entries[id], id or invalid(label .. " is not available")
+	end
+	if type(value) == "string" and value:lower() == "active" and activeId ~= nil then
+		return entries[activeId], entries[activeId] and activeId or (label .. " was not found")
 	end
 	local id
 	if type(value) == "number" then
@@ -128,7 +131,7 @@ local function apply_calculation_context(build, selectors)
 	end
 	if selectors.activeSkillSet ~= nil then
 		if not skillsTab then return nil, "Skill Set state is unavailable" end
-		local skillSet, skillId = resolve_title_selector(selectors.activeSkillSet, skillsTab.skillSets, skillsTab.skillSetOrderList, "Skill Set")
+		local skillSet, skillId = resolve_title_selector(selectors.activeSkillSet, skillsTab.skillSets, skillsTab.skillSetOrderList, "Skill Set", skillsTab.activeSkillSetId)
 		if not skillSet then return nil, skillId end
 		selected.activeSkillSet = { id = skillId, title = skillSet.title or "Default" }
 	end
@@ -139,7 +142,7 @@ local function apply_calculation_context(build, selectors)
 	end
 	if selectors.activeItemSet ~= nil then
 		if not itemsTab then return nil, "Item Set state is unavailable" end
-		local itemSet, itemId = resolve_title_selector(selectors.activeItemSet, itemsTab.itemSets, itemsTab.itemSetOrderList, "Item Set")
+		local itemSet, itemId = resolve_title_selector(selectors.activeItemSet, itemsTab.itemSets, itemsTab.itemSetOrderList, "Item Set", itemsTab.activeItemSetId)
 		if not itemSet then return nil, itemId end
 		selected.activeItemSet = { id = itemId, title = itemSet.title or "Default" }
 	end
@@ -163,7 +166,7 @@ local function skill_set(build, selector)
 	local tab = build and build.skillsTab
 	if not tab or not tab.skillSets then return nil, "Skill Set state is unavailable" end
 	local id
-	if selector == nil then
+	if selector == nil or (type(selector) == "string" and selector:lower() == "active") then
 		id = tab.activeSkillSetId or (tab.skillSetOrderList and tab.skillSetOrderList[1])
 	elseif type(selector) == "number" then
 		id = tab.skillSetOrderList and tab.skillSetOrderList[selector]
