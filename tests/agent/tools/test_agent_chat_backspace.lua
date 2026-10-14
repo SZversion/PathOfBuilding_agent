@@ -2,9 +2,15 @@ local previousNewClass = newClass
 local previousJson = package.loaded.dkjson
 local previousCpath = package.cpath
 package.cpath = "runtime/?.dll;" .. package.cpath
-newClass = function(...) return { constructor = select(select("#", ...), ...) } end
+local classes = { }
+newClass = function(name, ...)
+	local class = { constructor = select(select("#", ...), ...) }
+	classes[name] = class
+	return class
+end
 package.loaded.dkjson = { }
-local edit = dofile("src/Classes/EditControl.lua")
+dofile("src/Classes/EditControl.lua")
+local edit = assert(classes.EditControl)
 local chat = dofile("src/Classes/AgentChatPane.lua")
 local configure
 for index = 1, 30 do
